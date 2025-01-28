@@ -1,0 +1,92 @@
+// This is your Prisma schema file
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+enum LessonType {
+  PRIVATE
+  GROUP
+  CHOREOGRAPHY
+  COMPETITION_PREP
+}
+
+enum SkatingLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  COMPETITIVE
+}
+
+enum RinkArea {
+  MAIN_RINK
+  PRACTICE_RINK
+  DANCE_STUDIO
+}
+
+enum PaymentStatus {
+  PENDING
+  PAID
+  CANCELLED
+}
+
+model Student {
+  id              String         @id @default(uuid())
+  name            String
+  email           String         @unique
+  phone           String?
+  level           SkatingLevel
+  emergencyName   String?
+  emergencyPhone  String?
+  relationship    String?
+  notes           String?
+  startDate       DateTime
+  packageCredits  Int           @default(0)
+  preferredDays   String[]      // Stored as JSON array
+  preferredTimes  Json?         // Stored as JSON
+  appointments    Appointment[]
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+}
+
+model Resource {
+  id                  String         @id @default(uuid())
+  name                String
+  type                RinkArea
+  maxCapacity         Int?
+  description         String?
+  available           Boolean        @default(true)
+  maintenanceSchedule Json?          // Stored as JSON array of start/end times
+  appointments        Appointment[]
+  createdAt           DateTime       @default(now())
+  updatedAt           DateTime       @updatedAt
+}
+
+model Appointment {
+  id            String        @id @default(uuid())
+  title         String
+  start         DateTime
+  end           DateTime
+  order         Int
+  lessonType    LessonType
+  notes         String?
+  paymentStatus PaymentStatus @default(PENDING)
+  skill         String?
+  focus         String?
+  student       Student       @relation(fields: [studentId], references: [id])
+  studentId     String
+  resource      Resource      @relation(fields: [resourceId], references: [id])
+  resourceId    String
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([studentId])
+  @@index([resourceId])
+  @@index([start, end])
+}
