@@ -9,7 +9,10 @@ import { CalendarIcon, Clock, CreditCard, Edit2, User2 } from 'lucide-react';
 import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
 import { cn, formatAppointmentTime, getLessonTypeColor } from '@/lib/utils';
 import { useCalendar } from '@/contexts/PlannerContext';
-import { Calendar } from '@/components/ui/calendar';
+import { PaymentDialog } from '../payments/PaymentDialog';
+import { PaymentStatusBadge } from '../payments/PaymentStatusBadge';
+import { PaymentHistory } from '../payments/PaymentHistory';
+import { usePayments } from '@/hooks/usePayments';
 
 interface AppointmentProps {
   appointment: AppointmentType;
@@ -17,15 +20,12 @@ interface AppointmentProps {
   columnIndex: number;
 }
 
-export const Appointment: React.FC<AppointmentProps> = ({
-  appointment,
-  resourceId,
-  columnIndex,
-}) => {
+export function Appointment({ appointment, resourceId, columnIndex }: AppointmentProps) {
   const { updateAppointment } = useCalendar();
+  const { recordPayment, isLoading } = usePayments();
   const ref = useRef<HTMLDivElement>(null);
   const [isDragging, setIsDragging] = useState(false);
-  const [isEditing, setIsEditing] = useState(false);
+  const [showPaymentHistory, setShowPaymentHistory] = useState(false);
 
   useEffect(() => {
     const element = ref.current!;
@@ -40,6 +40,15 @@ export const Appointment: React.FC<AppointmentProps> = ({
       onDrop: () => setIsDragging(false),
     });
   }, [appointment.id, columnIndex, resourceId]);
+
+  const handlePaymentSubmit = async (data: any) => {
+    try {
+      await recordPayment(appointment.id, data);
+      // Optionally refresh the appointment data here
+    } catch (error) {
+      console.error('Error recording payment:', error);
+    }
+  };
 
   return (
     <Card
@@ -57,11 +66,61 @@ export const Appointment: React.FC<AppointmentProps> = ({
         >
           {appointment.details.lessonType}
         </Badge>
-        <PopoverTrigger asChild>
-          <Button variant="ghost" size="icon" className="h-6 w-6">
-            <Edit2 className="h-3 w-3" />
-          </Button>
-        </PopoverTrigger>
+        <div className="flex gap-1">
+          {appointment.payment && (
+            <PaymentStatusBadge status={appointment.payment.status} />
+          )}
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="ghost" size="icon" className="h-6 w-6">
+                <Edit2 className="h-3 w-3" />
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-80">
+              <div className="grid gap-4">
+                <div className="space-y-2">
+                  <h4 className="font-medium">Lesson Details</h4>
+                  <div className="grid gap-2">
+                    <div className="flex items-center gap-2">
+                      <User2 className="h-4 w-4" />
+                      <span>{appointment.title}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Clock className="h-4 w-4" />
+                      <span>
+                        {format(appointment.start, 'h:mm a')} - {format(appointment.end, 'h:mm a')}
+                      </span>
+                    </div>
+                    {appointment.details.notes && (
+                      <div className="text-sm text-muted-foreground">
+                        {appointment.details.notes}
+                      </div>
+                    )}
+                  </div>
+                </div>
+
+                <div className="space-y-2">
+                  <h4 className="font-medium">Payment</h4>
+                  {!appointment.payment ? (
+                    <PaymentDialog
+                      appointmentId={appointment.id}
+                      studentName={appointment.title}
+                      amount={75} // Make this dynamic based on lesson type
+                      onPaymentUpdate={handlePaymentSubmit}
+                    />
+                  ) : (
+                    <Button
+                      variant="outline"
+                      onClick={() => setShowPaymentHistory(true)}
+                    >
+                      View Payment History
+                    </Button>
+                  )}
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        </div>
       </CardHeader>
       <CardContent className="grid gap-1 p-2 pt-0 text-xs">
         <div className="flex items-center gap-1">
@@ -74,29 +133,7 @@ export const Appointment: React.FC<AppointmentProps> = ({
             {formatAppointmentTime(appointment.start)} - {formatAppointmentTime(appointment.end)}
           </span>
         </div>
-        {appointment.details.paymentStatus && (
-          <div className="flex items-center gap-1">
-            <CreditCard className="h-3 w-3" />
-            <Badge
-              variant={appointment.details.paymentStatus === 'paid' ? 'success' : 'warning'}
-              className="text-[10px]"
-            >
-              {appointment.details.paymentStatus}
-            </Badge>
-          </div>
-        )}
       </CardContent>
-
-      <PopoverContent className="w-80">
-        <div className="grid gap-4">
-          <div className="space-y-2">
-            <h4 className="font-medium">Edit Appointment</h4>
-            <div className="grid gap-2">
-              {/* Add your edit form fields here */}
-            </div>
-          </div>
-        </div>
-      </PopoverContent>
     </Card>
   );
-};
+}
