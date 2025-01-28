@@ -76,6 +76,6 @@ Distributed under the MIT License. See `LICENSE` for more information.
 
 ## Contact
 
-Your Name - [@YourTwitter](https://twitter.com/yourusername)
+Yura Min - Ice Dance Coach
 
 Project Link: [https://github.com/kopacz77/yura-scheduler-v2](https://github.com/kopacz77/yura-scheduler-v2)
