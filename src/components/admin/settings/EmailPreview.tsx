@@ -4,6 +4,9 @@ import { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { toast } from 'sonner';
 import { LessonConfirmation } from '@/lib/email/templates/LessonConfirmation';
 import { PaymentReceipt } from '@/lib/email/templates/PaymentReceipt';
 import { ScheduleReminder } from '@/lib/email/templates/ScheduleReminder';
@@ -85,13 +88,39 @@ const templates = [
 export function EmailPreview() {
   const [selectedTemplate, setSelectedTemplate] = useState(templates[0].id);
   const [testEmailAddress, setTestEmailAddress] = useState('');
+  const [isSending, setIsSending] = useState(false);
 
   const template = templates.find(t => t.id === selectedTemplate);
   const TemplateComponent = template?.component;
 
   const handleSendTest = async () => {
-    // Implement test email sending functionality
-    console.log('Sending test email to:', testEmailAddress);
+    if (!testEmailAddress) return;
+
+    setIsSending(true);
+    try {
+      const response = await fetch('/api/email/test', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          templateId: selectedTemplate,
+          email: testEmailAddress,
+        }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to send test email');
+      }
+
+      toast.success('Test email sent successfully!');
+      setTestEmailAddress('');
+    } catch (error) {
+      console.error('Error sending test email:', error);
+      toast.error('Failed to send test email');
+    } finally {
+      setIsSending(false);
+    }
   };
 
   return (
@@ -100,32 +129,49 @@ export function EmailPreview() {
         <div className="flex items-center justify-between">
           <CardTitle>Email Template Preview</CardTitle>
           <div className="flex items-center gap-4">
-            <Select
-              value={selectedTemplate}
-              onValueChange={setSelectedTemplate}
-            >
-              <SelectTrigger className="w-[200px]">
-                <SelectValue placeholder="Select template" />
-              </SelectTrigger>
-              <SelectContent>
-                {templates.map(template => (
-                  <SelectItem key={template.id} value={template.id}>
-                    {template.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Button
-              onClick={handleSendTest}
-              disabled={!testEmailAddress}
-            >
-              Send Test
-            </Button>
+            <div className="space-y-2">
+              <Label htmlFor="test-email">Test Email Address</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  id="test-email"
+                  type="email"
+                  value={testEmailAddress}
+                  onChange={(e) => setTestEmailAddress(e.target.value)}
+                  placeholder="Enter email for test"
+                  className="w-64"
+                />
+                <Button
+                  onClick={handleSendTest}
+                  disabled={!testEmailAddress || isSending}
+                >
+                  {isSending ? 'Sending...' : 'Send Test'}
+                </Button>
+              </div>
+            </div>
           </div>
         </div>
       </CardHeader>
-      <CardContent>
-        <div className="rounded-lg border bg-white p-6">
+      <CardContent className="space-y-6">
+        <div className="flex items-center gap-2">
+          <Label>Template</Label>
+          <Select
+            value={selectedTemplate}
+            onValueChange={setSelectedTemplate}
+          >
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Select template" />
+            </SelectTrigger>
+            <SelectContent>
+              {templates.map(template => (
+                <SelectItem key={template.id} value={template.id}>
+                  {template.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+
+        <div className="rounded-lg border bg-card p-6">
           {TemplateComponent && <TemplateComponent {...template?.props} />}
         </div>
       </CardContent>
