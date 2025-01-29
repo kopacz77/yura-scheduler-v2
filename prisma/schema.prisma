@@ -16,10 +16,14 @@ enum LessonType {
 }
 
 enum SkatingLevel {
-  BEGINNER
+  PRE_PRELIMINARY
+  PRELIMINARY
+  PRE_JUVENILE
+  JUVENILE
   INTERMEDIATE
-  ADVANCED
-  COMPETITIVE
+  NOVICE
+  JUNIOR
+  SENIOR
 }
 
 enum RinkArea {
@@ -41,8 +45,28 @@ enum PaymentStatus {
   CONFIRMED
 }
 
+enum UserStatus {
+  PENDING_APPROVAL
+  ACTIVE
+  INACTIVE
+}
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  name          String
+  role          String      @default("STUDENT")
+  status        UserStatus  @default(PENDING_APPROVAL)
+  passwordHash  String
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  student       Student?
+}
+
 model Student {
   id              String         @id @default(uuid())
+  userId          String         @unique
+  user            User           @relation(fields: [userId], references: [id])
   name            String
   email           String         @unique
   phone           String?
