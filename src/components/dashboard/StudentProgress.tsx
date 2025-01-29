@@ -1,15 +1,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { ProgressDataPoint } from '@/types/stats';
 
-export function StudentProgress() {
-  // This will be replaced with real data from the API
-  const progressData = [
-    { month: 'Jan', beginners: 5, intermediate: 8, advanced: 3, competitive: 1 },
-    { month: 'Feb', beginners: 4, intermediate: 9, advanced: 3, competitive: 1 },
-    { month: 'Mar', beginners: 3, intermediate: 9, advanced: 4, competitive: 2 },
-    { month: 'Apr', beginners: 2, intermediate: 8, advanced: 5, competitive: 2 },
-    { month: 'May', beginners: 2, intermediate: 7, advanced: 6, competitive: 2 },
-  ];
+interface StudentProgressProps {
+  progressData?: ProgressDataPoint[];
+  isLoading: boolean;
+}
+
+export function StudentProgress({ progressData, isLoading }: StudentProgressProps) {
+  if (isLoading) {
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle>Student Progress Over Time</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[400px] w-full flex items-center justify-center">
+            <Skeleton className="h-[300px] w-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
 
   return (
     <Card>
@@ -29,7 +42,7 @@ export function StudentProgress() {
               <Tooltip />
               <Line 
                 type="monotone" 
-                dataKey="beginners" 
+                dataKey="beginner" 
                 stroke="#22c55e"
                 name="Beginners"
               />
