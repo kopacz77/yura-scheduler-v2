@@ -1,80 +1,115 @@
-import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { auth } from '@/lib/auth';
+import prisma from '@/lib/prisma';
+import { validateAppointments, generateRecurringAppointments } from '@/lib/scheduling/conflicts';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const appointments = await db.query.appointment.findMany({
+    const { searchParams } = new URL(req.url);
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const resourceId = searchParams.get('resourceId');
+
+    const appointments = await prisma.appointment.findMany({
+      where: {
+        ...(startDate && endDate ? {
+          start: { gte: new Date(startDate) },
+          end: { lte: new Date(endDate) }
+        } : {}),
+        ...(resourceId ? { resourceId } : {})
+      },
       include: {
         student: true,
         resource: true,
-      },
-      orderBy: {
-        start: 'asc',
-      },
+        payment: true
+      }
     });
 
     return NextResponse.json(appointments);
   } catch (error) {
     console.error('Error fetching appointments:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const body = await req.json();
-    const { title, start, end, studentId, resourceId, lessonType, notes } = body;
+    const {
+      appointment,
+      isRecurring,
+      recurrencePattern,
+      recurrenceEndDate
+    } = body;
 
-    const appointment = await db.query.appointment.create({
-      data: {
-        title,
-        start: new Date(start),
-        end: new Date(end),
-        studentId,
-        resourceId,
-        lessonType,
-        notes,
-        order: 0, // Default order
-        paymentStatus: 'PENDING',
-      },
+    // Generate appointments based on recurrence pattern
+    const appointmentsToCreate = isRecurring
+      ? generateRecurringAppointments(
+          appointment,
+          recurrencePattern,
+          new Date(recurrenceEndDate)
+        )
+      : [appointment];
+
+    // Validate appointments for conflicts
+    const existingAppointments = await prisma.appointment.findMany({
+      where: {
+        resourceId: appointment.resourceId,
+        start: { gte: new Date(appointment.start) },
+        end: { lte: isRecurring ? new Date(recurrenceEndDate) : new Date(appointment.end) }
+      }
     });
 
-    // Send email notification
-    const student = await db.query.student.findUnique({
-      where: { id: studentId },
+    const resources = await prisma.resource.findMany({
+      where: { id: appointment.resourceId }
     });
 
-    if (student?.email) {
-      await sendAppointmentEmail({
-        to: student.email,
-        subject: 'New Lesson Scheduled',
-        appointment,
-        studentName: student.name,
-      });
+    const validation = await validateAppointments(
+      appointmentsToCreate,
+      existingAppointments,
+      resources
+    );
+
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: 'Scheduling conflicts detected', conflicts: validation.conflicts },
+        { status: 409 }
+      );
     }
 
-    return NextResponse.json(appointment);
+    // Create all appointments
+    const createdAppointments = await prisma.$transaction(
+      appointmentsToCreate.map(appt =>
+        prisma.appointment.create({
+          data: appt,
+          include: {
+            student: true,
+            resource: true
+          }
+        })
+      )
+    );
+
+    return NextResponse.json(createdAppointments);
   } catch (error) {
-    console.error('Error creating appointment:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('Error creating appointments:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
 export async function PUT(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
@@ -82,39 +117,90 @@ export async function PUT(req: Request) {
     const body = await req.json();
     const { id, ...updateData } = body;
 
-    const appointment = await db.query.appointment.update({
-      where: { id },
-      data: updateData,
+    // Check for conflicts before updating
+    const existingAppointments = await prisma.appointment.findMany({
+      where: {
+        resourceId: updateData.resourceId,
+        NOT: { id },
+        start: { gte: new Date(updateData.start) },
+        end: { lte: new Date(updateData.end) }
+      }
     });
 
-    return NextResponse.json(appointment);
+    const resources = await prisma.resource.findMany({
+      where: { id: updateData.resourceId }
+    });
+
+    const validation = await validateAppointments(
+      [updateData],
+      existingAppointments,
+      resources
+    );
+
+    if (!validation.valid) {
+      return NextResponse.json(
+        { error: 'Scheduling conflicts detected', conflicts: validation.conflicts },
+        { status: 409 }
+      );
+    }
+
+    const updatedAppointment = await prisma.appointment.update({
+      where: { id },
+      data: updateData,
+      include: {
+        student: true,
+        resource: true,
+        payment: true
+      }
+    });
+
+    return NextResponse.json(updatedAppointment);
   } catch (error) {
     console.error('Error updating appointment:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
 export async function DELETE(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
     const id = searchParams.get('id');
-
     if (!id) {
-      return new NextResponse('Missing ID', { status: 400 });
+      return new NextResponse('Missing appointment ID', { status: 400 });
     }
 
-    await db.query.appointment.delete({
+    // Check if this is part of a recurring series
+    const appointment = await prisma.appointment.findUnique({
       where: { id },
+      include: { payment: true }
+    });
+
+    if (!appointment) {
+      return new NextResponse('Appointment not found', { status: 404 });
+    }
+
+    // If there's a payment associated, handle it appropriately
+    if (appointment.payment) {
+      // You might want to refund or mark the payment as cancelled
+      await prisma.payment.update({
+        where: { id: appointment.payment.id },
+        data: { status: 'CANCELLED' }
+      });
+    }
+
+    // Delete the appointment
+    await prisma.appointment.delete({
+      where: { id }
     });
 
     return new NextResponse(null, { status: 204 });
   } catch (error) {
     console.error('Error deleting appointment:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
