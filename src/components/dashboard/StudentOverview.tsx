@@ -1,14 +1,29 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend } from 'recharts';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { DistributionItem } from '@/types/stats';
 
-const data = [
-  { name: 'Beginner', value: 8, color: '#22c55e' },
-  { name: 'Intermediate', value: 10, color: '#3b82f6' },
-  { name: 'Advanced', value: 4, color: '#a855f7' },
-  { name: 'Competitive', value: 2, color: '#ef4444' },
-];
+interface StudentOverviewProps {
+  distribution?: DistributionItem[];
+  isLoading: boolean;
+}
 
-export function StudentOverview() {
+export function StudentOverview({ distribution, isLoading }: StudentOverviewProps) {
+  if (isLoading) {
+    return (
+      <Card className="col-span-1">
+        <CardHeader>
+          <CardTitle>Student Distribution</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px] flex items-center justify-center">
+            <Skeleton className="h-[200px] w-[200px] rounded-full" />
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
   return (
     <Card className="col-span-1">
       <CardHeader>
@@ -18,7 +33,7 @@ export function StudentOverview() {
         <ResponsiveContainer width="100%" height={300}>
           <PieChart>
             <Pie
-              data={data}
+              data={distribution}
               cx="50%"
               cy="50%"
               innerRadius={60}
@@ -26,7 +41,7 @@ export function StudentOverview() {
               paddingAngle={2}
               dataKey="value"
             >
-              {data.map((entry, index) => (
+              {distribution?.map((entry, index) => (
                 <Cell key={`cell-${index}`} fill={entry.color} />
               ))}
             </Pie>
