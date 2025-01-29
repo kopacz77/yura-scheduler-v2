@@ -1,3 +1,5 @@
+'use client';
+
 import React, { useState, useEffect } from 'react';
 import { CalendarView } from './CalendarView';
 import { AppointmentDialog, AppointmentFormData } from './AppointmentDialog';
@@ -7,8 +9,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import type { Appointment, Resource } from '@prisma/client';
-import { format } from 'date-fns';
 
 export function Scheduler() {
   const [appointments, setAppointments] = useState<Appointment[]>([]);
@@ -16,11 +18,24 @@ export function Scheduler() {
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [selectedAppointment, setSelectedAppointment] = useState<Appointment | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { toast } = useToast();
 
   useEffect(() => {
-    fetchAppointments();
-    fetchResources();
+    const loadData = async () => {
+      try {
+        setIsLoading(true);
+        setError(null);
+        await Promise.all([fetchAppointments(), fetchResources()]);
+      } catch (err) {
+        setError('Failed to load scheduler data');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    loadData();
   }, []);
 
   const fetchAppointments = async () => {
@@ -35,6 +50,7 @@ export function Scheduler() {
         description: 'Failed to load appointments',
         variant: 'destructive'
       });
+      throw error;
     }
   };
 
@@ -50,6 +66,7 @@ export function Scheduler() {
         description: 'Failed to load resources',
         variant: 'destructive'
       });
+      throw error;
     }
   };
 
@@ -154,6 +171,30 @@ export function Scheduler() {
       });
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full w-full items-center justify-center p-8">
+        <LoadingSpinner size="lg" />
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <Alert variant="destructive" className="m-4">
+        <AlertTitle>Error</AlertTitle>
+        <AlertDescription>{error}</AlertDescription>
+        <Button 
+          onClick={() => window.location.reload()} 
+          variant="outline" 
+          className="mt-4"
+        >
+          Retry
+        </Button>
+      </Alert>
+    );
+  }
 
   return (
     <div className="space-y-6">
