@@ -1,7 +1,14 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { CalendarDays, Users, DollarSign, TrendingUp } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+import type { OverviewStats } from '@/types/stats';
 
-export function DashboardHeader() {
+interface DashboardHeaderProps {
+  stats: OverviewStats | undefined;
+  isLoading: boolean;
+}
+
+export function DashboardHeader({ stats, isLoading }: DashboardHeaderProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
@@ -9,7 +16,11 @@ export function DashboardHeader() {
           <Users className="h-8 w-8 text-blue-500" />
           <div>
             <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-            <h3 className="text-2xl font-bold">24</h3>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <h3 className="text-2xl font-bold">{stats?.totalStudents || 0}</h3>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -19,7 +30,11 @@ export function DashboardHeader() {
           <CalendarDays className="h-8 w-8 text-green-500" />
           <div>
             <p className="text-sm font-medium text-muted-foreground">This Week's Lessons</p>
-            <h3 className="text-2xl font-bold">18</h3>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <h3 className="text-2xl font-bold">{stats?.weeklyLessons || 0}</h3>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -29,7 +44,13 @@ export function DashboardHeader() {
           <DollarSign className="h-8 w-8 text-yellow-500" />
           <div>
             <p className="text-sm font-medium text-muted-foreground">Outstanding Payments</p>
-            <h3 className="text-2xl font-bold">$450</h3>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <h3 className="text-2xl font-bold">
+                ${stats?.outstandingAmount.toFixed(2) || '0.00'}
+              </h3>
+            )}
           </div>
         </CardContent>
       </Card>
@@ -39,7 +60,11 @@ export function DashboardHeader() {
           <TrendingUp className="h-8 w-8 text-purple-500" />
           <div>
             <p className="text-sm font-medium text-muted-foreground">Student Progress</p>
-            <h3 className="text-2xl font-bold">85%</h3>
+            {isLoading ? (
+              <Skeleton className="h-8 w-24" />
+            ) : (
+              <h3 className="text-2xl font-bold">{stats?.averageProgress || 0}%</h3>
+            )}
           </div>
         </CardContent>
       </Card>
