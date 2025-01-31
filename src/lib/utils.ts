@@ -1,5 +1,6 @@
 import { type ClassValue, clsx } from "clsx";
 import { twMerge } from "tailwind-merge";
+import { addDays, startOfDay } from "date-fns";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -31,4 +32,32 @@ export function getLessonTypeColor(type: string): string {
   };
 
   return types[type.toLowerCase()] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
+}
+
+export function calculateNewDates(
+  viewMode: 'day' | 'week' | 'month',
+  targetColumnIndex: number,
+  sourceColumnIndex: number,
+  originalDates: { from: Date; to: Date }
+) {
+  const daysDifference = targetColumnIndex - sourceColumnIndex;
+  const start = addDays(originalDates.from, daysDifference);
+  const end = addDays(originalDates.to, daysDifference);
+  
+  return {
+    start,
+    end
+  };
+}
+
+export function filterAppointments(
+  appointment: { start: Date; end: Date },
+  columnIndex: number,
+  dateRange: { start: Date; end: Date },
+  viewMode: 'day' | 'week' | 'month'
+): boolean {
+  const appointmentDay = startOfDay(new Date(appointment.start));
+  const columnDay = addDays(dateRange.start, columnIndex);
+
+  return appointmentDay.getTime() === columnDay.getTime();
 }
