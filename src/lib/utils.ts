@@ -1,62 +1,46 @@
-import { type ClassValue, clsx } from "clsx";
-import { twMerge } from "tailwind-merge";
-import { Appointment } from "@/models/types";
-import { add, isWithinInterval, startOfDay, endOfDay, format } from "date-fns";
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { format } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function calculateNewDates(
-  viewMode: string,
-  targetColumn: number,
-  sourceColumn: number,
-  currentDates: { from: Date; to: Date },
-) {
-  const daysDiff = targetColumn - sourceColumn;
-  if (daysDiff === 0) return currentDates;
-
-  return {
-    start: add(currentDates.from, { days: daysDiff }),
-    end: add(currentDates.to, { days: daysDiff }),
-  };
+export function formatAppointmentTime(date: Date | string): string {
+  return format(new Date(date), 'h:mm a');
 }
 
-export function filterAppointments(
-  appointment: Appointment,
-  columnIndex: number,
-  dateRange: { start: Date; end: Date },
-  viewMode: string,
-) {
-  const columnDate = add(startOfDay(dateRange.start), { days: columnIndex });
-  const columnEnd = endOfDay(columnDate);
-
-  return isWithinInterval(appointment.start, {
-    start: columnDate,
-    end: columnEnd,
-  });
+export function getLessonTypeColor(type: string): string {
+  switch (type.toLowerCase()) {
+    case 'private':
+      return 'bg-blue-50 dark:bg-blue-950';
+    case 'group':
+      return 'bg-green-50 dark:bg-green-950';
+    case 'competition':
+      return 'bg-purple-50 dark:bg-purple-950';
+    case 'evaluation':
+      return 'bg-orange-50 dark:bg-orange-950';
+    default:
+      return 'bg-gray-50 dark:bg-gray-950';
+  }
 }
 
-export function formatAppointmentTime(date: Date) {
-  return format(date, "h:mm a");
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
 }
 
-export function getLessonTypeColor(lessonType: string) {
-  const colors = {
-    private: "bg-blue-100 text-blue-800",
-    group: "bg-green-100 text-green-800",
-    choreography: "bg-purple-100 text-purple-800",
-    "competition-prep": "bg-red-100 text-red-800",
-  };
-  return colors[lessonType as keyof typeof colors] || "bg-gray-100 text-gray-800";
+export function calculateLessonDuration(start: Date | string, end: Date | string): number {
+  return (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60);
 }
 
-export function getSkatingLevelBadge(level: string) {
-  const badges = {
-    beginner: "bg-green-100 text-green-800",
-    intermediate: "bg-blue-100 text-blue-800",
-    advanced: "bg-purple-100 text-purple-800",
-    competitive: "bg-red-100 text-red-800",
-  };
-  return badges[level as keyof typeof badges] || "bg-gray-100 text-gray-800";
+export function generateTimeSlots(startTime: number = 6, endTime: number = 22): string[] {
+  const slots: string[] = [];
+  for (let hour = startTime; hour < endTime; hour++) {
+    slots.push(`${hour.toString().padStart(2, '0')}:00`);
+    slots.push(`${hour.toString().padStart(2, '0')}:30`);
+  }
+  return slots;
 }
