@@ -1,185 +1,188 @@
-# Yura's Ice Dance Scheduler
+# Yura's Ice Dance Scheduling System
 
-A comprehensive scheduling and business management system for ice dance coaching, built on [shadcn/ui-template](https://github.com/shadcn/next-template).
+Built on [shadcn/ui-template](https://github.com/shadcn/ui-template) - A Next.js 14 template with shadcn/ui pre-configured.
 
 ## Project Overview
 
-This application helps ice dance coach Yura Min manage lesson scheduling, student progress tracking, and business operations.
+A comprehensive scheduling and business management system for ice dance coach Yura Min, featuring:
 
-### Core Features
+- Lesson scheduling with conflict detection
+- Resource management (rink spaces)
+- Payment tracking (Venmo/Zelle)
+- Student portal
+- Automated notifications
 
-#### Implemented
+## Core Features
+
+### Implemented:
+
 - **Scheduling System**
-  - Multi-view calendar (day/week/month)
-  - Automated conflict detection
-  - Recurring lesson support
-  - Resource management
-  - Rink availability tracking
+  - Calendar with day/week/month views
+  - Appointment management
+  - Recurring lessons
+  - Conflict detection
+  - Resource allocation
 
-- **Payment Processing**
-  - Venmo/Zelle integration
-  - Payment status tracking
+- **Resource Management**
+  - Rink/space management
+  - Maintenance scheduling
+  - Availability tracking
+  - Capacity controls
+
+- **Payment System**
+  - Venmo/Zelle tracking
+  - Payment status management
   - Automated receipts
   - Payment history
-  - Reminder system
 
 - **Student Portal**
-  - Lesson booking interface
-  - Progress tracking
-  - Payment management
-  - Schedule viewing
+  - Dashboard view
   - Lesson history
+  - Payment tracking
+  - Basic progress monitoring
 
-- **Notification System**
-  - Automated email notifications
-  - Lesson reminders
-  - Payment confirmations
-  - Schedule updates
+- **Email System**
+  - Lesson confirmations
+  - Payment notifications
+  - Automated reminders
+  - Custom templates
 
-#### In Development
-- Enhanced progress tracking
-- Advanced reporting system
-- Group lesson management
-- Administrative dashboard
-- Mobile optimization
+### Pending Implementation:
 
-## Technology Stack
+- **Progress Tracking**
+  - Detailed metrics
+  - Skill assessments
+  - Achievement system
+  - Progress reports
+
+- **Advanced Reports**
+  - Financial analytics
+  - Attendance tracking
+  - Revenue forecasting
+  - Performance metrics
+
+- **Enhanced Scheduling**
+  - Group lessons
+  - Wait list
+  - Schedule templates
+  - Holiday handling
+
+- **Admin Features**
+  - Business analytics
+  - Batch operations
+  - System settings
+  - Role management
+
+## Tech Stack
 
 - **Framework**: Next.js 14 (App Router)
 - **Database**: PostgreSQL with Prisma ORM
-- **Authentication**: NextAuth.js
-- **UI Components**: shadcn/ui
+- **UI**: shadcn/ui components
 - **Styling**: Tailwind CSS
+- **Authentication**: NextAuth.js
 - **Email**: Resend
 - **State Management**: React Query
 - **Date Handling**: date-fns
 
 ## Getting Started
 
-### Prerequisites
-
+1. Clone the repository:
 ```bash
-Node.js >= 18
-PostgreSQL
-pnpm (recommended)
+git clone https://github.com/kopacz77/yura-scheduler-v2.git
 ```
 
-### Environment Setup
+2. Install dependencies:
+```bash
+pnpm install
+```
 
-1. Copy .env.example to .env
-2. Update environment variables:
+3. Copy `.env.example` to `.env` and configure:
+```bash
+cp .env.example .env
+```
+
+4. Configure environment variables:
 ```env
 DATABASE_URL="your-neon-db-url"
 DIRECT_URL="your-neon-direct-url"
 NEXTAUTH_SECRET="your-secret"
 NEXTAUTH_URL="http://localhost:3000"
 RESEND_API_KEY="your-resend-api-key"
-ADMIN_EMAIL="admin@example.com"
+ADMIN_EMAIL="yura@example.com"
 ```
 
-### Installation
-
+5. Initialize database:
 ```bash
-# Install dependencies
-pnpm install
+npx prisma db push
+```
 
-# Initialize database
-pnpm prisma migrate dev
-
-# Start development server
+6. Start development server:
+```bash
 pnpm dev
 ```
 
 ## Project Structure
 
 ```
-src/
-├── app/              # Next.js app router pages
-├── components/       # React components
-│   ├── admin/        # Admin interface components
-│   ├── dashboard/    # Dashboard components
-│   ├── layout/       # Layout components
-│   ├── planner/      # Scheduling components
-│   ├── students/     # Student portal components
-│   └── ui/           # shadcn/ui components
-├── lib/              # Utility functions
-│   ├── auth/         # Authentication logic
-│   ├── email/        # Email templates and sending
-│   ├── scheduling/   # Scheduling logic
-│   └── utils/        # Helper functions
-├── models/           # Data models
-└── types/            # TypeScript types
+├── src/
+│   ├── app/              # Next.js pages
+│   ├── components/       # React components
+│   ├── lib/             # Utilities
+│   ├── types/           # TypeScript types
+│   └── models/          # Data models
+├── prisma/              # Database schema
+└── public/             # Static assets
 ```
 
-## API Routes
+## Development Guidelines
 
-### Appointments
-- `GET /api/appointments` - List appointments
-- `POST /api/appointments` - Create appointment
-- `PUT /api/appointments` - Update appointment
-- `DELETE /api/appointments` - Delete appointment
+1. **Component Creation**:
+   - Use shadcn/ui components
+   - Maintain TypeScript types
+   - Implement error boundaries
+   - Add loading states
 
-### Resources
-- `GET /api/resources` - List resources
-- `POST /api/resources` - Create resource
-- `PUT /api/resources` - Update resource
-- `DELETE /api/resources` - Delete resource
+2. **API Routes**:
+   - Include authentication
+   - Validate inputs
+   - Handle errors gracefully
+   - Follow REST principles
 
-### Payments
-- `GET /api/payments` - List payments
-- `POST /api/payments` - Create payment
-- `PUT /api/payments` - Update payment status
+3. **Database Operations**:
+   - Use Prisma Client
+   - Include transactions
+   - Handle relationships
+   - Optimize queries
 
-### Students
-- `GET /api/student/appointments` - Get student appointments
-- `GET /api/student/payments` - Get student payments
-- `GET /api/student/progress` - Get student progress
+4. **Testing**:
+   - Write unit tests
+   - Add integration tests
+   - Include E2E testing
+   - Test error cases
 
-## Database Schema
+## Security Considerations
 
-Key models:
-- `User` - Authentication and user data
-- `Student` - Student profiles and preferences
-- `Resource` - Rink areas and facilities
-- `Appointment` - Lesson scheduling
-- `Payment` - Payment tracking
-
-## Contributing
-
-1. Create feature branch from main
-2. Implement changes following project patterns
-3. Add tests
-4. Submit pull request
-
-### Development Guidelines
-
-- Use TypeScript strict mode
-- Follow existing component patterns
-- Maintain API response formats
-- Add proper error handling
-- Include loading states
-- Write comprehensive tests
-
-## Testing
-
-```bash
-# Run unit tests
-pnpm test
-
-# Run e2e tests
-pnpm test:e2e
-
-# Run with coverage
-pnpm test:coverage
-```
+- Role-based access control
+- Input validation
+- API rate limiting
+- Data encryption
+- Secure sessions
 
 ## Deployment
 
-The application is deployed on Vercel:
+The application is configured for deployment on Vercel:
 
-1. Connect repository to Vercel
+1. Connect to GitHub repository
 2. Configure environment variables
-3. Deploy to production
+3. Deploy main branch
+
+## Contributing
+
+1. Fork the repository
+2. Create feature branch
+3. Commit changes
+4. Push to branch
+5. Open pull request
 
 ## License
 
