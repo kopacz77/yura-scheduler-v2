@@ -1,15 +1,25 @@
-import React, { createContext, useContext, useState, useCallback } from 'react';
-import { Appointment, Resource } from '@/types/scheduling';
+'use client';
+
+import React, { createContext, useContext, useState, useCallback, useMemo } from 'react';
+import { Appointment, Resource } from '@/models/types';
+import { addDays, startOfWeek, endOfWeek, startOfMonth, endOfMonth, eachHourOfInterval } from 'date-fns';
+
+interface DateRange {
+  start: Date;
+  end: Date;
+}
 
 interface PlannerContextType {
   appointments: Appointment[];
   resources: Resource[];
   selectedDate: Date;
   viewMode: 'day' | 'week' | 'month';
+  dateRange: DateRange;
+  timeLabels: Date[];
   setViewMode: (mode: 'day' | 'week' | 'month') => void;
   setSelectedDate: (date: Date) => void;
   addAppointment: (appointment: Appointment) => void;
-  updateAppointment: (id: string, appointment: Partial<Appointment>) => void;
+  updateAppointment: (appointment: Appointment) => void;
   deleteAppointment: (id: string) => void;
   addResource: (resource: Resource) => void;
   updateResource: (id: string, resource: Partial<Resource>) => void;
@@ -18,19 +28,63 @@ interface PlannerContextType {
 
 const PlannerContext = createContext<PlannerContextType | undefined>(undefined);
 
-export function PlannerProvider({ children }: { children: React.ReactNode }) {
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [resources, setResources] = useState<Resource[]>([]);
+interface PlannerProviderProps {
+  children: React.ReactNode;
+  initialAppointments?: Appointment[];
+  initialResources?: Resource[];
+}
+
+export function PlannerProvider({ 
+  children, 
+  initialAppointments = [],
+  initialResources = []
+}: PlannerProviderProps) {
+  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
+  const [resources, setResources] = useState<Resource[]>(initialResources);
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
   const [viewMode, setViewMode] = useState<'day' | 'week' | 'month'>('week');
+
+  const dateRange = useMemo(() => {
+    switch (viewMode) {
+      case 'day':
+        return {
+          start: selectedDate,
+          end: selectedDate
+        };
+      case 'week':
+        return {
+          start: startOfWeek(selectedDate, { weekStartsOn: 0 }),
+          end: endOfWeek(selectedDate, { weekStartsOn: 0 })
+        };
+      case 'month':
+        return {
+          start: startOfMonth(selectedDate),
+          end: endOfMonth(selectedDate)
+        };
+      default:
+        return {
+          start: selectedDate,
+          end: selectedDate
+        };
+    }
+  }, [selectedDate, viewMode]);
+
+  const timeLabels = useMemo(() => {
+    const start = new Date();
+    start.setHours(6, 0, 0, 0); // Start at 6 AM
+    const end = new Date();
+    end.setHours(22, 0, 0, 0); // End at 10 PM
+
+    return eachHourOfInterval({ start, end });
+  }, []);
 
   const addAppointment = useCallback((appointment: Appointment) => {
     setAppointments(prev => [...prev, appointment]);
   }, []);
 
-  const updateAppointment = useCallback((id: string, updates: Partial<Appointment>) => {
+  const updateAppointment = useCallback((appointment: Appointment) => {
     setAppointments(prev =>
-      prev.map(apt => (apt.id === id ? { ...apt, ...updates } : apt))
+      prev.map(apt => (apt.id === appointment.id ? appointment : apt))
     );
   }, []);
 
@@ -59,6 +113,8 @@ export function PlannerProvider({ children }: { children: React.ReactNode }) {
         resources,
         selectedDate,
         viewMode,
+        dateRange,
+        timeLabels,
         setViewMode,
         setSelectedDate,
         addAppointment,
