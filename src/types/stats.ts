@@ -5,9 +5,10 @@ export interface OverviewStats {
   averageProgress: number;
 }
 
-export interface DistributionStats {
-  labels: string[];
-  data: number[];
+export interface DistributionItem {
+  name: string;
+  value: number;
+  color: string;
 }
 
 export interface ProgressStats {
@@ -19,6 +20,6 @@ export interface ProgressStats {
 
 export interface DashboardStats {
   overview: OverviewStats;
-  distribution: DistributionStats;
+  distribution: DistributionItem[];
   progress: ProgressStats[];
 }
