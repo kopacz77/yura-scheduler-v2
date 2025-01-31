@@ -1,81 +1,186 @@
 # Yura's Ice Dance Scheduler
 
-A professional scheduling system for ice dance coaching, built with modern web technologies.
+A comprehensive scheduling and business management system for ice dance coaching, built on [shadcn/ui-template](https://github.com/shadcn/next-template).
 
-## Tech Stack
+## Project Overview
 
-- **Frontend:**
-  - React
-  - Tailwind CSS
-  - shadcn/ui components
-  - Planner Component for scheduling
-  - TypeScript
+This application helps ice dance coach Yura Min manage lesson scheduling, student progress tracking, and business operations.
 
-- **Backend:**
-  - Netlify Functions (Serverless)
-  - Neon PostgreSQL (Serverless)
-  - Serverless architecture
+### Core Features
 
-- **Infrastructure:**
-  - Hosted on Netlify
-  - Database by Neon
-  - Authentication via Auth.js
+#### Implemented
+- **Scheduling System**
+  - Multi-view calendar (day/week/month)
+  - Automated conflict detection
+  - Recurring lesson support
+  - Resource management
+  - Rink availability tracking
 
-## Features
+- **Payment Processing**
+  - Venmo/Zelle integration
+  - Payment status tracking
+  - Automated receipts
+  - Payment history
+  - Reminder system
 
-- [x] Professional scheduling interface
-- [x] Multiple lesson types support
-- [x] Student management
-- [x] Ice rink scheduling
-- [x] Payment processing
-- [x] Email notifications
-- [x] Mobile responsive design
+- **Student Portal**
+  - Lesson booking interface
+  - Progress tracking
+  - Payment management
+  - Schedule viewing
+  - Lesson history
 
-## Local Development
+- **Notification System**
+  - Automated email notifications
+  - Lesson reminders
+  - Payment confirmations
+  - Schedule updates
 
-1. Install dependencies:
+#### In Development
+- Enhanced progress tracking
+- Advanced reporting system
+- Group lesson management
+- Administrative dashboard
+- Mobile optimization
+
+## Technology Stack
+
+- **Framework**: Next.js 14 (App Router)
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: NextAuth.js
+- **UI Components**: shadcn/ui
+- **Styling**: Tailwind CSS
+- **Email**: Resend
+- **State Management**: React Query
+- **Date Handling**: date-fns
+
+## Getting Started
+
+### Prerequisites
+
 ```bash
-npm install
+Node.js >= 18
+PostgreSQL
+pnpm (recommended)
 ```
 
-2. Set up environment variables:
-```bash
-cp .env.example .env
+### Environment Setup
+
+1. Copy .env.example to .env
+2. Update environment variables:
+```env
+DATABASE_URL="your-neon-db-url"
+DIRECT_URL="your-neon-direct-url"
+NEXTAUTH_SECRET="your-secret"
+NEXTAUTH_URL="http://localhost:3000"
+RESEND_API_KEY="your-resend-api-key"
+ADMIN_EMAIL="admin@example.com"
 ```
 
-3. Run the development server:
+### Installation
+
 ```bash
-npm run dev
+# Install dependencies
+pnpm install
+
+# Initialize database
+pnpm prisma migrate dev
+
+# Start development server
+pnpm dev
 ```
 
-4. For database development:
+## Project Structure
+
+```
+src/
+├── app/              # Next.js app router pages
+├── components/       # React components
+│   ├── admin/        # Admin interface components
+│   ├── dashboard/    # Dashboard components
+│   ├── layout/       # Layout components
+│   ├── planner/      # Scheduling components
+│   ├── students/     # Student portal components
+│   └── ui/           # shadcn/ui components
+├── lib/              # Utility functions
+│   ├── auth/         # Authentication logic
+│   ├── email/        # Email templates and sending
+│   ├── scheduling/   # Scheduling logic
+│   └── utils/        # Helper functions
+├── models/           # Data models
+└── types/            # TypeScript types
+```
+
+## API Routes
+
+### Appointments
+- `GET /api/appointments` - List appointments
+- `POST /api/appointments` - Create appointment
+- `PUT /api/appointments` - Update appointment
+- `DELETE /api/appointments` - Delete appointment
+
+### Resources
+- `GET /api/resources` - List resources
+- `POST /api/resources` - Create resource
+- `PUT /api/resources` - Update resource
+- `DELETE /api/resources` - Delete resource
+
+### Payments
+- `GET /api/payments` - List payments
+- `POST /api/payments` - Create payment
+- `PUT /api/payments` - Update payment status
+
+### Students
+- `GET /api/student/appointments` - Get student appointments
+- `GET /api/student/payments` - Get student payments
+- `GET /api/student/progress` - Get student progress
+
+## Database Schema
+
+Key models:
+- `User` - Authentication and user data
+- `Student` - Student profiles and preferences
+- `Resource` - Rink areas and facilities
+- `Appointment` - Lesson scheduling
+- `Payment` - Payment tracking
+
+## Contributing
+
+1. Create feature branch from main
+2. Implement changes following project patterns
+3. Add tests
+4. Submit pull request
+
+### Development Guidelines
+
+- Use TypeScript strict mode
+- Follow existing component patterns
+- Maintain API response formats
+- Add proper error handling
+- Include loading states
+- Write comprehensive tests
+
+## Testing
+
 ```bash
-# Connect to Neon PostgreSQL
-npm run db:studio
+# Run unit tests
+pnpm test
+
+# Run e2e tests
+pnpm test:e2e
+
+# Run with coverage
+pnpm test:coverage
 ```
 
 ## Deployment
 
-The application automatically deploys to Netlify when changes are pushed to the main branch.
+The application is deployed on Vercel:
 
-## Database Schema
-
-See [DATABASE.md](./docs/DATABASE.md) for the complete database schema and relationships.
-
-## Contributing
-
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
+1. Connect repository to Vercel
+2. Configure environment variables
+3. Deploy to production
 
 ## License
 
-Distributed under the MIT License. See `LICENSE` for more information.
-
-## Contact
-
-Yura Min - Ice Dance Coach
-
-Project Link: [https://github.com/kopacz77/yura-scheduler-v2](https://github.com/kopacz77/yura-scheduler-v2)
+MIT
