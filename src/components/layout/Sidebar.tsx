@@ -1,109 +1,63 @@
-'use client';
-
+import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
-import {
-  Home,
-  Users,
-  Calendar,
-  CreditCard,
-  Settings,
-  ChevronLeft,
-  ChevronRight,
-  ScrollText,
-  BarChart3
-} from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Calendar, Users, Settings, BarChart2, CreditCard } from 'lucide-react';
+
+const sidebarNavItems = [
+  { title: 'Dashboard', href: '/dashboard', icon: BarChart2 },
+  { title: 'Schedule', href: '/schedule', icon: Calendar },
+  { title: 'Students', href: '/students', icon: Users },
+  { title: 'Payments', href: '/payments', icon: CreditCard },
+  { title: 'Settings', href: '/settings', icon: Settings },
+];
 
 interface SidebarProps {
   isOpen: boolean;
   onToggle: () => void;
 }
 
-const navigation = [
-  { name: 'Dashboard', href: '/dashboard', icon: Home },
-  { name: 'Calendar', href: '/calendar', icon: Calendar },
-  { name: 'Students', href: '/students', icon: Users },
-  { name: 'Payments', href: '/payments', icon: CreditCard },
-  { name: 'Reports', href: '/reports', icon: BarChart3 },
-  { name: 'Resources', href: '/resources', icon: ScrollText },
-];
-
-const bottomNavigation = [
-  { name: 'Settings', href: '/settings', icon: Settings },
-];
-
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
 
-  const NavItem = ({ item }: { item: typeof navigation[0] }) => {
-    const isActive = pathname === item.href;
-    const Icon = item.icon;
-
-    return (
-      <Link
-        href={item.href}
-        className={cn(
-          'flex items-center gap-x-3 rounded-lg px-3 py-2 text-sm font-medium',
-          'transition-all duration-150 ease-in-out',
-          isActive
-            ? 'bg-primary/10 text-primary'
-            : 'text-muted-foreground hover:bg-muted hover:text-primary'
-        )}
-      >
-        <Icon className="h-5 w-5" />
-        {isOpen && <span>{item.name}</span>}
-      </Link>
-    );
-  };
-
   return (
-    <div
-      className={cn(
-        'fixed inset-y-0 z-50 flex flex-col bg-card',
-        'transition-all duration-300 ease-in-out',
-        isOpen ? 'w-64' : 'w-20',
-        'border-r'
-      )}
-    >
+    <div className={cn(
+      'fixed inset-y-0 left-0 z-50 flex flex-col border-r bg-background',
+      isOpen ? 'w-64' : 'w-[70px]',
+      'transition-all duration-300 ease-in-out'
+    )}>
       {/* Logo area */}
-      <div className="flex h-16 items-center justify-between gap-x-4 border-b px-4">
-        <div className="flex items-center gap-x-3">
-          <img
-            src="/logo.svg"
-            alt="Logo"
-            className="h-8 w-8"
-          />
-          {isOpen && <span className="text-lg font-semibold">Yura Scheduler</span>}
-        </div>
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={onToggle}
-          className="lg:block"
-        >
+      <div className="flex h-14 items-center border-b px-4">
+        <Link href="/" className="flex items-center space-x-2">
           {isOpen ? (
-            <ChevronLeft className="h-4 w-4" />
+            <span className="text-lg font-bold">Yura Scheduler</span>
           ) : (
-            <ChevronRight className="h-4 w-4" />
+            <span className="text-lg font-bold">YS</span>
           )}
-        </Button>
+        </Link>
       </div>
 
       {/* Navigation */}
-      <nav className="flex-1 space-y-1 px-3 py-4">
-        {navigation.map((item) => (
-          <NavItem key={item.name} item={item} />
-        ))}
-      </nav>
-
-      {/* Bottom navigation */}
-      <div className="border-t px-3 py-4">
-        {bottomNavigation.map((item) => (
-          <NavItem key={item.name} item={item} />
-        ))}
-      </div>
+      <ScrollArea className="flex-1 px-2 py-4">
+        <nav className="space-y-1">
+          {sidebarNavItems.map((item) => (
+            <Link key={item.href} href={item.href}>
+              <Button
+                variant={pathname === item.href ? 'secondary' : 'ghost'}
+                className={cn(
+                  'w-full justify-start',
+                  isOpen ? 'px-4' : 'px-2'
+                )}
+              >
+                <item.icon className={cn('h-5 w-5', isOpen ? 'mr-3' : '')} />
+                {isOpen && <span>{item.title}</span>}
+              </Button>
+            </Link>
+          ))}
+        </nav>
+      </ScrollArea>
     </div>
   );
 }
