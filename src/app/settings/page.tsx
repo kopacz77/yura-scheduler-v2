@@ -1,60 +1,70 @@
 'use client';
 
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { useAuth } from '@/hooks/useAuth';
+
+// Settings components
+import { BusinessHours } from '@/components/admin/settings/BusinessHours';
+import { RinkSettings } from '@/components/admin/settings/RinkSettings';
+import { PricingConfig } from '@/components/admin/settings/PricingConfig';
+import { EmailPreview } from '@/components/admin/settings/EmailPreview';
+import { UserSettings } from '@/components/settings/UserSettings';
+import { NotificationSettings } from '@/components/settings/NotificationSettings';
 
 export default function SettingsPage() {
+  const { user } = useAuth();
+  const isAdmin = user?.role === 'admin';
+
   return (
     <div className="space-y-4 p-8">
       <PageHeader
         title="Settings"
-        description="Manage your scheduling preferences and account settings"
+        description="Manage your account and application settings"
       />
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>Business Hours</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Configure your available coaching hours
-            </p>
-          </CardContent>
-        </Card>
+      
+      <Tabs defaultValue="user" className="space-y-6">
+        <TabsList>
+          <TabsTrigger value="user">User Settings</TabsTrigger>
+          <TabsTrigger value="notifications">Notifications</TabsTrigger>
+          {isAdmin && (
+            <>
+              <TabsTrigger value="business-hours">Business Hours</TabsTrigger>
+              <TabsTrigger value="rinks">Rinks</TabsTrigger>
+              <TabsTrigger value="pricing">Pricing</TabsTrigger>
+              <TabsTrigger value="email">Email Templates</TabsTrigger>
+            </>
+          )}
+        </TabsList>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Lesson Types</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Manage different types of lessons and their durations
-            </p>
-          </CardContent>
-        </Card>
+        <TabsContent value="user" className="mt-6">
+          <UserSettings />
+        </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Pricing</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Set up pricing for different lesson types
-            </p>
-          </CardContent>
-        </Card>
+        <TabsContent value="notifications" className="mt-6">
+          <NotificationSettings />
+        </TabsContent>
 
-        <Card>
-          <CardHeader>
-            <CardTitle>Notifications</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-muted-foreground">
-              Configure email and SMS notifications
-            </p>
-          </CardContent>
-        </Card>
-      </div>
+        {isAdmin && (
+          <>
+            <TabsContent value="business-hours" className="mt-6">
+              <BusinessHours />
+            </TabsContent>
+
+            <TabsContent value="rinks" className="mt-6">
+              <RinkSettings />
+            </TabsContent>
+
+            <TabsContent value="pricing" className="mt-6">
+              <PricingConfig />
+            </TabsContent>
+
+            <TabsContent value="email" className="mt-6">
+              <EmailPreview />
+            </TabsContent>
+          </>
+        )}
+      </Tabs>
     </div>
   );
 }
