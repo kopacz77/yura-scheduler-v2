@@ -10,24 +10,33 @@ export default function DashboardPage() {
   const { stats, isLoading } = useStats();
 
   return (
-    <div className="flex flex-col gap-8 p-8">
+    <div className="space-y-8 p-8 bg-accent/10 min-h-screen">
+      {/* Header Cards */}
       <DashboardHeader 
         stats={stats?.overview}
         isLoading={isLoading}
       />
       
+      {/* Middle Section */}
       <div className="grid gap-6 lg:grid-cols-2">
-        <StudentOverview 
-          distribution={stats?.distribution}
-          isLoading={isLoading}
-        />
-        <UpcomingLessons />
+        <div className="lg:col-span-1 h-full">
+          <StudentOverview 
+            distribution={stats?.distribution}
+            isLoading={isLoading}
+          />
+        </div>
+        <div className="lg:col-span-1 h-full">
+          <UpcomingLessons />
+        </div>
       </div>
 
-      <StudentProgress 
-        progressData={stats?.progress}
-        isLoading={isLoading}
-      />
+      {/* Bottom Section */}
+      <div className="w-full">
+        <StudentProgress 
+          progressData={stats?.progress}
+          isLoading={isLoading}
+        />
+      </div>
     </div>
   );
 }
