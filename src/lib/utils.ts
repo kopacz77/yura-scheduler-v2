@@ -1,46 +1,34 @@
-import { type ClassValue, clsx } from 'clsx';
-import { twMerge } from 'tailwind-merge';
-import { format } from 'date-fns';
+import { type ClassValue, clsx } from "clsx";
+import { twMerge } from "tailwind-merge";
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-export function formatAppointmentTime(date: Date | string): string {
-  return format(new Date(date), 'h:mm a');
+export function formatDate(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "long",
+    day: "numeric",
+    year: "numeric",
+  }).format(date);
+}
+
+export function formatTime(date: Date) {
+  return new Intl.DateTimeFormat("en-US", {
+    hour: "numeric",
+    minute: "numeric",
+    hour12: true,
+  }).format(date);
 }
 
 export function getLessonTypeColor(type: string): string {
-  switch (type.toLowerCase()) {
-    case 'private':
-      return 'bg-blue-50 dark:bg-blue-950';
-    case 'group':
-      return 'bg-green-50 dark:bg-green-950';
-    case 'competition':
-      return 'bg-purple-50 dark:bg-purple-950';
-    case 'evaluation':
-      return 'bg-orange-50 dark:bg-orange-950';
-    default:
-      return 'bg-gray-50 dark:bg-gray-950';
-  }
-}
+  const types: Record<string, string> = {
+    "private": "bg-blue-100 text-blue-800 dark:bg-blue-900 dark:text-blue-300",
+    "group": "bg-green-100 text-green-800 dark:bg-green-900 dark:text-green-300",
+    "competition": "bg-purple-100 text-purple-800 dark:bg-purple-900 dark:text-purple-300",
+    "performance": "bg-orange-100 text-orange-800 dark:bg-orange-900 dark:text-orange-300",
+    "seminar": "bg-yellow-100 text-yellow-800 dark:bg-yellow-900 dark:text-yellow-300"
+  };
 
-export function formatCurrency(amount: number): string {
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency: 'USD',
-  }).format(amount);
-}
-
-export function calculateLessonDuration(start: Date | string, end: Date | string): number {
-  return (new Date(end).getTime() - new Date(start).getTime()) / (1000 * 60);
-}
-
-export function generateTimeSlots(startTime: number = 6, endTime: number = 22): string[] {
-  const slots: string[] = [];
-  for (let hour = startTime; hour < endTime; hour++) {
-    slots.push(`${hour.toString().padStart(2, '0')}:00`);
-    slots.push(`${hour.toString().padStart(2, '0')}:30`);
-  }
-  return slots;
+  return types[type.toLowerCase()] || "bg-gray-100 text-gray-800 dark:bg-gray-900 dark:text-gray-300";
 }
