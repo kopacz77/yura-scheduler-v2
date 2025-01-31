@@ -1,18 +1,32 @@
-import React from 'react';
+'use client';
+
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { Calendar, Users, Settings, BarChart2, CreditCard } from 'lucide-react';
+import { Calendar, Users, Settings, BarChart2, CreditCard, UserCircle } from 'lucide-react';
+import { useAuth } from '@/hooks/useAuth';
 
-const sidebarNavItems = [
-  { title: 'Dashboard', href: '/dashboard', icon: BarChart2 },
-  { title: 'Schedule', href: '/schedule', icon: Calendar },
-  { title: 'Students', href: '/students', icon: Users },
-  { title: 'Payments', href: '/payments', icon: CreditCard },
-  { title: 'Settings', href: '/settings', icon: Settings },
-];
+const getNavItems = (role: string) => {
+  const items = [
+    { title: 'Dashboard', href: '/dashboard', icon: BarChart2 },
+    { title: 'Schedule', href: '/schedule', icon: Calendar },
+  ];
+
+  if (role === 'admin') {
+    items.push(
+      { title: 'Students', href: '/students', icon: Users },
+      { title: 'Payments', href: '/payments', icon: CreditCard },
+    );
+  } else {
+    items.push({ title: 'My Portal', href: '/student-portal', icon: UserCircle });
+  }
+
+  items.push({ title: 'Settings', href: '/settings', icon: Settings });
+  
+  return items;
+};
 
 interface SidebarProps {
   isOpen: boolean;
@@ -21,6 +35,8 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
+  const navItems = getNavItems(user?.role || 'student');
 
   return (
     <div className={cn(
@@ -42,7 +58,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       {/* Navigation */}
       <ScrollArea className="flex-1 px-2 py-4">
         <nav className="space-y-1">
-          {sidebarNavItems.map((item) => (
+          {navItems.map((item) => (
             <Link key={item.href} href={item.href}>
               <Button
                 variant={pathname === item.href ? 'secondary' : 'ghost'}
