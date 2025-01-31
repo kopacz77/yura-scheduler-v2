@@ -5,22 +5,20 @@ export interface OverviewStats {
   averageProgress: number;
 }
 
-export interface DistributionItem {
-  name: string;
-  value: number;
-  color: string;
+export interface DistributionStats {
+  labels: string[];
+  data: number[];
 }
 
-export interface ProgressDataPoint {
-  month: string;
-  beginner: number;
-  intermediate: number;
-  advanced: number;
-  competitive: number;
+export interface ProgressStats {
+  student: string;
+  progress: number;
+  lastLesson: string;
+  nextLesson: string;
 }
 
 export interface DashboardStats {
   overview: OverviewStats;
-  distribution: DistributionItem[];
-  progress: ProgressDataPoint[];
+  distribution: DistributionStats;
+  progress: ProgressStats[];
 }
