@@ -45,8 +45,7 @@ const PlannerMainComponent: FC<PlannerMainComponentProps> = ({ ...props }) => {
 interface CalendarContentProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 const CalendarContent: React.FC<CalendarContentProps> = ({ ...props }) => {
-  const { viewMode, dateRange, timeLabels } = useCalendar();
-  const { resources, appointments, updateAppointment } = usePlannerContext();
+  const { viewMode, dateRange, timeLabels, resources, appointments, updateAppointment } = useCalendar();
 
   useEffect(() => {
     return monitorForElements({
