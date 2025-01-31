@@ -1,7 +1,7 @@
 'use client';
 
 import { PageHeader } from '@/components/layout/PageHeader';
-import { Planner } from '@/components/planner/Planner';
+import Planner from '@/components/planner/Planner';  // Changed to default import
 import { usePlanner } from '@/hooks/usePlanner';
 
 export default function SchedulePage() {
