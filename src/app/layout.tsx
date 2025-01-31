@@ -8,11 +8,6 @@ import '@/styles/globals.css';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export const metadata = {
-  title: 'Yura Scheduler - Ice Dance Coaching',
-  description: 'Professional ice dance coaching scheduling system',
-};
-
 export default function RootLayout({
   children,
 }: {
