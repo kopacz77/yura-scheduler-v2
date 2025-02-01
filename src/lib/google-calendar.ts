@@ -1,83 +1,110 @@
 import { google } from 'googleapis';
-import { Appointment } from '@/models/types';
+import { JWT } from 'google-auth-library';
 
-const calendar = google.calendar('v3');
+const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
-// Initialize Google Calendar API
-const auth = new google.auth.GoogleAuth({
-  credentials: {
-    client_id: process.env.GOOGLE_CLIENT_ID,
-    client_secret: process.env.GOOGLE_CLIENT_SECRET,
-  },
-  scopes: ['https://www.googleapis.com/auth/calendar'],
+const auth = new JWT({
+  email: process.env.GOOGLE_CLIENT_EMAIL,
+  key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
+  scopes: SCOPES,
 });
 
-export async function syncAppointmentToGoogle(appointment: Appointment) {
+export const calendar = google.calendar({ version: 'v3', auth });
+
+export async function createCalendarEvent({
+  summary,
+  description,
+  startTime,
+  endTime,
+  attendees = [],
+}: {
+  summary: string;
+  description: string;
+  startTime: Date;
+  endTime: Date;
+  attendees?: { email: string }[];
+}) {
   try {
-    const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    if (!calendarId) throw new Error('Google Calendar ID not configured');
-
-    // Format appointment for Google Calendar
-    const event = {
-      summary: `${appointment.title} - ${appointment.details.lessonType}`,
-      description: `Student: ${appointment.title}\nType: ${appointment.details.lessonType}\nNotes: ${appointment.details.notes || 'None'}`,
-      start: {
-        dateTime: appointment.start.toISOString(),
-        timeZone: 'America/New_York',
+    const event = await calendar.events.insert({
+      calendarId: process.env.GOOGLE_CALENDAR_ID,
+      requestBody: {
+        summary,
+        description,
+        start: {
+          dateTime: startTime.toISOString(),
+          timeZone: 'America/Los_Angeles',
+        },
+        end: {
+          dateTime: endTime.toISOString(),
+          timeZone: 'America/Los_Angeles',
+        },
+        attendees,
+        reminders: {
+          useDefault: false,
+          overrides: [
+            { method: 'email', minutes: 24 * 60 },
+            { method: 'popup', minutes: 30 },
+          ],
+        },
       },
-      end: {
-        dateTime: appointment.end.toISOString(),
-        timeZone: 'America/New_York',
-      },
-      location: appointment.resourceId, // Rink area
-      colorId: getColorForLessonType(appointment.details.lessonType),
-    };
+    });
 
-    // Create or update event
-    if (appointment.googleEventId) {
-      await calendar.events.update({
-        auth,
-        calendarId,
-        eventId: appointment.googleEventId,
-        requestBody: event,
-      });
-    } else {
-      const response = await calendar.events.insert({
-        auth,
-        calendarId,
-        requestBody: event,
-      });
-      return response.data.id; // Return Google Calendar event ID
-    }
+    return event.data;
   } catch (error) {
-    console.error('Error syncing with Google Calendar:', error);
+    console.error('Error creating calendar event:', error);
     throw error;
   }
 }
 
-export async function deleteGoogleCalendarEvent(googleEventId: string) {
+export async function deleteCalendarEvent(eventId: string) {
   try {
-    const calendarId = process.env.GOOGLE_CALENDAR_ID;
-    if (!calendarId) throw new Error('Google Calendar ID not configured');
-
     await calendar.events.delete({
-      auth,
-      calendarId,
-      eventId: googleEventId,
+      calendarId: process.env.GOOGLE_CALENDAR_ID,
+      eventId,
     });
   } catch (error) {
-    console.error('Error deleting Google Calendar event:', error);
+    console.error('Error deleting calendar event:', error);
     throw error;
   }
 }
 
-// Helper function to assign colors to different lesson types
-function getColorForLessonType(lessonType: string): string {
-  const colors = {
-    'private': '1',     // Lavender
-    'group': '2',       // Sage
-    'choreography': '3', // Grape
-    'competition-prep': '4', // Flamingo
-  };
-  return colors[lessonType as keyof typeof colors] || '1';
+export async function updateCalendarEvent({
+  eventId,
+  summary,
+  description,
+  startTime,
+  endTime,
+  attendees = [],
+}: {
+  eventId: string;
+  summary: string;
+  description: string;
+  startTime: Date;
+  endTime: Date;
+  attendees?: { email: string }[];
+}) {
+  try {
+    const event = await calendar.events.update({
+      calendarId: process.env.GOOGLE_CALENDAR_ID,
+      eventId,
+      requestBody: {
+        summary,
+        description,
+        start: {
+          dateTime: startTime.toISOString(),
+          timeZone: 'America/Los_Angeles',
+        },
+        end: {
+          dateTime: endTime.toISOString(),
+          timeZone: 'America/Los_Angeles',
+        },
+        attendees,
+      },
+    });
+
+    return event.data;
+  } catch (error) {
+    console.error('Error updating calendar event:', error);
+    throw error;
+  }
 }
