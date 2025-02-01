@@ -1,53 +1,72 @@
 import { useState, useCallback } from 'react';
-import { Student } from '@/types/student';
+import { Student } from '@/types/schedule';
+import { toast } from 'sonner';
 
 export function useStudents() {
+  const [students, setStudents] = useState<Student[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
-  const getStudents = useCallback(async () => {
+  const fetchStudents = useCallback(async () => {
     setIsLoading(true);
+    setError(null);
+
     try {
       const response = await fetch('/api/students');
-      if (!response.ok) throw new Error('Failed to fetch students');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching students:', error);
-      throw error;
+      if (!response.ok) {
+        throw new Error('Failed to fetch students');
+      }
+
+      const data = await response.json();
+      setStudents(data);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      toast.error('Failed to fetch students');
     } finally {
       setIsLoading(false);
     }
   }, []);
 
-  const getStudentDetails = useCallback(async (studentId: string) => {
+  const createStudent = async (studentData: {
+    email: string;
+    name: string;
+    phone?: string;
+    maxLessonsPerWeek?: number;
+    emergencyContact?: {
+      name: string;
+      phone: string;
+      relationship: string;
+    };
+  }) => {
     try {
-      const response = await fetch(`/api/students/${studentId}`);
-      if (!response.ok) throw new Error('Failed to fetch student details');
-      return await response.json();
-    } catch (error) {
-      console.error('Error fetching student details:', error);
-      throw error;
-    }
-  }, []);
-
-  const updateStudent = useCallback(async (studentId: string, data: Partial<Student>) => {
-    try {
-      const response = await fetch(`/api/students/${studentId}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(data)
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(studentData),
       });
-      if (!response.ok) throw new Error('Failed to update student');
-      return await response.json();
-    } catch (error) {
-      console.error('Error updating student:', error);
-      throw error;
+
+      if (!response.ok) {
+        throw new Error('Failed to create student');
+      }
+
+      const student = await response.json();
+      setStudents(prev => [...prev, student]);
+      toast.success('Student created successfully');
+      return student;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to create student';
+      toast.error(message);
+      throw err;
     }
-  }, []);
+  };
 
   return {
-    getStudents,
-    getStudentDetails,
-    updateStudent,
-    isLoading
+    students,
+    isLoading,
+    error,
+    fetchStudents,
+    createStudent,
   };
 }
