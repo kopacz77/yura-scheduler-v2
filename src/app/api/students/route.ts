@@ -3,36 +3,37 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function GET() {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const students = await prisma.student.findMany({
       include: {
-        user: {
-          select: {
-            name: true,
-            email: true
-          }
-        }
+        user: true,
+        lessons: {
+          where: {
+            startTime: {
+              gte: new Date(),
+            },
+          },
+          orderBy: {
+            startTime: 'asc',
+          },
+          take: 1,
+        },
       },
       orderBy: {
-        user: {
-          name: 'asc'
-        }
-      }
+        createdAt: 'desc',
+      },
     });
 
     return NextResponse.json(students);
   } catch (error) {
-    console.error('Error fetching students:', error);
-    return NextResponse.json(
-      { error: 'Error fetching students' },
-      { status: 500 }
-    );
+    console.error('[STUDENTS_GET]', error);
+    return new NextResponse('Internal error', { status: 500 });
   }
 }
 
@@ -40,48 +41,41 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const data = await req.json();
-    const { email, name, phone, maxLessonsPerWeek, emergencyContact } = data;
+    const body = await req.json();
+    const { name, email, phone, emergencyContact } = body;
 
-    // Create user and student in a transaction
-    const result = await prisma.$transaction(async (prisma) => {
-      const user = await prisma.user.create({
-        data: {
-          email,
-          name,
-          role: 'STUDENT',
-        },
-      });
+    if (!name || !email || !phone) {
+      return new NextResponse('Missing required fields', { status: 400 });
+    }
 
-      const student = await prisma.student.create({
-        data: {
-          userId: user.id,
-          phone,
-          maxLessonsPerWeek: maxLessonsPerWeek || 3,
-          emergencyContact: emergencyContact || null,
-        },
-        include: {
-          user: {
-            select: {
-              name: true,
-              email: true
-            }
-          }
-        }
-      });
-
-      return student;
+    // First create the user
+    const user = await prisma.user.create({
+      data: {
+        name,
+        email,
+        role: 'STUDENT',
+      },
     });
 
-    return NextResponse.json(result);
+    // Then create the student profile
+    const student = await prisma.student.create({
+      data: {
+        userId: user.id,
+        phone,
+        emergencyContact,
+        maxLessonsPerWeek: 3, // Default value
+      },
+      include: {
+        user: true,
+      },
+    });
+
+    return NextResponse.json(student);
   } catch (error) {
-    console.error('Error creating student:', error);
-    return NextResponse.json(
-      { error: 'Error creating student' },
-      { status: 500 }
-    );
+    console.error('[STUDENTS_POST]', error);
+    return new NextResponse('Internal error', { status: 500 });
   }
 }
