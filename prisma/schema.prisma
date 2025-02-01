@@ -29,6 +29,7 @@ model Student {
   notes             String?
   emergencyContact  Json?
   lessons           Lesson[]
+  payments          Payment[]
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 }
@@ -42,16 +43,40 @@ model Lesson {
   startTime         DateTime
   endTime           DateTime
   duration          Int       // in minutes
-  status            String    @default("scheduled") // scheduled, cancelled, completed
+  status            LessonStatus @default(SCHEDULED)
   cancellationReason String?
   cancellationTime   DateTime?
   notes             String?
+  price             Float
+  payment           Payment?
+  googleCalendarEventId String?
   createdAt         DateTime  @default(now())
   updatedAt         DateTime  @updatedAt
 
   @@index([startTime])
   @@index([studentId])
   @@index([rinkId])
+}
+
+model Payment {
+  id            String    @id @default(cuid())
+  lessonId      String    @unique
+  lesson        Lesson    @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  studentId     String
+  student       Student   @relation(fields: [studentId], references: [id])
+  amount        Float
+  method        PaymentMethod
+  status        PaymentStatus @default(PENDING)
+  referenceCode String    @unique
+  verifiedBy    String?
+  verifiedAt    DateTime?
+  notes         String?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  @@index([studentId])
+  @@index([status])
+  @@index([referenceCode])
 }
 
 model Rink {
@@ -68,4 +93,21 @@ enum Role {
   ADMIN
   COACH
   STUDENT
+}
+
+enum LessonStatus {
+  SCHEDULED
+  CANCELLED
+  COMPLETED
+}
+
+enum PaymentMethod {
+  VENMO
+  ZELLE
+}
+
+enum PaymentStatus {
+  PENDING
+  COMPLETED
+  FAILED
 }
