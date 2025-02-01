@@ -1,53 +1,51 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { Badge } from '@/components/ui/badge';
 
-interface ProgressData {
-  date: string;
-  skillLevel: number;
-  attendance: number;
+interface Milestone {
+  id: string;
+  title: string;
+  description: string;
+  completed: boolean;
+  date?: Date;
 }
 
-const mockProgressData: ProgressData[] = [
-  { date: '2024-01', skillLevel: 3, attendance: 90 },
-  { date: '2024-02', skillLevel: 4, attendance: 85 },
-  { date: '2024-03', skillLevel: 4.5, attendance: 95 },
-  { date: '2024-04', skillLevel: 5, attendance: 92 },
-  { date: '2024-05', skillLevel: 5.5, attendance: 88 },
-  { date: '2024-06', skillLevel: 6, attendance: 94 }
-];
+interface StudentProgressProps {
+  milestones: Milestone[];
+}
 
-export function StudentProgress() {
+export function StudentProgress({ milestones }: StudentProgressProps) {
   return (
-    <Card>
+    <Card className="w-full">
       <CardHeader>
-        <CardTitle>Progress Tracking</CardTitle>
+        <CardTitle>Skills & Milestones</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={mockProgressData}>
-              <CartesianGrid strokeDasharray="3 3" />
-              <XAxis dataKey="date" />
-              <YAxis yAxisId="left" domain={[0, 10]} />
-              <YAxis yAxisId="right" orientation="right" domain={[0, 100]} />
-              <Tooltip />
-              <Line
-                yAxisId="left"
-                type="monotone"
-                dataKey="skillLevel"
-                stroke="#8884d8"
-                name="Skill Level"
-              />
-              <Line
-                yAxisId="right"
-                type="monotone"
-                dataKey="attendance"
-                stroke="#82ca9d"
-                name="Attendance %"
-              />
-            </LineChart>
-          </ResponsiveContainer>
+        <div className="space-y-6">
+          {milestones.map((milestone) => (
+            <div
+              key={milestone.id}
+              className="flex items-center justify-between border-b pb-4 last:border-0"
+            >
+              <div className="space-y-1">
+                <h4 className="font-medium">{milestone.title}</h4>
+                <p className="text-sm text-muted-foreground">
+                  {milestone.description}
+                </p>
+                {milestone.date && (
+                  <p className="text-sm text-muted-foreground">
+                    {milestone.date.toLocaleDateString()}
+                  </p>
+                )}
+              </div>
+              <Badge
+                variant={milestone.completed ? 'success' : 'secondary'}
+                className="ml-auto"
+              >
+                {milestone.completed ? 'Completed' : 'In Progress'}
+              </Badge>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>
