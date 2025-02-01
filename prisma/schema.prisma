@@ -1,137 +1,71 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-  directUrl = env("DIRECT_URL")
-}
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
   provider = "prisma-client-js"
 }
 
-enum LessonType {
-  PRIVATE
-  GROUP
-  CHOREOGRAPHY
-  COMPETITION_PREP
-}
-
-enum SkatingLevel {
-  PRE_PRELIMINARY
-  PRELIMINARY
-  PRE_JUVENILE
-  JUVENILE
-  INTERMEDIATE
-  NOVICE
-  JUNIOR
-  SENIOR
-}
-
-enum RinkArea {
-  MAIN_RINK
-  PRACTICE_RINK
-  DANCE_STUDIO
-}
-
-enum PaymentMethod {
-  VENMO
-  ZELLE
-  CASH
-  OTHER
-}
-
-enum PaymentStatus {
-  PENDING
-  PAID
-  CONFIRMED
-}
-
-enum UserStatus {
-  PENDING_APPROVAL
-  ACTIVE
-  INACTIVE
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
-  id            String      @id @default(uuid())
-  email         String      @unique
-  name          String
-  role          String      @default("STUDENT")
-  status        UserStatus  @default(PENDING_APPROVAL)
-  passwordHash  String
-  createdAt     DateTime    @default(now())
-  updatedAt     DateTime    @updatedAt
-  student       Student?
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  role      Role      @default(STUDENT)
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  student   Student?
 }
 
 model Student {
-  id              String         @id @default(uuid())
-  userId          String         @unique
-  user            User           @relation(fields: [userId], references: [id])
-  name            String
-  email           String         @unique
-  phone           String?
-  level           SkatingLevel
-  emergencyName   String?
-  emergencyPhone  String?
-  relationship    String?
-  notes           String?
-  preferredPayment PaymentMethod @default(VENMO)
-  startDate       DateTime       @default(now())
-  appointments    Appointment[]
-  paymentHistory  Payment[]
-  createdAt       DateTime       @default(now())
-  updatedAt       DateTime       @updatedAt
+  id                String    @id @default(cuid())
+  userId            String    @unique
+  user              User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone             String?
+  maxLessonsPerWeek Int       @default(3)
+  notes             String?
+  emergencyContact  Json?
+  lessons           Lesson[]
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 }
 
-model Resource {
-  id                  String         @id @default(uuid())
-  name                String
-  type                RinkArea
-  maxCapacity         Int?
-  description         String?
-  available           Boolean        @default(true)
-  maintenanceSchedule Json?          // Stored as JSON array of start/end times
-  appointments        Appointment[]
-  createdAt           DateTime       @default(now())
-  updatedAt           DateTime       @updatedAt
-}
+model Lesson {
+  id                String    @id @default(cuid())
+  studentId         String
+  student           Student   @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  rinkId            String
+  rink              Rink      @relation(fields: [rinkId], references: [id])
+  startTime         DateTime
+  endTime           DateTime
+  duration          Int       // in minutes
+  status            String    @default("scheduled") // scheduled, cancelled, completed
+  cancellationReason String?
+  cancellationTime   DateTime?
+  notes             String?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
-model Appointment {
-  id            String        @id @default(uuid())
-  title         String
-  start         DateTime
-  end           DateTime
-  lessonType    LessonType
-  notes         String?
-  student       Student       @relation(fields: [studentId], references: [id])
-  studentId     String
-  resource      Resource      @relation(fields: [resourceId], references: [id])
-  resourceId    String
-  payment       Payment?
-  googleEventId String?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
-
+  @@index([startTime])
   @@index([studentId])
-  @@index([resourceId])
-  @@index([start, end])
+  @@index([rinkId])
 }
 
-model Payment {
-  id            String        @id @default(uuid())
-  amount        Float
-  method        PaymentMethod
-  status        PaymentStatus @default(PENDING)
-  confirmationId String?      // Venmo/Zelle transaction ID
-  appointment   Appointment   @relation(fields: [appointmentId], references: [id])
-  appointmentId String        @unique
-  student       Student       @relation(fields: [studentId], references: [id])
-  studentId     String
-  notes         String?
-  paidAt        DateTime?
-  createdAt     DateTime      @default(now())
-  updatedAt     DateTime      @updatedAt
+model Rink {
+  id        String    @id @default(cuid())
+  name      String    @unique
+  timezone  String
+  address   String
+  lessons   Lesson[]
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+}
 
-  @@index([studentId])
-  @@index([status])
+enum Role {
+  ADMIN
+  COACH
+  STUDENT
 }
