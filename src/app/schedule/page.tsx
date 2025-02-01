@@ -4,17 +4,20 @@ import { useState, useEffect } from 'react';
 import { CalendarView } from '@/components/schedule/CalendarView';
 import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { LessonDetails } from '@/components/schedule/LessonDetails';
+import { RinkSelector } from '@/components/schedule/RinkSelector';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import { useLessons } from '@/hooks/useLessons';
 import { Lesson } from '@/types/schedule';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 
 export default function SchedulePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedRink, setSelectedRink] = useState('');
+  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
   
   const {
     lessons,
@@ -24,12 +27,12 @@ export default function SchedulePage() {
   } = useLessons();
 
   useEffect(() => {
-    const currentWeek = startOfWeek(new Date());
     fetchLessons({
+      rinkId: selectedRink || undefined,
       startDate: currentWeek,
       endDate: endOfWeek(currentWeek)
     });
-  }, [fetchLessons]);
+  }, [fetchLessons, selectedRink, currentWeek]);
 
   const handleSlotSelect = (date: Date) => {
     setSelectedDate(date);
@@ -40,16 +43,53 @@ export default function SchedulePage() {
     setSelectedLesson(lesson);
   };
 
+  const handleWeekChange = (direction: 'prev' | 'next') => {
+    setCurrentWeek(prev => 
+      direction === 'next' ? addWeeks(prev, 1) : subWeeks(prev, 1)
+    );
+  };
+
+  const filteredLessons = selectedRink
+    ? lessons.filter(lesson => lesson.rinkId === selectedRink)
+    : lessons;
+
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto py-8 space-y-6">
+      {/* Header Section */}
       <div className="flex justify-between items-center">
-        <h1 className="text-4xl font-bold">Lesson Schedule</h1>
+        <div className="flex items-center space-x-2">
+          <Calendar className="h-8 w-8 text-primary" />
+          <h1 className="text-4xl font-bold">Lesson Schedule</h1>
+        </div>
         <Button onClick={() => setIsFormOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Lesson
         </Button>
       </div>
+
+      {/* Filters Section */}
+      <div className="grid gap-4 md:grid-cols-2">
+        <RinkSelector
+          selectedRink={selectedRink}
+          onRinkChange={setSelectedRink}
+        />
+        <div className="flex justify-end items-center space-x-4">
+          <Button
+            variant="outline"
+            onClick={() => handleWeekChange('prev')}
+          >
+            Previous Week
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => handleWeekChange('next')}
+          >
+            Next Week
+          </Button>
+        </div>
+      </div>
       
+      {/* Modals */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-2xl">
           <ScheduleForm
@@ -57,8 +97,11 @@ export default function SchedulePage() {
             onSchedule={() => {
               setIsFormOpen(false);
               setSelectedDate(null);
-              // Refresh lessons
-              fetchLessons();
+              fetchLessons({
+                rinkId: selectedRink || undefined,
+                startDate: currentWeek,
+                endDate: endOfWeek(currentWeek)
+              });
             }}
           />
         </DialogContent>
@@ -70,21 +113,25 @@ export default function SchedulePage() {
           isOpen={!!selectedLesson}
           onClose={() => {
             setSelectedLesson(null);
-            // Refresh lessons
-            fetchLessons();
+            fetchLessons({
+              rinkId: selectedRink || undefined,
+              startDate: currentWeek,
+              endDate: endOfWeek(currentWeek)
+            });
           }}
         />
       )}
 
+      {/* Error State */}
       {error && (
-        <div className="rounded-md bg-red-50 p-4">
+        <div className="rounded-md bg-destructive/10 p-4">
           <div className="flex">
             <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-red-400" aria-hidden="true" />
+              <AlertCircle className="h-5 w-5 text-destructive" />
             </div>
             <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error loading schedule</h3>
-              <div className="mt-2 text-sm text-red-700">
+              <h3 className="text-sm font-medium text-destructive">Error loading schedule</h3>
+              <div className="mt-2 text-sm text-destructive/90">
                 <p>{error}</p>
               </div>
             </div>
@@ -92,13 +139,18 @@ export default function SchedulePage() {
         </div>
       )}
 
+      {/* Loading State */}
       {isLoading ? (
-        <div className="flex justify-center items-center h-[600px]">
-          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <div className="flex justify-center items-center h-[600px] bg-background/50 backdrop-blur-sm rounded-lg border">
+          <div className="text-center space-y-4">
+            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+            <p className="text-muted-foreground">Loading schedule...</p>
+          </div>
         </div>
       ) : (
         <CalendarView
-          lessons={lessons}
+          currentWeek={currentWeek}
+          lessons={filteredLessons}
           onSlotSelect={handleSlotSelect}
           onLessonSelect={handleLessonSelect}
         />
