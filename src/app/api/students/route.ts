@@ -1,125 +1,87 @@
-import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const students = await db.query.student.findMany({
-      orderBy: {
-        name: 'asc',
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    }
+
+    const students = await prisma.student.findMany({
+      include: {
+        user: {
+          select: {
+            name: true,
+            email: true
+          }
+        }
       },
+      orderBy: {
+        user: {
+          name: 'asc'
+        }
+      }
     });
 
     return NextResponse.json(students);
   } catch (error) {
     console.error('Error fetching students:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    return NextResponse.json(
+      { error: 'Error fetching students' },
+      { status: 500 }
+    );
   }
 }
 
 export async function POST(req: Request) {
   try {
-    const body = await req.json();
-    const { name, email, phone, level, emergencyName, emergencyPhone, notes } = body;
-
-    // Check if student with email already exists
-    const existingStudent = await db.query.student.findUnique({
-      where: { email },
-    });
-
-    if (existingStudent) {
-      return new NextResponse('Student with this email already exists', { status: 400 });
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const student = await db.query.student.create({
-      data: {
-        name,
-        email,
-        phone,
-        level,
-        emergencyName,
-        emergencyPhone,
-        notes,
-      },
-    });
+    const data = await req.json();
+    const { email, name, phone, maxLessonsPerWeek, emergencyContact } = data;
 
-    return NextResponse.json(student);
-  } catch (error) {
-    console.error('Error creating student:', error);
-    return new NextResponse('Internal Error', { status: 500 });
-  }
-}
-
-export async function PUT(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-    
-    if (!id) {
-      return new NextResponse('Missing student ID', { status: 400 });
-    }
-
-    const body = await req.json();
-    const { name, email, phone, level, emergencyName, emergencyPhone, notes } = body;
-
-    // If email is being changed, check it's not taken
-    if (email) {
-      const existingStudent = await db.query.student.findFirst({
-        where: {
+    // Create user and student in a transaction
+    const result = await prisma.$transaction(async (prisma) => {
+      const user = await prisma.user.create({
+        data: {
           email,
-          id: { not: id },
+          name,
+          role: 'STUDENT',
         },
       });
 
-      if (existingStudent) {
-        return new NextResponse('Email already in use', { status: 400 });
-      }
-    }
+      const student = await prisma.student.create({
+        data: {
+          userId: user.id,
+          phone,
+          maxLessonsPerWeek: maxLessonsPerWeek || 3,
+          emergencyContact: emergencyContact || null,
+        },
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true
+            }
+          }
+        }
+      });
 
-    const student = await db.query.student.update({
-      where: { id },
-      data: {
-        name,
-        email,
-        phone,
-        level,
-        emergencyName,
-        emergencyPhone,
-        notes,
-      },
+      return student;
     });
 
-    return NextResponse.json(student);
+    return NextResponse.json(result);
   } catch (error) {
-    console.error('Error updating student:', error);
-    return new NextResponse('Internal Error', { status: 500 });
-  }
-}
-
-export async function DELETE(req: Request) {
-  try {
-    const { searchParams } = new URL(req.url);
-    const id = searchParams.get('id');
-
-    if (!id) {
-      return new NextResponse('Missing student ID', { status: 400 });
-    }
-
-    // Check for existing appointments
-    const existingAppointments = await db.query.appointment.findMany({
-      where: { studentId: id },
-    });
-
-    if (existingAppointments.length > 0) {
-      return new NextResponse('Cannot delete student with existing appointments', { status: 400 });
-    }
-
-    await db.query.student.delete({
-      where: { id },
-    });
-
-    return new NextResponse(null, { status: 204 });
-  } catch (error) {
-    console.error('Error deleting student:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('Error creating student:', error);
+    return NextResponse.json(
+      { error: 'Error creating student' },
+      { status: 500 }
+    );
   }
 }
