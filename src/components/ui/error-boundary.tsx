@@ -1,55 +1,31 @@
 'use client';
 
-import { Component, ErrorInfo, ReactNode } from 'react';
+import { useEffect } from 'react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Button } from '@/components/ui/button';
+import { XCircle } from 'lucide-react';
 
-interface Props {
-  children: ReactNode;
-  fallback?: ReactNode;
+interface ErrorBoundaryProps {
+  error: Error & { digest?: string };
+  reset: () => void;
 }
 
-interface State {
-  hasError: boolean;
-  error?: Error;
-}
+export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
+  useEffect(() => {
+    // Log the error to an error reporting service
+    console.error('Error:', error);
+  }, [error]);
 
-export class ErrorBoundary extends Component<Props, State> {
-  public state: State = {
-    hasError: false
-  };
-
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
-  }
-
-  public componentDidCatch(error: Error, errorInfo: ErrorInfo) {
-    console.error('Uncaught error:', error, errorInfo);
-  }
-
-  private handleRetry = () => {
-    this.setState({ hasError: false, error: undefined });
-  };
-
-  public render() {
-    if (this.state.hasError) {
-      return (
-        this.props.fallback || (
-          <Alert variant="destructive" className="m-4">
-            <AlertTitle>Something went wrong</AlertTitle>
-            <AlertDescription className="mt-2">
-              {this.state.error?.message || 'An unexpected error occurred.'}
-              <div className="mt-4">
-                <Button onClick={this.handleRetry} variant="outline">
-                  Try again
-                </Button>
-              </div>
-            </AlertDescription>
-          </Alert>
-        )
-      );
-    }
-
-    return this.props.children;
-  }
+  return (
+    <Alert variant="destructive" className="my-4">
+      <XCircle className="h-4 w-4" />
+      <AlertTitle>Something went wrong!</AlertTitle>
+      <AlertDescription className="mt-2 flex flex-col gap-3">
+        <div>{error.message || 'An unexpected error occurred.'}</div>
+        <Button onClick={reset} variant="outline" className="w-fit">
+          Try again
+        </Button>
+      </AlertDescription>
+    </Alert>
+  );
 }
