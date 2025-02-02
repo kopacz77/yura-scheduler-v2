@@ -1,21 +1,18 @@
 import { NextResponse } from 'next/server';
-import { hash } from 'bcrypt';
+import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { sendEmail } from '@/lib/email/sendEmail';
+import { validateUser } from '@/lib/utils/validation';
 
-export async function POST(request: Request) {
+export async function POST(req: Request) {
   try {
-    const body = await request.json();
-    const {
-      name,
-      email,
-      password,
-      phone,
-      level,
-      emergencyName,
-      emergencyPhone,
-      relationship,
-    } = body;
+    const body = await req.json();
+    const validation = validateUser(body);
+
+    if (!validation.success) {
+      return new NextResponse(validation.error.message, { status: 400 });
+    }
+
+    const { email, password, name, role } = validation.data;
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -23,60 +20,45 @@ export async function POST(request: Request) {
     });
 
     if (existingUser) {
-      return NextResponse.json(
-        { error: 'User already exists' },
-        { status: 400 }
-      );
+      return new NextResponse('User with this email already exists', { status: 400 });
     }
 
     // Hash password
     const hashedPassword = await hash(password, 12);
 
-    // Create user and student profile
-    const user = await prisma.user.create({
-      data: {
-        email,
-        name,
-        passwordHash: hashedPassword,
-        status: 'PENDING_APPROVAL',
-        student: {
-          create: {
-            name,
-            email,
-            phone,
-            level,
-            emergencyName,
-            emergencyPhone,
-            relationship,
-          },
+    // Create user transaction with associated profile
+    const user = await prisma.$transaction(async (prisma) => {
+      // Create user
+      const newUser = await prisma.user.create({
+        data: {
+          email,
+          name,
+          password: hashedPassword,
+          role,
         },
-      },
+      });
+
+      // If it's a student, create student profile
+      if (role === 'STUDENT') {
+        await prisma.student.create({
+          data: {
+            userId: newUser.id,
+            maxLessonsPerWeek: 3, // Default value
+          },
+        });
+      }
+
+      return newUser;
     });
 
-    // Send notification to admin
-    await sendEmail({
-      to: process.env.ADMIN_EMAIL!,
-      subject: 'New Student Registration',
-      html: `
-        <h1>New Student Registration</h1>
-        <p>A new student has registered and is pending approval:</p>
-        <ul>
-          <li><strong>Name:</strong> ${name}</li>
-          <li><strong>Email:</strong> ${email}</li>
-          <li><strong>Level:</strong> ${level}</li>
-        </ul>
-        <p>Please log in to the admin dashboard to review and approve this registration.</p>
-      `,
-    });
+    // Return user without password
+    const { password: _, ...userWithoutPassword } = user;
 
-    return NextResponse.json({
-      message: 'User created successfully',
-      userId: user.id,
-    });
+    return NextResponse.json(userWithoutPassword);
   } catch (error) {
     console.error('Signup error:', error);
-    return NextResponse.json(
-      { error: 'Failed to create user' },
+    return new NextResponse(
+      'An error occurred while creating your account',
       { status: 500 }
     );
   }

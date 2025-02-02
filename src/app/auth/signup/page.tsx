@@ -2,128 +2,128 @@
 
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { SkatingLevel } from '@prisma/client';
-import { toast } from 'sonner';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { toast } from '@/components/ui/use-toast';
+import Link from 'next/link';
 
 export default function SignUpPage() {
   const router = useRouter();
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
-    e.preventDefault();
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
     setIsLoading(true);
 
+    const formData = new FormData(event.currentTarget);
+    const email = formData.get('email') as string;
+    const password = formData.get('password') as string;
+    const name = formData.get('name') as string;
+
     try {
-      const formData = new FormData(e.currentTarget);
       const response = await fetch('/api/auth/signup', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          name: formData.get('name'),
-          email: formData.get('email'),
-          password: formData.get('password'),
-          phone: formData.get('phone'),
-          level: formData.get('level'),
-          emergencyName: formData.get('emergencyName'),
-          emergencyPhone: formData.get('emergencyPhone'),
-          relationship: formData.get('relationship'),
+          email,
+          password,
+          name,
+          role: 'STUDENT', // Default role for signup
         }),
       });
 
       if (!response.ok) {
-        throw new Error('Signup failed');
+        const error = await response.text();
+        throw new Error(error);
       }
 
-      toast.success('Sign up successful! Please wait for approval.');
-      router.push('/auth/pending-approval');
+      toast({
+        title: 'Success',
+        description: 'Account created successfully. Please sign in.',
+      });
+
+      router.push('/auth/signin');
     } catch (error) {
-      console.error('Signup error:', error);
-      toast.error('Failed to sign up. Please try again.');
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'An unexpected error occurred',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
-  };
+  }
 
   return (
-    <div className="container mx-auto flex min-h-screen items-center justify-center py-8">
+    <div className="container flex h-screen w-screen flex-col items-center justify-center">
       <Card className="w-full max-w-lg">
-        <CardHeader>
-          <CardTitle>Sign Up for Ice Dance Lessons</CardTitle>
+        <CardHeader className="space-y-1">
+          <CardTitle className="text-2xl font-bold">Create an account</CardTitle>
           <CardDescription>
-            Create your account to get started with Yura Min Ice Dance.
-            Your account will need to be approved before you can book lessons.
+            Enter your information to create your account
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={onSubmit} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Full Name</Label>
-              <Input id="name" name="name" required />
+              <Label htmlFor="name">Name</Label>
+              <Input
+                id="name"
+                name="name"
+                placeholder="John Doe"
+                required
+                disabled={isLoading}
+              />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
-              <Input id="email" name="email" type="email" required />
+              <Input
+                id="email"
+                name="email"
+                type="email"
+                placeholder="example@example.com"
+                required
+                disabled={isLoading}
+              />
             </div>
-
             <div className="space-y-2">
               <Label htmlFor="password">Password</Label>
-              <Input id="password" name="password" type="password" required />
+              <Input
+                id="password"
+                name="password"
+                type="password"
+                required
+                disabled={isLoading}
+                minLength={8}
+              />
+              <p className="text-sm text-muted-foreground">
+                Password must be at least 8 characters long
+              </p>
             </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="phone">Phone Number</Label>
-              <Input id="phone" name="phone" type="tel" required />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="level">Skating Level</Label>
-              <Select name="level" required>
-                <SelectTrigger>
-                  <SelectValue placeholder="Select your level" />
-                </SelectTrigger>
-                <SelectContent>
-                  {Object.values(SkatingLevel).map((level) => (
-                    <SelectItem key={level} value={level}>
-                      {level.replace(/_/g, ' ')}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
-
-            <div className="rounded-lg border p-4">
-              <h3 className="mb-4 font-medium">Emergency Contact</h3>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyName">Contact Name</Label>
-                  <Input id="emergencyName" name="emergencyName" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="emergencyPhone">Contact Phone</Label>
-                  <Input id="emergencyPhone" name="emergencyPhone" type="tel" required />
-                </div>
-
-                <div className="space-y-2">
-                  <Label htmlFor="relationship">Relationship</Label>
-                  <Input id="relationship" name="relationship" required />
-                </div>
-              </div>
-            </div>
-
-            <Button type="submit" className="w-full" disabled={isLoading}>
-              {isLoading ? 'Signing up...' : 'Sign Up'}
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? 'Creating account...' : 'Create account'}
             </Button>
           </form>
         </CardContent>
+        <CardFooter>
+          <p className="text-sm text-muted-foreground">
+            Already have an account?{' '}
+            <Link
+              href="/auth/signin"
+              className="text-primary hover:underline"
+            >
+              Sign in
+            </Link>
+          </p>
+        </CardFooter>
       </Card>
     </div>
   );
