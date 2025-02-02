@@ -1,37 +1,69 @@
-import { getToken } from 'next-auth/jwt';
 import { NextResponse } from 'next/server';
-import type { NextRequest } from 'next/server';
+import { NextRequest } from 'next/server';
+import { getToken } from 'next-auth/jwt';
+
+// Define protected routes and their required roles
+const protectedRoutes = {
+  '/admin': ['ADMIN'],
+  '/dashboard': ['ADMIN', 'COACH'],
+  '/student-portal': ['STUDENT'],
+  '/api/rinks': ['ADMIN'],
+  '/api/timeslots': ['ADMIN'],
+  '/api/payments/verify': ['ADMIN'],
+};
+
+// Define public routes that don't require authentication
+const publicRoutes = [
+  '/auth/signin',
+  '/auth/signup',
+  '/auth/forgot-password',
+  '/_next',
+  '/favicon.ico',
+];
 
 export async function middleware(request: NextRequest) {
   const token = await getToken({ req: request });
-  const isAuth = !!token;
-  const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
-  const isAdminRoute = request.nextUrl.pathname.startsWith('/admin');
-  const isStudentRoute = request.nextUrl.pathname.startsWith('/student');
+  const { pathname } = request.nextUrl;
 
-  if (!isAuth) {
-    if (isAuthPage) {
-      return NextResponse.next();
+  // Allow access to public routes
+  if (publicRoutes.some(route => pathname.startsWith(route))) {
+    return NextResponse.next();
+  }
+
+  // Check if the user is authenticated
+  if (!token) {
+    const signInUrl = new URL('/auth/signin', request.url);
+    signInUrl.searchParams.set('callbackUrl', pathname);
+    return NextResponse.redirect(signInUrl);
+  }
+
+  // Check role-based access for protected routes
+  for (const [route, roles] of Object.entries(protectedRoutes)) {
+    if (pathname.startsWith(route) && !roles.includes(token.role as string)) {
+      // Redirect to appropriate dashboard based on role
+      switch (token.role) {
+        case 'ADMIN':
+          return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+        case 'COACH':
+          return NextResponse.redirect(new URL('/dashboard', request.url));
+        case 'STUDENT':
+          return NextResponse.redirect(new URL('/student-portal', request.url));
+        default:
+          return NextResponse.redirect(new URL('/auth/signin', request.url));
+      }
     }
-
-    return NextResponse.redirect(new URL('/auth/signin', request.url));
   }
 
-  if (isAuthPage) {
-    if (token.role === 'ADMIN') {
-      return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+  // Special handling for root path
+  if (pathname === '/') {
+    switch (token.role) {
+      case 'ADMIN':
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
+      case 'COACH':
+        return NextResponse.redirect(new URL('/dashboard', request.url));
+      case 'STUDENT':
+        return NextResponse.redirect(new URL('/student-portal', request.url));
     }
-    return NextResponse.redirect(new URL('/student/dashboard', request.url));
-  }
-
-  // Protect admin routes
-  if (isAdminRoute && token.role !== 'ADMIN') {
-    return NextResponse.redirect(new URL('/student/dashboard', request.url));
-  }
-
-  // Protect student routes
-  if (isStudentRoute && token.role === 'ADMIN') {
-    return NextResponse.redirect(new URL('/admin/dashboard', request.url));
   }
 
   return NextResponse.next();
@@ -39,8 +71,13 @@ export async function middleware(request: NextRequest) {
 
 export const config = {
   matcher: [
-    '/admin/:path*',
-    '/student/:path*',
-    '/auth/:path*',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     * - public folder
+     */
+    '/((?!_next/static|_next/image|favicon.ico|public/).*)',
   ],
 };
