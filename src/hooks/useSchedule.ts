@@ -5,12 +5,11 @@ import { toast } from '@/components/ui/use-toast';
 
 type Lesson = {
   id: string;
-  startTime: Date;
-  endTime: Date;
+  startTime: string;
+  endTime: string;
   studentId: string;
   rinkId: string;
   status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
-  notes?: string;
 };
 
 type ScheduleFilters = {
@@ -22,12 +21,14 @@ type ScheduleFilters = {
 
 export function useSchedule() {
   const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const fetchLessons = async (filters: ScheduleFilters = {}) => {
     try {
-      setLoading(true);
+      setIsLoading(true);
+      setError(null);
+
       const params = new URLSearchParams();
       if (filters.studentId) params.append('studentId', filters.studentId);
       if (filters.rinkId) params.append('rinkId', filters.rinkId);
@@ -39,20 +40,24 @@ export function useSchedule() {
 
       const data = await response.json();
       setLessons(data);
-      setError(null);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'An error occurred');
+      const message = err instanceof Error ? err.message : 'An error occurred';
+      setError(message);
       toast({
         title: 'Error',
-        description: 'Failed to fetch lessons. Please try again.',
+        description: message,
         variant: 'destructive',
       });
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   };
 
-  const bookLesson = async (lessonData: Omit<Lesson, 'id'>) => {
+  useEffect(() => {
+    fetchLessons();
+  }, []);
+
+  const scheduleLesson = async (lessonData: Omit<Lesson, 'id'>) => {
     try {
       const response = await fetch('/api/lessons', {
         method: 'POST',
@@ -62,24 +67,22 @@ export function useSchedule() {
         body: JSON.stringify(lessonData),
       });
 
-      if (!response.ok) {
-        const error = await response.text();
-        throw new Error(error || 'Failed to book lesson');
-      }
+      if (!response.ok) throw new Error('Failed to schedule lesson');
 
-      const data = await response.json();
-      setLessons(prev => [...prev, data]);
-      
+      const newLesson = await response.json();
+      setLessons((prev) => [...prev, newLesson]);
+
       toast({
         title: 'Success',
-        description: 'Lesson booked successfully.',
+        description: 'Lesson scheduled successfully',
       });
 
-      return data;
+      return newLesson;
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to schedule lesson';
       toast({
         title: 'Error',
-        description: err instanceof Error ? err.message : 'Failed to book lesson',
+        description: message,
         variant: 'destructive',
       });
       throw err;
@@ -88,54 +91,49 @@ export function useSchedule() {
 
   const cancelLesson = async (lessonId: string, reason: string) => {
     try {
-      const response = await fetch(`/api/lessons`, {
+      const response = await fetch(`/api/lessons/${lessonId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          id: lessonId,
           status: 'CANCELLED',
           cancellationReason: reason,
-          cancellationTime: new Date(),
         }),
       });
 
       if (!response.ok) throw new Error('Failed to cancel lesson');
 
-      const data = await response.json();
-      setLessons(prev =>
-        prev.map(lesson =>
-          lesson.id === lessonId ? data : lesson
+      const updatedLesson = await response.json();
+      setLessons((prev) =>
+        prev.map((lesson) =>
+          lesson.id === lessonId ? updatedLesson : lesson
         )
       );
 
       toast({
         title: 'Success',
-        description: 'Lesson cancelled successfully.',
+        description: 'Lesson cancelled successfully',
       });
 
-      return data;
+      return updatedLesson;
     } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to cancel lesson';
       toast({
         title: 'Error',
-        description: 'Failed to cancel lesson. Please try again.',
+        description: message,
         variant: 'destructive',
       });
       throw err;
     }
   };
 
-  useEffect(() => {
-    fetchLessons();
-  }, []);
-
   return {
     lessons,
-    loading,
+    isLoading,
     error,
     fetchLessons,
-    bookLesson,
+    scheduleLesson,
     cancelLesson,
   };
 }
