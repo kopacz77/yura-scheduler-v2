@@ -1,89 +1,133 @@
-import { useState } from 'react';
-import { toast } from 'sonner';
-import { Payment, PaymentStatus } from '@prisma/client';
+'use client';
 
-interface PaymentWithRelations extends Payment {
-  lesson: {
-    student: {
-      user: {
-        name: string;
-        email: string;
-      };
-    };
-    startTime: Date;
-    duration: number;
-  };
-}
+import { useState } from 'react';
+import { toast } from '@/components/ui/use-toast';
+
+type Payment = {
+  id: string;
+  amount: number;
+  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  method: 'VENMO' | 'ZELLE';
+  lessonId: string;
+  studentId: string;
+  referenceCode: string;
+  createdAt: Date;
+};
+
+type PaymentFilters = {
+  studentId?: string;
+  status?: string;
+  startDate?: Date;
+  endDate?: Date;
+};
 
 export function usePayments() {
-  const [isLoading, setIsLoading] = useState(false);
+  const [payments, setPayments] = useState<Payment[]>([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const verifyPayment = async (referenceCode: string) => {
-    setIsLoading(true);
-    setError(null);
+  const fetchPayments = async (filters: PaymentFilters = {}) => {
+    try {
+      setLoading(true);
+      const params = new URLSearchParams();
+      if (filters.studentId) params.append('studentId', filters.studentId);
+      if (filters.status) params.append('status', filters.status);
+      if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
+      if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
 
+      const response = await fetch(`/api/payments?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch payments');
+
+      const data = await response.json();
+      setPayments(data);
+      setError(null);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'An error occurred');
+      toast({
+        title: 'Error',
+        description: 'Failed to fetch payments. Please try again.',
+        variant: 'destructive',
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyPayment = async (paymentId: string, verificationNotes?: string) => {
     try {
       const response = await fetch('/api/payments/verify', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ referenceCode }),
+        body: JSON.stringify({
+          paymentId,
+          verificationNotes,
+        }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Failed to verify payment');
-      }
+      if (!response.ok) throw new Error('Failed to verify payment');
 
-      const { payment } = await response.json();
-      toast.success('Payment verified successfully');
-      return payment;
+      const data = await response.json();
+      setPayments(prev =>
+        prev.map(payment =>
+          payment.id === paymentId ? data : payment
+        )
+      );
+
+      toast({
+        title: 'Success',
+        description: 'Payment verified successfully.',
+      });
+
+      return data;
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to verify payment';
-      setError(message);
-      toast.error(message);
+      toast({
+        title: 'Error',
+        description: 'Failed to verify payment. Please try again.',
+        variant: 'destructive',
+      });
       throw err;
-    } finally {
-      setIsLoading(false);
     }
   };
 
-  const getPaymentStatusBadgeProps = (status: PaymentStatus) => {
-    switch (status) {
-      case 'COMPLETED':
-        return {
-          variant: 'success' as const,
-          label: 'Paid',
-        };
-      case 'PENDING':
-        return {
-          variant: 'warning' as const,
-          label: 'Pending',
-        };
-      case 'FAILED':
-        return {
-          variant: 'destructive' as const,
-          label: 'Failed',
-        };
-      default:
-        return {
-          variant: 'secondary' as const,
-          label: status,
-        };
-    }
-  };
+  const createPayment = async (paymentData: Omit<Payment, 'id' | 'referenceCode' | 'createdAt'>) => {
+    try {
+      const response = await fetch('/api/payments', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(paymentData),
+      });
 
-  const formatReferenceCode = (code: string) => {
-    return code.split('-').map(part => part.toUpperCase()).join('-');
+      if (!response.ok) throw new Error('Failed to create payment');
+
+      const data = await response.json();
+      setPayments(prev => [...prev, data]);
+
+      toast({
+        title: 'Success',
+        description: 'Payment created successfully.',
+      });
+
+      return data;
+    } catch (err) {
+      toast({
+        title: 'Error',
+        description: 'Failed to create payment. Please try again.',
+        variant: 'destructive',
+      });
+      throw err;
+    }
   };
 
   return {
-    isLoading,
+    payments,
+    loading,
     error,
+    fetchPayments,
     verifyPayment,
-    getPaymentStatusBadgeProps,
-    formatReferenceCode,
+    createPayment,
   };
 }
