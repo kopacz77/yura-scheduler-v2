@@ -1,7 +1,10 @@
 'use client';
 
 import * as React from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useSearchParams } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,28 +16,23 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
-import { useToast } from '@/components/ui/use-toast';
+import { toast } from '@/components/ui/use-toast';
 
 const formSchema = z.object({
   email: z.string().email({
     message: 'Please enter a valid email address.',
   }),
-  password: z.string().min(6, {
-    message: 'Password must be at least 6 characters.',
+  password: z.string().min(8, {
+    message: 'Password must be at least 8 characters.',
   }),
 });
 
 export function SignInForm() {
-  const router = useRouter();
-  const { toast } = useToast();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({{
+  const form = useForm<z.infer<typeof formSchema>>({  // Removed extra curly brace
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
@@ -46,26 +44,26 @@ export function SignInForm() {
     setIsLoading(true);
 
     try {
-      const res = await signIn('credentials', {
-        redirect: false,
+      const result = await signIn('credentials', {
         email: values.email,
         password: values.password,
+        redirect: false,
+        callbackUrl,
       });
 
-      if (res?.error) {
-        toast({
-          title: 'Error',
-          description: 'Invalid email or password',
+      if (!result?.ok) {
+        return toast({
+          title: 'Something went wrong.',
+          description: 'Your sign in request failed. Please try again.',
           variant: 'destructive',
         });
-        return;
       }
 
-      router.push(callbackUrl);
+      window.location.href = callbackUrl;
     } catch (error) {
       toast({
-        title: 'Error',
-        description: 'Something went wrong',
+        title: 'Something went wrong.',
+        description: 'Your sign in request failed. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -86,6 +84,7 @@ export function SignInForm() {
                 <Input
                   type="email"
                   placeholder="example@example.com"
+                  disabled={isLoading}
                   {...field}
                 />
               </FormControl>
@@ -100,14 +99,22 @@ export function SignInForm() {
             <FormItem>
               <FormLabel>Password</FormLabel>
               <FormControl>
-                <Input type="password" {...field} />
+                <Input
+                  type="password"
+                  disabled={isLoading}
+                  {...field}
+                />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
-        <Button className="w-full" type="submit" disabled={isLoading}>
-          {isLoading ? 'Signing in...' : 'Sign in'}
+        <Button type="submit" className="w-full" disabled={isLoading}>
+          {isLoading ? (
+            <span>Signing in...</span>
+          ) : (
+            <span>Sign in</span>
+          )}
         </Button>
       </form>
     </Form>
