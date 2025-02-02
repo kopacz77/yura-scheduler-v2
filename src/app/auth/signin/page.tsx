@@ -22,6 +22,14 @@ export default function SignInPage() {
           </p>
         </div>
         <SignInForm />
+        <p className="px-8 text-center text-sm text-muted-foreground">
+          <Link 
+            href="/auth/signup" 
+            className="hover:text-brand underline underline-offset-4"
+          >
+            Don't have an account? Sign up
+          </Link>
+        </p>
       </div>
     </div>
   );
