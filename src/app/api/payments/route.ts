@@ -2,141 +2,102 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { generateReferenceCode } from '@/lib/email/templates';
-import { EmailService } from '@/lib/email/service';
 
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
-    const status = searchParams.get('status');
     const studentId = searchParams.get('studentId');
-
-    const where = {
-      ...(status && { status }),
-      ...(studentId && { studentId }),
-    };
+    const status = searchParams.get('status');
 
     const payments = await prisma.payment.findMany({
-      where,
+      where: {
+        studentId: studentId || undefined,
+        status: (status as any) || undefined,
+      },
       include: {
         student: {
           include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
+            user: true,
           },
         },
-        lesson: {
-          select: {
-            startTime: true,
-            duration: true,
-          },
-        },
+        lesson: true,
       },
       orderBy: {
         createdAt: 'desc',
       },
     });
 
-    return NextResponse.json({ payments });
+    return NextResponse.json(payments);
   } catch (error) {
     console.error('Error fetching payments:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch payments' },
-      { status: 500 }
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
 
+export async function PUT(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session || session.user.role !== 'ADMIN') {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const data = await req.json();
+    const { id, status, verifiedBy } = data;
+
+    const payment = await prisma.payment.update({
+      where: { id },
+      data: {
+        status,
+        verifiedBy: verifiedBy || session.user.id,
+        verifiedAt: status === 'COMPLETED' ? new Date() : null,
+      },
+      include: {
+        student: true,
+        lesson: true,
+      },
+    });
+
+    return NextResponse.json(payment);
+  } catch (error) {
+    console.error('Error updating payment:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
+
+// POST endpoint for creating payments (if needed separately from lesson creation)
 export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { lessonId, amount, method } = await req.json();
-
-    // Get the lesson details
-    const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-      include: {
-        student: {
-          include: {
-            user: true
-          }
-        },
-        rink: true
-      }
-    });
-
-    if (!lesson) {
-      return NextResponse.json(
-        { error: 'Lesson not found' },
-        { status: 404 }
-      );
-    }
-
-    // Check if payment already exists
-    const existingPayment = await prisma.payment.findFirst({
-      where: { lessonId }
-    });
-
-    if (existingPayment) {
-      return NextResponse.json(
-        { error: 'Payment already exists for this lesson' },
-        { status: 400 }
-      );
-    }
-
-    // Generate reference code
-    const referenceCode = generateReferenceCode(
-      lesson.student.user.name,
-      new Date(lesson.startTime)
-    );
-
-    // Create payment
+    const data = await req.json();
+    
     const payment = await prisma.payment.create({
       data: {
-        lessonId,
-        studentId: lesson.studentId,
-        amount,
-        method,
-        referenceCode,
-        status: 'PENDING'
+        studentId: data.studentId,
+        lessonId: data.lessonId,
+        amount: data.amount,
+        method: data.method,
+        status: 'PENDING',
+        referenceCode: `PAY-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        notes: data.notes,
       },
       include: {
-        student: {
-          include: {
-            user: true
-          }
-        },
-        lesson: true
-      }
+        student: true,
+        lesson: true,
+      },
     });
 
-    // Send email notification
-    await EmailService.sendBookingConfirmation({
-      lesson,
-      student: lesson.student,
-      price: amount,
-      paymentMethod: method.toLowerCase() as 'venmo' | 'zelle'
-    });
-
-    return NextResponse.json({ payment });
+    return NextResponse.json(payment);
   } catch (error) {
     console.error('Error creating payment:', error);
-    return NextResponse.json(
-      { error: 'Failed to create payment' },
-      { status: 500 }
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
