@@ -1,11 +1,11 @@
-import { Inter } from 'next/font/google';
-import { metadata } from './metadata';
 import { Providers } from '@/components/providers';
 import '@/styles/globals.css';
+import type { Metadata } from 'next';
 
-const inter = Inter({ subsets: ['latin'] });
-
-export { metadata };
+export const metadata: Metadata = {
+  title: 'Yura Scheduler',
+  description: 'Ice Dance Coach Scheduling System',
+};
 
 export default function RootLayout({
   children,
@@ -14,7 +14,7 @@ export default function RootLayout({
 }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
+      <body>
         <Providers>{children}</Providers>
       </body>
     </html>
