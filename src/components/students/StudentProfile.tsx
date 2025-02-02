@@ -1,90 +1,166 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar } from '@/components/ui/avatar';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Calendar, Clock, DollarSign, Star } from 'lucide-react';
+'use client';
 
-interface Student {
-  id: string;
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Textarea } from '@/components/ui/textarea';
+import { toast } from '@/components/ui/use-toast';
+
+type StudentProfileData = {
   name: string;
   email: string;
   phone: string;
-  level: string;
-  joinedDate: string;
-  totalLessons: number;
-  upcomingLessons: number;
-  averageRating: number;
-  paymentStatus: 'paid' | 'pending' | 'overdue';
-}
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  };
+  medicalInfo: string;
+  preferences: {
+    preferredDays: string[];
+    maxLessonsPerWeek: number;
+  };
+};
 
-interface StudentProfileProps {
-  student: Student;
-}
+export function StudentProfile() {
+  const [profile, setProfile] = useState<StudentProfileData>({
+    name: '',
+    email: '',
+    phone: '',
+    emergencyContact: {
+      name: '',
+      phone: '',
+      relationship: '',
+    },
+    medicalInfo: '',
+    preferences: {
+      preferredDays: [],
+      maxLessonsPerWeek: 3,
+    },
+  });
 
-export function StudentProfile({ student }: StudentProfileProps) {
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      // API call would go here
+      toast({
+        title: 'Profile Updated',
+        description: 'Your profile has been successfully updated.',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to update profile. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <form onSubmit={handleSubmit} className="space-y-8">
       <Card>
-        <CardContent className="flex items-center space-x-4 p-6">
-          <Avatar className="h-20 w-20">
-            <span className="text-2xl">{student.name.split(' ').map(n => n[0]).join('')}</span>
-          </Avatar>
-          <div className="flex-1">
-            <h2 className="text-2xl font-bold">{student.name}</h2>
-            <p className="text-sm text-muted-foreground">{student.email}</p>
-            <div className="mt-2 flex items-center space-x-2">
-              <Badge>{student.level}</Badge>
-              <Badge variant="outline">{student.paymentStatus}</Badge>
+        <CardHeader>
+          <CardTitle>Personal Information</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="name">Full Name</Label>
+              <Input
+                id="name"
+                value={profile.name}
+                onChange={(e) => setProfile({ ...profile, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                value={profile.email}
+                onChange={(e) => setProfile({ ...profile, email: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="phone">Phone</Label>
+              <Input
+                id="phone"
+                value={profile.phone}
+                onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+              />
             </div>
           </div>
-          <Button>Schedule Lesson</Button>
         </CardContent>
       </Card>
 
-      {/* Stats */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Total Lessons</CardTitle>
-            <Calendar className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{student.totalLessons}</div>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Emergency Contact</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="emergencyName">Contact Name</Label>
+              <Input
+                id="emergencyName"
+                value={profile.emergencyContact.name}
+                onChange={(e) => setProfile({
+                  ...profile,
+                  emergencyContact: { ...profile.emergencyContact, name: e.target.value },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="emergencyPhone">Contact Phone</Label>
+              <Input
+                id="emergencyPhone"
+                value={profile.emergencyContact.phone}
+                onChange={(e) => setProfile({
+                  ...profile,
+                  emergencyContact: { ...profile.emergencyContact, phone: e.target.value },
+                })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="relationship">Relationship</Label>
+              <Input
+                id="relationship"
+                value={profile.emergencyContact.relationship}
+                onChange={(e) => setProfile({
+                  ...profile,
+                  emergencyContact: { ...profile.emergencyContact, relationship: e.target.value },
+                })}
+              />
+            </div>
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Upcoming Lessons</CardTitle>
-            <Clock className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{student.upcomingLessons}</div>
-          </CardContent>
-        </Card>
+      <Card>
+        <CardHeader>
+          <CardTitle>Medical Information</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-2">
+            <Label htmlFor="medicalInfo">Relevant Medical Information</Label>
+            <Textarea
+              id="medicalInfo"
+              value={profile.medicalInfo}
+              onChange={(e) => setProfile({ ...profile, medicalInfo: e.target.value })}
+              placeholder="Please list any medical conditions, allergies, or other important health information."
+              className="h-32"
+            />
+          </div>
+        </CardContent>
+      </Card>
 
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Average Rating</CardTitle>
-            <Star className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">{student.averageRating}</div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between pb-2 space-y-0">
-            <CardTitle className="text-sm font-medium">Payment Status</CardTitle>
-            <DollarSign className="h-4 w-4 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold capitalize">{student.paymentStatus}</div>
-          </CardContent>
-        </Card>
+      <div className="flex justify-end">
+        <Button type="submit" size="lg">
+          Save Changes
+        </Button>
       </div>
-    </div>
+    </form>
   );
 }
