@@ -1,5 +1,5 @@
-import { PrismaClient } from '@prisma/client';
-import { addDays, setHours, setMinutes, addWeeks } from 'date-fns';
+import { PrismaClient, Role } from '@prisma/client';
+import { hash } from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -11,28 +11,24 @@ async function main() {
   await prisma.user.deleteMany();
   await prisma.rink.deleteMany();
 
-  // Create test rinks
-  const toyotaSportsCenter = await prisma.rink.create({
+  // Create admin user
+  const adminPassword = await hash('admin123', 12);
+  const admin = await prisma.user.create({
     data: {
-      name: 'Toyota Sports Center',
-      timezone: 'America/Los_Angeles',
-      address: '555 N Nash St, El Segundo, CA 90245',
+      name: 'Admin User',
+      email: 'admin@example.com',
+      password: adminPassword,
+      role: 'ADMIN',
     },
   });
 
-  const pickwickIce = await prisma.rink.create({
-    data: {
-      name: 'Pickwick Ice',
-      timezone: 'America/Los_Angeles',
-      address: '1001 Riverside Dr, Burbank, CA 91506',
-    },
-  });
-
-  // Create test students
-  const student1 = await prisma.user.create({
+  // Create student user
+  const studentPassword = await hash('student123', 12);
+  const studentUser = await prisma.user.create({
     data: {
       name: 'Emily Chen',
-      email: 'emily.chen@example.com',
+      email: 'student@example.com',
+      password: studentPassword,
       role: 'STUDENT',
       student: {
         create: {
@@ -47,83 +43,30 @@ async function main() {
         },
       },
     },
-    include: {
-      student: true,
-    },
   });
 
-  const student2 = await prisma.user.create({
-    data: {
-      name: 'Marcus Rodriguez',
-      email: 'marcus.r@example.com',
-      role: 'STUDENT',
-      student: {
-        create: {
-          phone: '323-555-0125',
-          maxLessonsPerWeek: 2,
-          emergencyContact: {
-            name: 'Laura Rodriguez',
-            phone: '323-555-0126',
-            relation: 'Mother',
-          },
-          notes: 'Focus on ice dance basics',
-        },
+  // Create test rinks
+  const rinks = await Promise.all([
+    prisma.rink.create({
+      data: {
+        name: 'Toyota Sports Center',
+        timezone: 'America/Los_Angeles',
+        address: '555 N Nash St, El Segundo, CA 90245',
       },
-    },
-    include: {
-      student: true,
-    },
-  });
-
-  // Create lessons for the next 4 weeks
-  const startDate = new Date();
-  const lessonTimes = [
-    { hours: 9, minutes: 0 },   // 9:00 AM
-    { hours: 10, minutes: 30 },  // 10:30 AM
-    { hours: 14, minutes: 0 },   // 2:00 PM
-    { hours: 15, minutes: 30 },  // 3:30 PM
-    { hours: 17, minutes: 0 },   // 5:00 PM
-  ];
-
-  for (let week = 0; week < 4; week++) {
-    for (let day = 0; day < 5; day++) { // Monday to Friday
-      const currentDate = addDays(addWeeks(startDate, week), day);
-      
-      for (const time of lessonTimes) {
-        const lessonStart = setMinutes(
-          setHours(currentDate, time.hours),
-          time.minutes
-        );
-
-        // Alternate between students and rinks
-        const student = day % 2 === 0 ? student1 : student2;
-        const rink = day % 2 === 0 ? toyotaSportsCenter : pickwickIce;
-
-        const lesson = await prisma.lesson.create({
-          data: {
-            studentId: student.student!.id,
-            rinkId: rink.id,
-            startTime: lessonStart,
-            endTime: new Date(lessonStart.getTime() + 60 * 60 * 1000), // 1 hour
-            duration: 60,
-            status: 'SCHEDULED',
-            price: 85.0,
-            payment: {
-              create: {
-                studentId: student.student!.id,
-                amount: 85.0,
-                method: 'VENMO',
-                status: 'COMPLETED',
-                referenceCode: `PAY-${Math.random().toString(36).substring(2, 10).toUpperCase()}`,
-              },
-            },
-          },
-        });
-      }
-    }
-  }
+    }),
+    prisma.rink.create({
+      data: {
+        name: 'Pickwick Ice',
+        timezone: 'America/Los_Angeles',
+        address: '1001 Riverside Dr, Burbank, CA 91506',
+      },
+    }),
+  ]);
 
   console.log('Seed data created successfully');
+  console.log('Test Accounts:');
+  console.log('Admin - Email: admin@example.com / Password: admin123');
+  console.log('Student - Email: student@example.com / Password: student123');
 }
 
 main()
