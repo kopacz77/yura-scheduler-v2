@@ -139,7 +139,7 @@ export function RinkSchedule({
                 <div className="space-y-2">
                   <Label>Max Students</Label>
                   <Select
-                    value={String(newTimeSlot.maxStudents)}
+                    defaultValue="1"
                     onValueChange={(value) =>
                       setNewTimeSlot((prev) => ({
                         ...prev,
@@ -148,11 +148,11 @@ export function RinkSchedule({
                     }
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder="Select max students" />
                     </SelectTrigger>
                     <SelectContent>
                       {[1, 2, 3, 4, 5].map((num) => (
-                        <SelectItem key={num} value={String(num)}>
+                        <SelectItem key={num} value={num.toString()}>
                           {num} student{num > 1 ? 's' : ''}
                         </SelectItem>
                       ))}
