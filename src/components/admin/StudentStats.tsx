@@ -1,65 +1,95 @@
 'use client';
 
-import { Card, CardContent } from '@/components/ui/card';
-import { Users, TrendingUp, AlertCircle } from 'lucide-react';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
 
-interface StatsCardProps {
-  title: string;
-  value: string | number;
-  description: string;
-  icon: React.ReactNode;
-  trend?: {
-    value: number;
-    label: string;
-  };
-}
+type StudentLevel = {
+  level: string;
+  count: number;
+};
 
-function StatsCard({ title, value, description, icon, trend }: StatsCardProps) {
+type StudentStatsProps = {
+  data: StudentLevel[];
+};
+
+export function StudentStats({ data }: StudentStatsProps) {
+  const totalStudents = data.reduce((sum, level) => sum + level.count, 0);
+
   return (
-    <div className="p-4 border rounded-lg bg-card">
-      <div className="flex items-center justify-between">
-        <div className="space-y-1">
-          <p className="text-sm font-medium text-muted-foreground">{title}</p>
-          <p className="text-2xl font-bold">{value}</p>
+    <div className="space-y-4">
+      {data.map((level) => {
+        const percentage = (level.count / totalStudents) * 100;
+
+        return (
+          <div key={level.level} className="space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-medium">{level.level}</span>
+              <span className="text-sm text-muted-foreground">
+                {level.count} ({percentage.toFixed(1)}%)
+              </span>
+            </div>
+            <Progress value={percentage} className="h-2" />
+          </div>
+        );
+      })}
+
+      <div className="mt-6 grid grid-cols-2 gap-4 rounded-lg border p-4">
+        <div>
+          <div className="text-sm font-medium">Total Students</div>
+          <div className="mt-1 text-2xl font-bold">{totalStudents}</div>
         </div>
-        <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-          {icon}
+        <div>
+          <div className="text-sm font-medium">Average Level</div>
+          <div className="mt-1 text-2xl font-bold">
+            {data.length > 0 ? 
+              Math.round(data.reduce((sum, level, i) => 
+                sum + (level.count * (i + 1)), 0) / totalStudents * 10) / 10 
+              : 'N/A'
+            }
+          </div>
         </div>
       </div>
-      <div className="mt-4 text-sm text-muted-foreground">
-        {description}
-        {trend && (
-          <span className={`ml-2 ${trend.value >= 0 ? 'text-green-600' : 'text-red-600'}`}>
-            {trend.value > 0 ? '+' : ''}{trend.value}% {trend.label}
-          </span>
-        )}
-      </div>
-    </div>
-  );
-}
 
-export function StudentStats() {
-  return (
-    <div className="grid gap-4">
-      <StatsCard
-        title="Total Students"
-        value="42"
-        description="Active students"
-        icon={<Users className="h-5 w-5" />}
-        trend={{ value: 12, label: 'vs last month' }}
-      />
-      <StatsCard
-        title="Lessons This Week"
-        value="28"
-        description="Scheduled lessons"
-        icon={<TrendingUp className="h-5 w-5" />}
-      />
-      <StatsCard
-        title="Attention Needed"
-        value="3"
-        description="Students requiring follow-up"
-        icon={<AlertCircle className="h-5 w-5" />}
-      />
+      <div className="mt-4">
+        <h4 className="text-sm font-semibold mb-2">Level Distribution</h4>
+        <div className="flex h-4 rounded-full overflow-hidden">
+          {data.map((level, index) => {
+            const width = (level.count / totalStudents) * 100;
+            const colors = [
+              'bg-blue-500',
+              'bg-green-500',
+              'bg-yellow-500',
+              'bg-red-500',
+              'bg-purple-500',
+            ];
+
+            return (
+              <div
+                key={level.level}
+                className={`${colors[index % colors.length]} h-full`}
+                style={{ width: `${width}%` }}
+                title={`${level.level}: ${level.count} students (${width.toFixed(1)}%)`}
+              />
+            );
+          })}
+        </div>
+        <div className="mt-2 flex flex-wrap gap-4">
+          {data.map((level, index) => (
+            <div key={level.level} className="flex items-center space-x-2">
+              <div
+                className={`h-3 w-3 rounded-full ${[
+                  'bg-blue-500',
+                  'bg-green-500',
+                  'bg-yellow-500',
+                  'bg-red-500',
+                  'bg-purple-500',
+                ][index % 5]}`}
+              />
+              <span className="text-sm text-muted-foreground">{level.level}</span>
+            </div>
+          ))}
+        </div>
+      </div>
     </div>
   );
 }
