@@ -1,5 +1,6 @@
 import { prisma } from '@/lib/prisma';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
+import { zonedTimeToUtc } from 'date-fns-tz';
 
 export async function checkWeeklyLessonLimit(
   studentId: string,
@@ -33,4 +34,20 @@ export async function checkWeeklyLessonLimit(
   });
 
   return weeklyLessonsCount < student.maxLessonsPerWeek;
+}
+
+export function formatTimeSlot(date: Date, timeString: string, timezone: string) {
+  // Parse the time string (format: "HH:mm")
+  const [hours, minutes] = timeString.split(':').map(Number);
+  
+  // Create a new date with the same day but different time
+  const newDate = new Date(date);
+  newDate.setHours(hours, minutes, 0, 0);
+  
+  // Convert to the specified timezone
+  return zonedTimeToUtc(newDate, timezone);
+}
+
+export function formatLessonTime(date: Date) {
+  return format(date, 'h:mm a');
 }
