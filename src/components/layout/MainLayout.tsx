@@ -1,62 +1,18 @@
 'use client';
 
-import { useState, Suspense } from 'react';
-import { cn } from '@/lib/utils';
-import { Sidebar } from './Sidebar';
-import { Header } from './Header';
-import { ErrorBoundary } from '@/components/ui/error-boundary';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useAuth } from '@/contexts/auth-context';
+import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-interface MainLayoutProps {
-  children: React.ReactNode;
-}
+export function MainLayout({ children }: { children: React.ReactNode }) {
+  const { isLoading } = useAuth();
 
-function LoadingFallback() {
-  return (
-    <div className="flex h-full w-full items-center justify-center">
-      <LoadingSpinner size="lg" />
-    </div>
-  );
-}
-
-export function MainLayout({ children }: MainLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(true);
-
-  return (
-    <div className="relative flex h-screen overflow-hidden bg-background">
-      {/* Sidebar */}
-      <ErrorBoundary>
-        <Sidebar 
-          isOpen={sidebarOpen}
-          onToggle={() => setSidebarOpen(!sidebarOpen)}
-        />
-      </ErrorBoundary>
-      
-      {/* Main content area */}
-      <div className={cn(
-        "flex flex-1 flex-col",
-        "transition-all duration-300 ease-in-out",
-        sidebarOpen ? "lg:pl-64" : "lg:pl-20"
-      )}>
-        {/* Header */}
-        <ErrorBoundary>
-          <Header 
-            sidebarOpen={sidebarOpen}
-            onSidebarToggle={() => setSidebarOpen(!sidebarOpen)}
-          />
-        </ErrorBoundary>
-        
-        {/* Main content */}
-        <main className="relative flex-1 overflow-y-auto bg-background">
-          <div className="container mx-auto p-4">
-            <ErrorBoundary>
-              <Suspense fallback={<LoadingFallback />}>
-                {children}
-              </Suspense>
-            </ErrorBoundary>
-          </div>
-        </main>
+  if (isLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center">
+        <LoadingSpinner size="lg" />
       </div>
-    </div>
-  );
+    );
+  }
+
+  return <div className="min-h-screen">{children}</div>;
 }
