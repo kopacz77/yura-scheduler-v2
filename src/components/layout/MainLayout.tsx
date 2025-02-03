@@ -1,5 +1,6 @@
 'use client';
 
+import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { SideNav } from '@/components/layout/SideNav';
@@ -7,6 +8,8 @@ import { TopNav } from '@/components/layout/TopNav';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { isLoading, user } = useAuth();
+  const pathname = usePathname();
+  const isAuthPage = pathname.startsWith('/auth');
 
   if (isLoading) {
     return (
@@ -16,7 +19,9 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user) return <>{children}</>;
+  if (!user || isAuthPage) {
+    return <>{children}</>;
+  }
 
   return (
     <div className="min-h-screen bg-background">
