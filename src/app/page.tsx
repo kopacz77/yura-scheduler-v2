@@ -7,7 +7,7 @@ export default function LandingPage() {
       <header className="border-b bg-card">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 items-center justify-between">
-            <h1 className="text-xl font-bold">Yura Ice Dance</h1>
+            <h1 className="text-xl font-bold">YM Movement</h1>
             <div className="flex items-center gap-4">
               <Button asChild variant="outline">
                 <Link href="/auth/signin">Sign In</Link>
@@ -24,11 +24,10 @@ export default function LandingPage() {
         <div className="mx-auto max-w-7xl px-4 py-16 sm:px-6 lg:px-8">
           <div className="text-center">
             <h2 className="text-4xl font-bold tracking-tight sm:text-6xl">
-              Professional Ice Dance Training
+              Movement Training & Coaching
             </h2>
             <p className="mt-6 text-lg text-muted-foreground">
-              Join world-class ice dance coach Yura Min for personalized lessons
-              and expert guidance in your skating journey.
+              Join coach Yura Min for personalized training and expert guidance in your movement journey.
             </p>
             <div className="mt-10 flex justify-center gap-4">
               <Button size="lg" asChild>
