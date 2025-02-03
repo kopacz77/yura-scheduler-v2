@@ -5,7 +5,7 @@ import { ThemeProvider } from '@/components/providers/theme-provider';
 import { AuthProvider } from '@/contexts/auth-context';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Toaster } from '@/components/ui/toaster';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { ErrorBoundary } from '@/components/error-boundary';
 
 export function Providers({ children }: { children: React.ReactNode }) {

@@ -1,7 +1,7 @@
 'use client';
 
 import { useAuth } from '@/contexts/auth-context';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { isLoading } = useAuth();
