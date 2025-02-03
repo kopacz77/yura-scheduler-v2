@@ -2,9 +2,11 @@
 
 import { useAuth } from '@/contexts/auth-context';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { SideNav } from '@/components/layout/SideNav';
+import { TopNav } from '@/components/layout/TopNav';
 
 export function MainLayout({ children }: { children: React.ReactNode }) {
-  const { isLoading } = useAuth();
+  const { isLoading, user } = useAuth();
 
   if (isLoading) {
     return (
@@ -14,5 +16,15 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  return <div className="min-h-screen">{children}</div>;
+  if (!user) return <>{children}</>;
+
+  return (
+    <div className="min-h-screen bg-background">
+      <TopNav />
+      <div className="flex">
+        <SideNav />
+        <main className="flex-1 p-6">{children}</main>
+      </div>
+    </div>
+  );
 }
