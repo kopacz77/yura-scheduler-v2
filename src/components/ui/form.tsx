@@ -1,73 +1,46 @@
 'use client';
 
 import * as React from 'react';
-import { useFormContext } from 'react-hook-form';
+import { useForm, useFormContext, FormProvider, Form as FormComponent } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
-const Form = React.forwardRef<
-  HTMLFormElement,
-  React.FormHTMLAttributes<HTMLFormElement>
->(({ className, ...props }, ref) => (
-  <form
-    ref={ref}
-    className={cn('space-y-6', className)}
-    {...props}
-  />
-));
+type FormProps<T extends Record<string, any>> = {
+  form: ReturnType<typeof useForm<T>>;
+  onSubmit: (data: T) => void;
+  children: React.ReactNode;
+} & Omit<React.FormHTMLAttributes<HTMLFormElement>, 'onSubmit'>;
+
+const Form = <T extends Record<string, any>>({ form, onSubmit, children, className, ...props }: FormProps<T>) => {
+  return (
+    <FormProvider {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className={cn('space-y-6', className)} {...props}>
+        {children}
+      </form>
+    </FormProvider>
+  );
+};
 Form.displayName = 'Form';
 
-type FormFieldContextValue<
-  TFieldValues extends Record<string, any> = Record<string, any>
-> = {
+type FormFieldProps = {
   name: string;
-  id: string;
+  id?: string;
+  render: (props: {
+    field: ReturnType<typeof useFormContext>['register'];
+    fieldState: { error?: { message?: string } };
+  }) => React.ReactElement;
 };
 
-const FormFieldContext = React.createContext<FormFieldContextValue>(
-  {} as FormFieldContextValue
-);
-
-const FormField = <
-  TFieldValues extends Record<string, any> = Record<string, any>
->(
-  props: {
-    name: string;
-    id?: string;
-    render: (
-      fieldProps: {
-        field: {
-          onChange: (...event: any[]) => void;
-          onBlur: () => void;
-          value: any;
-          name: string;
-          ref: (instance: any) => void;
-        };
-        fieldState: {
-          error?: {
-            message?: string;
-          };
-        };
-      }
-    ) => React.ReactElement;
+const FormField = ({ name, id = name, render }: FormFieldProps) => {
+  const formContext = useFormContext();
+  if (!formContext) {
+    throw new Error('FormField must be used within a Form');
   }
-) => {
-  const { render, name, id = name } = props;
-  const { register, formState } = useFormContext();
-
-  const fieldState = formState[name];
-
-  return (
-    <FormFieldContext.Provider value={{ name, id }}>
-      {render({
-        field: {
-          ...register(name),
-          id,
-        },
-        fieldState,
-      })}
-    </FormFieldContext.Provider>
-  );
+  const { register, formState } = formContext;
+  return render({
+    field: register(name),
+    fieldState: formState.errors[name] || {},
+  });
 };
 
 const FormItem = React.forwardRef<
@@ -122,9 +95,11 @@ const FormMessage = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, children, ...props }, ref) => {
-  const { name } = React.useContext(FormFieldContext);
-  const { formState } = useFormContext();
-  const error = name ? formState.errors[name] : undefined;
+  const formContext = useFormContext();
+  if (!formContext) return null;
+  
+  const { formState } = formContext;
+  const error = formState.errors[props.name as string];
 
   if (!error) return null;
 
