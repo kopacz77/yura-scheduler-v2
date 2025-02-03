@@ -1,11 +1,11 @@
 'use client';
 
-import * as React from 'react';
-import { useSearchParams } from 'next/navigation';
+import { useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { signIn } from 'next-auth/react';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
-import { signIn } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import {
   Form,
@@ -28,11 +28,12 @@ const formSchema = z.object({
 });
 
 export function SignInForm() {
+  const router = useRouter();
   const searchParams = useSearchParams();
   const callbackUrl = searchParams.get('callbackUrl') || '/';
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = useState(false);
 
-  const form = useForm<z.infer<typeof formSchema>>({  // Removed extra curly brace
+  const form = useForm<z.infer<typeof formSchema>>({  
     resolver: zodResolver(formSchema),
     defaultValues: {
       email: '',
@@ -51,19 +52,20 @@ export function SignInForm() {
         callbackUrl,
       });
 
-      if (!result?.ok) {
-        return toast({
-          title: 'Something went wrong.',
-          description: 'Your sign in request failed. Please try again.',
+      if (result?.error) {
+        toast({
+          title: 'Error',
+          description: 'Invalid credentials. Please try again.',
           variant: 'destructive',
         });
+        return;
       }
 
-      window.location.href = callbackUrl;
+      router.push(callbackUrl);
     } catch (error) {
       toast({
-        title: 'Something went wrong.',
-        description: 'Your sign in request failed. Please try again.',
+        title: 'Error',
+        description: 'An error occurred during sign in. Please try again.',
         variant: 'destructive',
       });
     } finally {
@@ -110,11 +112,7 @@ export function SignInForm() {
           )}
         />
         <Button type="submit" className="w-full" disabled={isLoading}>
-          {isLoading ? (
-            <span>Signing in...</span>
-          ) : (
-            <span>Sign in</span>
-          )}
+          {isLoading ? 'Signing in...' : 'Sign in'}
         </Button>
       </form>
     </Form>
