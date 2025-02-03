@@ -1,38 +1,11 @@
-'use client';
-
-import { Metadata } from 'next';
-import { useEffect } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter, useSearchParams } from 'next/navigation';
-import Link from 'next/link';
 import { SignInForm } from '@/components/auth/SignInForm';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-export const metadata: Metadata = {
+export const metadata = {
   title: 'Sign In',
   description: 'Sign in to your account',
 };
 
 export default function SignInPage() {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const callbackUrl = searchParams?.get('callbackUrl') || '/';
-
-  useEffect(() => {
-    if (session) {
-      router.push(callbackUrl);
-    }
-  }, [session, router, callbackUrl]);
-
-  if (status === 'loading') {
-    return (
-      <div className="flex h-screen items-center justify-center">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
-  }
-
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
@@ -45,13 +18,11 @@ export default function SignInPage() {
           </p>
         </div>
         <SignInForm />
-        <p className="px-8 text-center text-sm text-muted-foreground">
-          <Link 
-            href="/auth/signup" 
-            className="hover:text-brand underline underline-offset-4"
-          >
-            Don't have an account? Sign up
-          </Link>
+        <p className="text-center text-sm text-muted-foreground">
+          New user?{' '}
+          <a href="/auth/signup" className="underline hover:text-primary">
+            Create an account
+          </a>
         </p>
       </div>
     </div>
