@@ -2,8 +2,9 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { signIn, signOut } from 'next-auth/react';
 
-type UserRole = 'ADMIN' | 'STUDENT' | 'COACH';
+type UserRole = 'ADMIN' | 'STUDENT';
 
 interface User {
   id: string;
@@ -47,41 +48,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (credentials: { email: string; password: string }) => {
-    setIsLoading(true);
     try {
-      const response = await fetch('/api/auth/login', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(credentials),
+      const result = await signIn('credentials', {
+        ...credentials,
+        redirect: false,
       });
 
-      if (!response.ok) {
-        throw new Error('Login failed');
+      if (result?.error) {
+        throw new Error(result.error);
       }
 
-      const data = await response.json();
-      setUser(data.user);
-
-      if (data.user.role === 'ADMIN') {
-        router.push('/admin/dashboard');
-      } else {
-        router.push('/student/dashboard');
-      }
+      router.push('/dashboard');
     } catch (error) {
       console.error('Login error:', error);
       throw error;
-    } finally {
-      setIsLoading(false);
     }
   };
 
   const logout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
+      await signOut({ redirect: false });
       setUser(null);
-      router.push('/auth/signin');
+      router.push('/');
     } catch (error) {
       console.error('Logout error:', error);
+      throw error;
     }
   };
 
