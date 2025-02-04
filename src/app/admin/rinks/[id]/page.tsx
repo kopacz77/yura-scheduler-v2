@@ -4,6 +4,7 @@ import { getRink, getRinkSchedule, addTimeSlot, deleteTimeSlot } from '@/lib/act
 import { Heading } from '@/components/ui/heading';
 import { notFound } from 'next/navigation';
 import { toast } from '@/components/ui/use-toast';
+import { type TimeSlot } from '@/types';
 
 export default async function RinkSchedulePage({
   params,
