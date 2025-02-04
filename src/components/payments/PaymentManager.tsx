@@ -7,8 +7,17 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/components/ui/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { PaymentStatus, PaymentMethod } from '@prisma/client';
+import { PaymentStatus, PaymentMethod, Payment } from '@prisma/client';
 import { format } from 'date-fns';
+
+interface PaymentWithDetails extends Payment {
+  student: {
+    name: string;
+  };
+  appointment: {
+    start: string | Date;
+  };
+}
 
 interface PaymentUpdateData {
   id: string;
@@ -18,9 +27,9 @@ interface PaymentUpdateData {
 }
 
 export function PaymentManager() {
-  const [payments, setPayments] = useState([]);
+  const [payments, setPayments] = useState<PaymentWithDetails[]>([]);
   const [isUpdateDialogOpen, setIsUpdateDialogOpen] = useState(false);
-  const [selectedPayment, setSelectedPayment] = useState(null);
+  const [selectedPayment, setSelectedPayment] = useState<PaymentWithDetails | null>(null);
   const [updateData, setUpdateData] = useState<PaymentUpdateData | null>(null);
   const { toast } = useToast();
 
@@ -58,7 +67,7 @@ export function PaymentManager() {
       const updatedPayment = await response.json();
       setPayments(prev =>
         prev.map(payment =>
-          payment.id === updatedPayment.id ? updatedPayment : payment
+          payment.id === updatedPayment.id ? { ...payment, ...updatedPayment } : payment
         )
       );
 
@@ -81,12 +90,12 @@ export function PaymentManager() {
 
   const getStatusColor = (status: PaymentStatus) => {
     switch (status) {
-      case 'PAID':
+      case 'COMPLETED':
         return 'bg-green-100 text-green-800';
       case 'PENDING':
         return 'bg-yellow-100 text-yellow-800';
-      case 'CONFIRMED':
-        return 'bg-blue-100 text-blue-800';
+      case 'FAILED':
+        return 'bg-red-100 text-red-800';
       default:
         return 'bg-gray-100 text-gray-800';
     }
@@ -120,7 +129,7 @@ export function PaymentManager() {
       </div>
 
       <div className="grid grid-cols-1 gap-4">
-        {payments.map((payment: any) => (
+        {payments.map((payment) => (
           <Card key={payment.id} className="p-4">
             <div className="flex justify-between items-start">
               <div>
@@ -133,9 +142,9 @@ export function PaymentManager() {
                 <p className="text-sm text-gray-600">
                   Method: {payment.method}
                 </p>
-                {payment.confirmationId && (
+                {payment.verifiedBy && (
                   <p className="text-sm text-gray-600">
-                    Confirmation: {payment.confirmationId}
+                    Verified by: {payment.verifiedBy}
                   </p>
                 )}
               </div>
@@ -152,8 +161,7 @@ export function PaymentManager() {
                       setUpdateData({
                         id: payment.id,
                         status: payment.status,
-                        notes: payment.notes,
-                        confirmationId: payment.confirmationId
+                        notes: payment.notes || undefined,
                       });
                       setIsUpdateDialogOpen(true);
                     }}
@@ -202,19 +210,6 @@ export function PaymentManager() {
                   ))}
                 </SelectContent>
               </Select>
-            </div>
-
-            <div className="space-y-2">
-              <Label>Confirmation ID</Label>
-              <Input
-                value={updateData?.confirmationId || ''}
-                onChange={(e) =>
-                  setUpdateData(prev =>
-                    prev ? { ...prev, confirmationId: e.target.value } : null
-                  )
-                }
-                placeholder="Enter confirmation ID"
-              />
             </div>
 
             <div className="space-y-2">
