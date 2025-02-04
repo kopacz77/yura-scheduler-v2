@@ -13,6 +13,26 @@ export const authOptions: NextAuthOptions = {
       if (token) {
         session.user.id = token.id as string;
         session.user.role = token.role as string;
+        
+        // Add additional student info for student roles
+        if (token.role === 'STUDENT') {
+          const student = await prisma.student.findUnique({
+            where: { userId: token.id as string },
+            select: {
+              id: true,
+              maxLessonsPerWeek: true,
+              emergencyContact: true,
+            },
+          });
+          if (student) {
+            session.user.studentId = student.id;
+            session.user.maxLessonsPerWeek = student.maxLessonsPerWeek;
+            session.user.emergencyContact = student.emergencyContact;
+          }
+        }
+
+        // Add verification status
+        session.user.emailVerified = token.emailVerified as Date | null;
       }
       return session;
     },
@@ -20,6 +40,7 @@ export const authOptions: NextAuthOptions = {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.emailVerified = user.emailVerified;
       }
       return token;
     }
@@ -50,11 +71,17 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid credentials');
         }
 
+        // For students, require email verification
+        if (user.role === 'STUDENT' && !user.emailVerified) {
+          throw new Error('Please verify your email before signing in');
+        }
+
         return {
           id: user.id,
           email: user.email,
           name: user.name,
           role: user.role,
+          emailVerified: user.emailVerified,
         };
       }
     })
