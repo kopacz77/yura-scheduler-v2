@@ -1,6 +1,6 @@
 'use client';
 
-import { Payment, PaymentStatus as PaymentStatusType } from '@prisma/client';
+import { PaymentStatus as PaymentStatusType, PaymentMethod } from '@prisma/client';
 import { usePayments } from '@/hooks/usePayments';
 import { Badge } from '@/components/ui/badge';
 import { Copy, CheckCircle } from 'lucide-react';
@@ -9,7 +9,12 @@ import { toast } from 'sonner';
 import { format } from 'date-fns';
 
 interface PaymentStatusProps {
-  payment: Payment & {
+  payment: {
+    id: string;
+    amount: number;
+    method: PaymentMethod;
+    status: PaymentStatusType;
+    referenceCode: string;
     verifiedAt?: Date | null;
     verifiedBy?: string | null;
   };
