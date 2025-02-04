@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { hash } from 'bcryptjs';
 import { prisma } from '@/lib/prisma';
-import { validateUser } from '@/lib/utils/validation';
+import { validateUser, validateAdminAction } from '@/lib/utils/validation';
 
 export async function POST(req: Request) {
   try {
@@ -13,6 +13,14 @@ export async function POST(req: Request) {
     }
 
     const { email, password, name, role } = validation.data;
+
+    // Prevent creation of admin accounts without proper authorization
+    if (role === 'ADMIN') {
+      const adminValidation = await validateAdminAction(body);
+      if (!adminValidation.success) {
+        return new NextResponse('Unauthorized admin account creation', { status: 403 });
+      }
+    }
 
     // Check if user already exists
     const existingUser = await prisma.user.findUnique({
@@ -35,6 +43,7 @@ export async function POST(req: Request) {
           name,
           password: hashedPassword,
           role,
+          emailVerified: null, // Will be set after email verification
         },
       });
 
@@ -46,6 +55,9 @@ export async function POST(req: Request) {
             maxLessonsPerWeek: 3, // Default value
           },
         });
+
+        // Send verification email (implementation in next step)
+        await sendVerificationEmail(newUser.email, newUser.id);
       }
 
       return newUser;
@@ -62,4 +74,9 @@ export async function POST(req: Request) {
       { status: 500 }
     );
   }
+}
+
+async function sendVerificationEmail(email: string, userId: string) {
+  // Will implement in next step
+  // This will use the email service to send verification links
 }
