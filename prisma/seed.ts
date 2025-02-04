@@ -1,17 +1,17 @@
 const { PrismaClient } = require('@prisma/client');
 const { hash } = require('bcryptjs');
 
-const prisma = new PrismaClient();
+const prismaDb = new PrismaClient();
 
 async function main() {
-  await prisma.payment.deleteMany();
-  await prisma.lesson.deleteMany();
-  await prisma.student.deleteMany();
-  await prisma.user.deleteMany();
-  await prisma.rink.deleteMany();
+  await prismaDb.payment.deleteMany();
+  await prismaDb.lesson.deleteMany();
+  await prismaDb.student.deleteMany();
+  await prismaDb.user.deleteMany();
+  await prismaDb.rink.deleteMany();
 
   const adminPassword = await hash('admin123', 12);
-  const admin = await prisma.user.create({
+  const admin = await prismaDb.user.create({
     data: {
       name: 'Admin User',
       email: 'admin@example.com',
@@ -21,7 +21,7 @@ async function main() {
   });
 
   const studentPassword = await hash('student123', 12);
-  const studentUser = await prisma.user.create({
+  const studentUser = await prismaDb.user.create({
     data: {
       name: 'Emily Chen',
       email: 'student@example.com',
@@ -43,7 +43,7 @@ async function main() {
     },
   });
 
-  await prisma.rink.createMany({
+  await prismaDb.rink.createMany({
     data: [
       {
         name: 'East West Ice Palace',
@@ -95,5 +95,5 @@ main()
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prismaDb.$disconnect();
   });
