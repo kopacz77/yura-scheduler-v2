@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY!);
+const resend = new Resend(process.env.RESEND_API_KEY);
 
 export async function sendEmail({
   to,
@@ -11,11 +11,6 @@ export async function sendEmail({
   subject: string;
   html: string;
 }) {
-  if (!process.env.RESEND_API_KEY) {
-    console.warn('RESEND_API_KEY not set');
-    return;
-  }
-
   try {
     const data = await resend.emails.send({
       from: 'YM Movement <no-reply@ymmove.com>',
@@ -28,4 +23,20 @@ export async function sendEmail({
     console.error('Failed to send email:', error);
     return { success: false, error };
   }
+}
+
+export async function sendLessonReminder(to: string, lessonDetails: any) {
+  return sendEmail({
+    to,
+    subject: 'Upcoming Lesson Reminder',
+    html: `<p>You have an upcoming lesson...</p>`, // Expand this template
+  });
+}
+
+export async function sendPaymentReminder(to: string, paymentDetails: any) {
+  return sendEmail({
+    to,
+    subject: 'Payment Reminder',
+    html: `<p>Payment reminder...</p>`, // Expand this template
+  });
 }
