@@ -1,5 +1,6 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
 import { type NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from './prisma';
 import { compare } from 'bcryptjs';
@@ -76,5 +77,8 @@ export const authOptions: NextAuthOptions = {
     })
   ],
 };
+
+// Helper function for route handlers
+export const auth = async () => await getServerSession(authOptions);
 
 export default authOptions;
