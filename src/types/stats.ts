@@ -6,6 +6,13 @@ export interface ProgressDataPoint {
   competitive: number;
 }
 
+export interface OverviewStats {
+  totalStudents: number;
+  weeklyLessons: number;
+  outstandingAmount: number;
+  averageProgress: number;
+}
+
 export interface StudentStats {
   totalLessons: number;
   completedLessons: number;
