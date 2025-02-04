@@ -1,1 +1,50 @@
-aW1wb3J0IHsgTmV4dFJlc3BvbnNlIH0gZnJvbSAnbmV4dC9zZXJ2ZXInOwppbXBvcnQgeyBwcmlzbWEgfSBmcm9tICdAL2xpYi9wcmlzbWEnOwppbXBvcnQgeyBnZXRTZXJ2ZXJTZXNzaW9uIH0gZnJvbSAnbmV4dC1hdXRoJzsKaW1wb3J0IHsgYXV0aE9wdGlvbnMgfSBmcm9tICdAL2xpYi9hdXRoJzsKCmV4cG9ydCBhc3luYyBmdW5jdGlvbiBHRVQocmVxOiBSZXF1ZXN0KSB7CiAgdHJ5IHsKICAgIGNvbnN0IHNlc3Npb24gPSBhd2FpdCBnZXRTZXJ2ZXJTZXNzaW9uKGF1dGhPcHRpb25zKTsKICAgIGlmICghc2Vzc2lvbikgewogICAgICByZXR1cm4gbmV3IE5leHRSZXNwb25zZSgnVW5hdXRob3JpemVkJywgeyBzdGF0dXM6IDQwMSB9KTsKICAgIH0KCiAgICBjb25zdCB7IHNlYXJjaFBhcmFtcyB9ID0gbmV3IFVSTChyZXEudXJsKTsKICAgIGNvbnN0IHN0dWRlbnRJZCA9IHNlYXJjaFBhcmFtcy5nZXQoJ3N0dWRlbnRJZCcpOwogICAgY29uc3Qgc3RhdHVzID0gc2VhcmNoUGFyYW1zLmdldCgnc3RhdHVzJyk7CgogICAgY29uc3QgcGF5bWVudHMgPSBhd2FpdCBwcmlzbWEucGF5bWVudC5maW5kTWFueSh7CiAgICAgIHdoZXJlOiB7CiAgICAgICAgc3R1ZGVudElkOiBzdHVkZW50SWQgfHwgdW5kZWZpbmVkLAogICAgICAgIHN0YXR1czogKHN0YXR1cyBhcyBhbnkpIHx8IHVuZGVmaW5lZCwKICAgICAgfSwKICAgICAgaW5jbHVkZTogewogICAgICAgIHN0dWRlbnQ6IHsKICAgICAgICAgIGluY2x1ZGU6IHsKICAgICAgICAgICAgdXNlcjogewogICAgICAgICAgICAgIHNlbGVjdDogewogICAgICAgICAgICAgICAgbmFtZTogdHJ1ZSwKICAgICAgICAgICAgICAgIGVtYWlsOiB0cnVlLAogICAgICAgICAgICAgIH0sCiAgICAgICAgICAgIH0sCiAgICAgICAgICB9LAogICAgICAgIH0sCiAgICAgICAgbGVzc29uOiB7CiAgICAgICAgICBzZWxlY3Q6IHsKICAgICAgICAgICAgc3RhcnRUaW1lOiB0cnVlLAogICAgICAgICAgICBkdXJhdGlvbjogdHJ1ZSwKICAgICAgICAgIH0sCiAgICAgICAgfSwKICAgICAgfSwKICAgICAgb3JkZXJCeTogewogICAgICAgIGNyZWF0ZWRBdDogJ2Rlc2MnLAogICAgICB9LAogICAgfSk7CgogICAgcmV0dXJuIE5leHRSZXNwb25zZS5qc29uKHsgcGF5bWVudHMgfSk7CiAgfSBjYXRjaCAoZXJyb3IpIHsKICAgIGNvbnNvbGUuZXJyb3IoJ0Vycm9yIGZldGNoaW5nIHBheW1lbnRzOicsIGVycm9yKTsKICAgIHJldHVybiBuZXcgTmV4dFJlc3BvbnNlKCdJbnRlcm5hbCBTZXJ2ZXIgRXJyb3InLCB7IHN0YXR1czogNTAwIH0pOwogIH0KfQ==
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
+
+export async function GET(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return new NextResponse('Unauthorized', { status: 401 });
+    }
+
+    const { searchParams } = new URL(req.url);
+    const studentId = searchParams.get('studentId');
+    const status = searchParams.get('status');
+
+    const payments = await prisma.payment.findMany({
+      where: {
+        studentId: studentId || undefined,
+        status: (status as any) || undefined,
+      },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
+        lesson: {
+          select: {
+            startTime: true,
+            duration: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: 'desc',
+      },
+    });
+
+    return NextResponse.json({ payments });
+  } catch (error) {
+    console.error('Error fetching payments:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
+  }
+}
