@@ -43,6 +43,7 @@ model Lesson {
   startTime         DateTime
   endTime           DateTime
   duration          Int          // in minutes
+  type              LessonType   @default(PRIVATE)
   status            LessonStatus @default(SCHEDULED)
   cancellationReason String?
   cancellationTime  DateTime?
@@ -126,6 +127,13 @@ enum Level {
   NOVICE
   JUNIOR
   SENIOR
+}
+
+enum LessonType {
+  PRIVATE
+  GROUP
+  CHOREOGRAPHY
+  COMPETITION_PREP
 }
 
 enum LessonStatus {
