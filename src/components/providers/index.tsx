@@ -5,31 +5,40 @@ import { ThemeProvider } from 'next-themes';
 import { AuthProvider } from '@/contexts/auth-context';
 import { MainLayout } from '@/components/layout/MainLayout';
 import { Toaster } from '@/components/ui/toaster';
+import { useState, useEffect } from 'react';
 
-function ThemeContainer({ children }: { children: React.ReactNode }) {
+function ClientProviders({ children }: { children: React.ReactNode }) {
+  const [mounted, setMounted] = useState(false);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted) {
+    return null;
+  }
+
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
+    <ThemeProvider 
+      attribute="class" 
+      defaultTheme="system" 
+      enableSystem 
       disableTransitionOnChange
     >
-      {children}
+      <MainLayout>{children}</MainLayout>
     </ThemeProvider>
   );
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeContainer>
-      <SessionProvider>
-        <AuthProvider>
-          <MainLayout>
-            {children}
-            <Toaster />
-          </MainLayout>
-        </AuthProvider>
-      </SessionProvider>
-    </ThemeContainer>
+    <SessionProvider>
+      <AuthProvider>
+        <ClientProviders>
+          {children}
+          <Toaster />
+        </ClientProviders>
+      </AuthProvider>
+    </SessionProvider>
   );
 }
