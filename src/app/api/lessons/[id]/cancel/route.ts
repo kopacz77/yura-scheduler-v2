@@ -1,8 +1,7 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { calculateCancellationFee } from '@/lib/schedule-utils';
 
 export async function POST(
   req: Request,
@@ -11,58 +10,39 @@ export async function POST(
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const { reason } = await req.json();
-    const lessonId = params.id;
-
     const lesson = await prisma.lesson.findUnique({
-      where: { id: lessonId },
-      include: {
-        student: true,
-      },
+      where: { id: params.id },
+      include: { student: true },
     });
 
     if (!lesson) {
-      return NextResponse.json({ error: 'Lesson not found' }, { status: 404 });
+      return new NextResponse('Lesson not found', { status: 404 });
     }
 
-    // Calculate cancellation fee
+    // Only allow admins or the student who owns the lesson to cancel
+    if (session.user.role !== 'ADMIN' && lesson.studentId !== session.user.id) {
+      return new NextResponse('Forbidden', { status: 403 });
+    }
+
+    const { reason } = await req.json();
     const cancellationTime = new Date();
-    const cancellationFee = calculateCancellationFee(
-      lesson,
-      cancellationTime,
-      100 // TODO: Replace with actual lesson price
-    );
 
     // Update lesson status
     const updatedLesson = await prisma.lesson.update({
-      where: { id: lessonId },
+      where: { id: params.id },
       data: {
-        status: 'cancelled',
+        status: 'CANCELLED',
         cancellationReason: reason,
         cancellationTime,
       },
-      include: {
-        student: {
-          include: {
-            user: true
-          }
-        },
-        rink: true
-      }
     });
 
-    return NextResponse.json({
-      lesson: updatedLesson,
-      cancellationFee,
-    });
+    return NextResponse.json(updatedLesson);
   } catch (error) {
     console.error('Error cancelling lesson:', error);
-    return NextResponse.json(
-      { error: 'Error cancelling lesson' },
-      { status: 500 }
-    );
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
