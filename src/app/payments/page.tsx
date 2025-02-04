@@ -1,19 +1,12 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { PaymentsList } from '@/components/payments/PaymentsList';
+import { PaymentsList, PaymentWithDetails } from '@/components/payments/PaymentsList';
 import { PaymentVerification } from '@/components/payments/PaymentVerification';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Loader2, DollarSign, CreditCard } from 'lucide-react';
 import { Payment } from '@prisma/client';
-
-interface PaymentWithDetails extends Payment {
-  lesson?: {
-    id: string;
-    startTime: Date;
-  };
-}
 
 export default function PaymentsPage() {
   const [activeTab, setActiveTab] = useState('list');
