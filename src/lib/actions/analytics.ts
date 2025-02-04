@@ -1,4 +1,4 @@
-import { prisma } from '@/lib/prisma';
+import prisma from '@/lib/prisma';
 import { startOfMonth, endOfMonth, eachDayOfInterval, format, subDays } from 'date-fns';
 
 export async function getAnalyticsData() {
