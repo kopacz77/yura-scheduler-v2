@@ -12,13 +12,15 @@ export default async function RinkSchedulePage({
   params: { id: string };
 }) {
   const rink = await getRink(params.id);
+  
   if (!rink) {
     notFound();
+    return null; // This helps TypeScript understand that rink won't be null below
   }
 
   const timeSlots = await getRinkSchedule(params.id);
 
-  async function handleAddTimeSlot(data: Omit<TimeSlot, 'id'>) {
+  const handleAddTimeSlot = async (data: Omit<TimeSlot, 'id'>) => {
     try {
       await addTimeSlot(rink.id, data);
       toast({
@@ -33,9 +35,9 @@ export default async function RinkSchedulePage({
         variant: 'destructive',
       });
     }
-  }
+  };
 
-  async function handleDeleteTimeSlot(timeSlotId: string) {
+  const handleDeleteTimeSlot = async (timeSlotId: string) => {
     try {
       await deleteTimeSlot(timeSlotId);
       toast({
@@ -50,7 +52,7 @@ export default async function RinkSchedulePage({
         variant: 'destructive',
       });
     }
-  }
+  };
 
   return (
     <div className="p-8 space-y-8">
