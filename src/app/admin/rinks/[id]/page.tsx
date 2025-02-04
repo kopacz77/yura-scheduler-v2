@@ -11,14 +11,12 @@ export default async function RinkSchedulePage({
 }: {
   params: { id: string };
 }) {
-  const [rink, timeSlots] = await Promise.all([
-    getRink(params.id),
-    getRinkSchedule(params.id),
-  ]);
-
+  const rink = await getRink(params.id);
   if (!rink) {
     notFound();
   }
+
+  const timeSlots = await getRinkSchedule(params.id);
 
   async function handleAddTimeSlot(data: Omit<TimeSlot, 'id'>) {
     try {
