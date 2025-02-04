@@ -5,11 +5,9 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { useAnalytics } from '@/hooks/useAnalytics';
 import { ScheduleOverview } from '@/components/schedule/ScheduleOverview';
-import { RevenueChart } from '@/components/admin/RevenueChart';
-import { StudentStats } from '@/components/admin/StudentStats';
 import { LessonStats } from '@/components/admin/LessonStats';
 import { RetentionChart } from '@/components/admin/RetentionChart';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { CalendarDays, DollarSign, Users, BarChart } from 'lucide-react';
 import { formatCurrency } from '@/lib/utils';
 
@@ -95,17 +93,6 @@ export function AdminDashboard() {
         </Card>
       </div>
 
-      {/* Revenue Chart */}
-      <Card className="col-span-4">
-        <CardHeader>
-          <CardTitle>Revenue Overview</CardTitle>
-          <CardDescription>Monthly revenue breakdown</CardDescription>
-        </CardHeader>
-        <CardContent className="h-[300px]">
-          <RevenueChart data={revenue?.byPeriod || []} />
-        </CardContent>
-      </Card>
-
       {/* Schedule and Stats Grid */}
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <Card className="col-span-4">
@@ -124,38 +111,26 @@ export function AdminDashboard() {
             <CardDescription>Student levels and progress</CardDescription>
           </CardHeader>
           <CardContent>
-            <StudentStats data={studentStats?.byLevel || []} />
+            <LessonStats />
           </CardContent>
         </Card>
       </div>
 
-      {/* Lesson Stats and Retention */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <Card className="col-span-1">
-          <CardHeader>
-            <CardTitle>Lesson Statistics</CardTitle>
-            <CardDescription>Completion and cancellation rates</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <LessonStats data={lessonStats || null} />
-          </CardContent>
-        </Card>
-
-        <Card className="col-span-1">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-              <CardTitle>Student Retention</CardTitle>
-              <CardDescription>Monthly retention rates by cohort</CardDescription>
-            </div>
-            <Button variant="outline" size="sm" onClick={() => getStudentRetention()}>
-              Refresh
-            </Button>
-          </CardHeader>
-          <CardContent>
-            <RetentionChart />
-          </CardContent>
-        </Card>
-      </div>
+      {/* Retention Chart */}
+      <Card className="col-span-2">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <div>
+            <CardTitle>Student Retention</CardTitle>
+            <CardDescription>Monthly retention rates by cohort</CardDescription>
+          </div>
+          <Button variant="outline" size="sm" onClick={() => getStudentRetention()}>
+            Refresh
+          </Button>
+        </CardHeader>
+        <CardContent>
+          <RetentionChart />
+        </CardContent>
+      </Card>
     </div>
   );
 }
