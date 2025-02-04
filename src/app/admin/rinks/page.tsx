@@ -17,12 +17,9 @@ export default async function RinksPage() {
           description="Manage your rink locations and schedules."
         />
         <RinkDialog
-          trigger={
-            <Button>
-              <Plus className="mr-2 h-4 w-4" />
-              Add New Rink
-            </Button>
-          }
+          open={false}
+          onOpenChange={() => {}}
+          onSubmit={async () => {}}
         />
       </div>
 
