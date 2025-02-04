@@ -6,6 +6,8 @@ import { notFound } from 'next/navigation';
 import { toast } from '@/components/ui/use-toast';
 import { type TimeSlot } from '@/types';
 
+type TimeSlotInput = Pick<TimeSlot, 'startTime' | 'endTime' | 'daysOfWeek' | 'maxStudents'>;
+
 export default async function RinkSchedulePage({
   params,
 }: {
@@ -20,9 +22,9 @@ export default async function RinkSchedulePage({
 
   const timeSlots = await getRinkSchedule(params.id);
 
-  const handleAddTimeSlot = async (timeSlot: Omit<TimeSlot, 'id'>) => {
+  const handleAddTimeSlot = async (timeSlot: TimeSlotInput) => {
     try {
-      await addTimeSlot(rink.id, {...timeSlot, isActive: true});
+      await addTimeSlot(rink.id, timeSlot);
       toast({
         title: 'Success',
         description: 'Time slot added successfully',
