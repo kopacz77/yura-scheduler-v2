@@ -1,42 +1,43 @@
-import { db } from '@/lib/db';
+import prisma from '@/lib/prisma';
 import { NextResponse } from 'next/server';
 import { startOfMonth, subMonths, format } from 'date-fns';
-import { SkatingLevel } from '@prisma/client';
+import { Level } from '@prisma/client';
 
 export async function GET() {
   try {
-    const months = Array.from({ length: 6 }, (_, i) => {
-      const date = subMonths(new Date(), i);
-      return {
-        start: startOfMonth(date),
-        label: format(date, 'MMM'),
-      };
-    }).reverse();
+    const now = new Date();
+    const monthsToTrack = 6;
 
     const progressData = await Promise.all(
-      months.map(async ({ start, label }) => {
-        const monthData = { month: label };
+      Array.from({ length: monthsToTrack }).map(async (_, index) => {
+        const targetMonth = subMonths(now, index);
+        const monthStart = startOfMonth(targetMonth);
+        const nextMonthStart = startOfMonth(subMonths(targetMonth, -1));
 
-        for (const level of Object.values(SkatingLevel)) {
-          const count = await db.query.student.count({
-            where: {
-              level,
-              startDate: {
-                lte: start,
-              },
-            },
-          });
+        const levelProgressions = await prisma.student.groupBy({
+          by: ['level'],
+          where: {
+            updatedAt: {
+              gte: monthStart,
+              lt: nextMonthStart
+            }
+          },
+          _count: true
+        });
 
-          monthData[level.toLowerCase()] = count;
-        }
-
-        return monthData;
+        return {
+          month: format(monthStart, 'MMM yyyy'),
+          levelCounts: Object.values(Level).reduce((acc, level) => {
+            acc[level] = levelProgressions.find(p => p.level === level)?._count || 0;
+            return acc;
+          }, {} as Record<Level, number>)
+        };
       })
     );
 
-    return NextResponse.json(progressData);
+    return NextResponse.json(progressData.reverse());
   } catch (error) {
-    console.error('Error fetching progress data:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('Error getting progress data:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
