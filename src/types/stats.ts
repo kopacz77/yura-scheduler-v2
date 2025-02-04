@@ -13,12 +13,19 @@ export interface OverviewStats {
   averageProgress: number;
 }
 
+export interface DistributionItem {
+  name: string;
+  value: number;
+  color: string;
+}
+
 export interface StudentStats {
   totalLessons: number;
   completedLessons: number;
   upcomingLessons: number;
   averageAttendance: number;
   progressData: ProgressDataPoint[];
+  distribution: DistributionItem[];
 }
 
 export interface RevenueStats {
