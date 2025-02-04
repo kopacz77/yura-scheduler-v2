@@ -1,33 +1,24 @@
 import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
-import { SkatingLevel } from '@prisma/client';
+import { Level } from '@prisma/client';
 
 export async function GET() {
   try {
-    const studentsPerLevel = await Promise.all(
-      Object.values(SkatingLevel).map(async (level) => {
-        const count = await db.query.student.count({
-          where: { level },
-        });
+    const students = await prisma.student.groupBy({
+      by: ['level'],
+      _count: {
+        level: true
+      }
+    });
 
-        const colors = {
-          BEGINNER: '#22c55e',
-          INTERMEDIATE: '#3b82f6',
-          ADVANCED: '#a855f7',
-          COMPETITIVE: '#ef4444',
-        };
+    const distribution = Object.values(Level).map(level => ({
+      level,
+      count: students.find(s => s.level === level)?._count.level || 0
+    }));
 
-        return {
-          name: level.charAt(0) + level.slice(1).toLowerCase(),
-          value: count,
-          color: colors[level],
-        };
-      })
-    );
-
-    return NextResponse.json(studentsPerLevel);
+    return NextResponse.json(distribution);
   } catch (error) {
-    console.error('Error fetching student distribution:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('Error getting level distribution:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
