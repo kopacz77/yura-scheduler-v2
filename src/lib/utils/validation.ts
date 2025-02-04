@@ -40,17 +40,24 @@ export const LessonSchema = z.object({
   { message: 'End time must be after start time' }
 );
 
+// Enhanced User Schema with role validation
 export const UserSchema = z.object({
   email: z.string().email('Invalid email address'),
   name: z.string().min(1, 'Name is required'),
-  role: z.enum(['ADMIN', 'COACH', 'STUDENT']),
+  role: z.enum(['ADMIN', 'STUDENT']).default('STUDENT'),
   password: z
     .string()
     .min(8, 'Password must be at least 8 characters')
-    .regex(
-      /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&])[A-Za-z\d@$!%*?&]/,
-      'Password must contain uppercase, lowercase, number and special character'
-    ),
+});
+
+// New schema for admin-only operations
+export const AdminActionSchema = z.object({
+  adminToken: z.string().min(1, 'Admin token is required')
+}).refine(async data => {
+  // In production, this would validate against a secure token
+  return data.adminToken === process.env.ADMIN_SECRET;
+}, {
+  message: 'Invalid admin token'
 });
 
 export const StudentSchema = z.object({
@@ -74,6 +81,7 @@ export const PaymentSchema = z.object({
   notes: z.string().optional(),
 });
 
+// Validation functions
 export function validateTimeSlot(data: unknown) {
   return TimeSlotSchema.safeParse(data);
 }
@@ -96,4 +104,8 @@ export function validateStudent(data: unknown) {
 
 export function validatePayment(data: unknown) {
   return PaymentSchema.safeParse(data);
+}
+
+export function validateAdminAction(data: unknown) {
+  return AdminActionSchema.safeParse(data);
 }
