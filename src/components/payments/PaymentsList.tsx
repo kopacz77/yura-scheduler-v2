@@ -9,7 +9,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { PaymentStatus as PaymentStatusType } from '@prisma/client';
 import { format } from 'date-fns';
 
-interface Payment {
+export interface PaymentWithDetails {
   id: string;
   studentId: string;
   lessonId: string;
@@ -20,20 +20,20 @@ interface Payment {
   verifiedBy?: string | null;
   verifiedAt?: Date | null;
   createdAt: Date;
-  student: {
+  student?: {
     user: {
       name: string;
       email: string;
     };
   };
-  lesson: {
+  lesson?: {
     startTime: Date;
     duration: number;
   };
 }
 
 interface PaymentsListProps {
-  payments: Payment[];
+  payments: PaymentWithDetails[];
 }
 
 export function PaymentsList({ payments }: PaymentsListProps) {
@@ -42,9 +42,9 @@ export function PaymentsList({ payments }: PaymentsListProps) {
 
   const filteredPayments = payments.filter(payment => {
     const matchesSearch = (
-      payment.student.user.name.toLowerCase().includes(search.toLowerCase()) ||
+      payment.student?.user.name.toLowerCase().includes(search.toLowerCase()) ||
       payment.referenceCode.toLowerCase().includes(search.toLowerCase()) ||
-      payment.student.user.email.toLowerCase().includes(search.toLowerCase())
+      payment.student?.user.email.toLowerCase().includes(search.toLowerCase())
     );
 
     const matchesStatus = statusFilter === 'ALL' || payment.status === statusFilter;
@@ -83,18 +83,20 @@ export function PaymentsList({ payments }: PaymentsListProps) {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{payment.student.user.name}</CardTitle>
-                  <div className="text-sm text-muted-foreground">{payment.student.user.email}</div>
+                  <CardTitle className="text-lg">{payment.student?.user.name}</CardTitle>
+                  <div className="text-sm text-muted-foreground">{payment.student?.user.email}</div>
                 </div>
               </div>
             </CardHeader>
             <CardContent>
               <div className="space-y-4">
-                <div className="text-sm text-muted-foreground">
-                  <div>Lesson Date: {format(new Date(payment.lesson.startTime), 'MMM d, yyyy')}</div>
-                  <div>Time: {format(new Date(payment.lesson.startTime), 'h:mm a')}</div>
-                  <div>Duration: {payment.lesson.duration} minutes</div>
-                </div>
+                {payment.lesson && (
+                  <div className="text-sm text-muted-foreground">
+                    <div>Lesson Date: {format(new Date(payment.lesson.startTime), 'MMM d, yyyy')}</div>
+                    <div>Time: {format(new Date(payment.lesson.startTime), 'h:mm a')}</div>
+                    <div>Duration: {payment.lesson.duration} minutes</div>
+                  </div>
+                )}
                 <PaymentStatus payment={payment} />
               </div>
             </CardContent>
