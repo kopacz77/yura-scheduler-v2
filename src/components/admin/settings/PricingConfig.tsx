@@ -6,12 +6,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { LessonType, SkatingLevel } from '@prisma/client';
+import { Level, LessonType } from '@prisma/client';
 
 type PricingRule = {
   id: string;
   lessonType: LessonType;
-  level: SkatingLevel;
+  level: Level;
   duration: number;
   price: number;
 };
@@ -20,8 +20,8 @@ export function PricingConfig() {
   const [rules, setRules] = useState<PricingRule[]>([
     {
       id: '1',
-      lessonType: LessonType.PRIVATE,
-      level: SkatingLevel.BEGINNER,
+      lessonType: 'PRIVATE',
+      level: 'PRELIMINARY',
       duration: 30,
       price: 50,
     },
@@ -30,8 +30,8 @@ export function PricingConfig() {
   const handleAddRule = () => {
     const newRule: PricingRule = {
       id: `${Date.now()}`,
-      lessonType: LessonType.PRIVATE,
-      level: SkatingLevel.BEGINNER,
+      lessonType: 'PRIVATE',
+      level: 'PRELIMINARY',
       duration: 30,
       price: 0,
     };
@@ -84,15 +84,15 @@ export function PricingConfig() {
                 <Label>Skill Level</Label>
                 <Select
                   value={rule.level}
-                  onValueChange={(value) => handleUpdateRule(rule.id, 'level', value as SkatingLevel)}
+                  onValueChange={(value) => handleUpdateRule(rule.id, 'level', value as Level)}
                 >
                   <SelectTrigger>
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                   <SelectContent>
-                    {Object.values(SkatingLevel).map((level) => (
+                    {Object.values(Level).map((level) => (
                       <SelectItem key={level} value={level}>
-                        {level}
+                        {level.replace('_', ' ')}
                       </SelectItem>
                     ))}
                   </SelectContent>
