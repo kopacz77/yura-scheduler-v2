@@ -15,14 +15,14 @@ export default async function RinkSchedulePage({
   
   if (!rink) {
     notFound();
-    return null; // This helps TypeScript understand that rink won't be null below
+    return null;
   }
 
   const timeSlots = await getRinkSchedule(params.id);
 
-  const handleAddTimeSlot = async (data: Omit<TimeSlot, 'id'>) => {
+  const handleAddTimeSlot = async (timeSlot: Omit<TimeSlot, 'id'>) => {
     try {
-      await addTimeSlot(rink.id, data);
+      await addTimeSlot(rink.id, {...timeSlot, isActive: true});
       toast({
         title: 'Success',
         description: 'Time slot added successfully',
