@@ -1,56 +1,52 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
-    const session = await auth();
-    if (!session) {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Get student ID from the authenticated user
     const student = await prisma.student.findUnique({
-      where: { userId: session.user.id }
+      where: { userId: session.user.id },
+      include: {
+        lessons: {
+          orderBy: { startTime: 'desc' },
+          take: 10
+        }
+      }
     });
 
     if (!student) {
       return new NextResponse('Student not found', { status: 404 });
     }
 
-    // Get all completed appointments with notes for progress tracking
-    const completedLessons = await prisma.appointment.findMany({
+    const completedLessons = await prisma.lesson.count({
       where: {
         studentId: student.id,
-        end: {
-          lte: new Date()
-        }
-      },
-      orderBy: {
-        start: 'desc'
-      },
-      include: {
-        resource: true
+        status: 'COMPLETED'
       }
     });
 
-    // Calculate progress metrics
-    const progress = {
-      totalLessons: completedLessons.length,
-      lessonsByType: completedLessons.reduce((acc: any, lesson) => {
-        acc[lesson.lessonType] = (acc[lesson.lessonType] || 0) + 1;
-        return acc;
-      }, {}),
-      recentNotes: completedLessons.slice(0, 5).map(lesson => ({
-        date: lesson.start,
-        notes: lesson.notes,
-        lessonType: lesson.lessonType
-      })),
-      currentLevel: student.level,
-      // Add more metrics as needed
-    };
+    const totalPayments = await prisma.payment.aggregate({
+      where: {
+        studentId: student.id,
+        status: 'COMPLETED'
+      },
+      _sum: {
+        amount: true
+      }
+    });
 
-    return NextResponse.json(progress);
+    return NextResponse.json({
+      level: student.level,
+      completedLessons,
+      totalSpent: totalPayments._sum.amount || 0,
+      recentLessons: student.lessons
+    });
   } catch (error) {
     console.error('Error fetching student progress:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
