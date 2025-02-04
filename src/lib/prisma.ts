@@ -4,10 +4,14 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-const prisma = global.prisma || new PrismaClient();
+const prismaClient = global.prisma || new PrismaClient();
 
 if (process.env.NODE_ENV !== 'production') {
-  global.prisma = prisma;
+  global.prisma = prismaClient;
 }
 
-export default prisma;
+export { prismaClient as prisma };
+// This allows both:
+// import { prisma } from '@/lib/prisma';
+// import prisma from '@/lib/prisma';
+export default prismaClient;
