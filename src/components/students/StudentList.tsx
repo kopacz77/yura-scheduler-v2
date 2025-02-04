@@ -25,8 +25,8 @@ export function StudentList({
   const [editingStudent, setEditingStudent] = useState<Student | null>(null);
 
   const filteredStudents = students.filter(student =>
-    student.name.toLowerCase().includes(search.toLowerCase()) ||
-    student.email.toLowerCase().includes(search.toLowerCase())
+    student.notes?.toLowerCase().includes(search.toLowerCase()) ||
+    student.phone?.toLowerCase().includes(search.toLowerCase())
   );
 
   const handleAddStudent = async (data: any) => {
@@ -93,6 +93,12 @@ export function StudentList({
           )}
         </DialogContent>
       </Dialog>
+
+      {filteredStudents.length === 0 && (
+        <div className="text-center py-8 text-muted-foreground">
+          No students found matching your search criteria
+        </div>
+      )}
     </div>
   );
 }
