@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Label } from '@/components/ui/label';
 import { ResponsiveContainer, RadarChart, PolarGrid, PolarAngleAxis, PolarRadiusAxis, Radar, Tooltip, Legend } from 'recharts';
-import { SkatingLevel } from '@prisma/client';
+import { Level } from '@prisma/client';
 
 type SkillData = {
   skill: string;
@@ -15,7 +15,7 @@ type SkillData = {
 type ProgressData = {
   studentId: string;
   name: string;
-  level: SkatingLevel;
+  level: Level;
   skillsData: SkillData[];
 };
 
@@ -24,7 +24,7 @@ export function ProgressReport() {
   const progressData: ProgressData = {
     studentId: '1',
     name: 'Sarah Johnson',
-    level: SkatingLevel.INTERMEDIATE,
+    level: Level.INTERMEDIATE,
     skillsData: [
       { skill: 'Edges', average: 75, current: 85 },
       { skill: 'Turns', average: 70, current: 80 },
