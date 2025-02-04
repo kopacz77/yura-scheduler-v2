@@ -11,14 +11,15 @@ datasource db {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
-  name      String?
-  password  String?
-  role      Role      @default(STUDENT)
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  student   Student?
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?
+  role          Role      @default(STUDENT)
+  emailVerified DateTime? 
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+  student       Student?
 }
 
 model Student {
@@ -28,6 +29,7 @@ model Student {
   phone             String?
   maxLessonsPerWeek Int       @default(3)
   notes             String?
+  level             Level     @default(PRELIMINARY)
   emergencyContact  Json?
   lessons           Lesson[]
   payments          Payment[]
@@ -115,6 +117,17 @@ enum Role {
   ADMIN
   COACH
   STUDENT
+}
+
+enum Level {
+  PRE_PRELIMINARY
+  PRELIMINARY
+  PRE_JUVENILE
+  JUVENILE
+  INTERMEDIATE
+  NOVICE
+  JUNIOR
+  SENIOR
 }
 
 enum LessonStatus {
