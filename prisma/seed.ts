@@ -1,17 +1,15 @@
-import { PrismaClient, Role } from '@prisma/client';
-import { hash } from 'bcryptjs';
+const { PrismaClient } = require('@prisma/client');
+const { hash } = require('bcryptjs');
 
 const prisma = new PrismaClient();
 
 async function main() {
-  // Clean existing data
   await prisma.payment.deleteMany();
   await prisma.lesson.deleteMany();
   await prisma.student.deleteMany();
   await prisma.user.deleteMany();
   await prisma.rink.deleteMany();
 
-  // Create admin user
   const adminPassword = await hash('admin123', 12);
   const admin = await prisma.user.create({
     data: {
@@ -22,7 +20,6 @@ async function main() {
     },
   });
 
-  // Create student user
   const studentPassword = await hash('student123', 12);
   const studentUser = await prisma.user.create({
     data: {
@@ -46,7 +43,6 @@ async function main() {
     },
   });
 
-  // Create rinks
   await prisma.rink.createMany({
     data: [
       {
