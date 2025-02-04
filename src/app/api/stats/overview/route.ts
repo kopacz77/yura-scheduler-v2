@@ -1,70 +1,40 @@
-import { db } from '@/lib/db';
 import { NextResponse } from 'next/server';
+import prisma from '@/lib/prisma';
 import { startOfWeek, endOfWeek } from 'date-fns';
 
 export async function GET() {
   try {
-    // Get start and end of current week
-    const weekStart = startOfWeek(new Date());
-    const weekEnd = endOfWeek(new Date());
+    const now = new Date();
+    const weekStart = startOfWeek(now);
+    const weekEnd = endOfWeek(now);
 
-    // Get total students count
-    const totalStudents = await db.query.student.count();
-
-    // Get this week's lessons
-    const weeklyLessons = await db.query.appointment.count({
-      where: {
-        start: {
-          gte: weekStart,
-          lte: weekEnd,
+    const [totalStudents, weeklyLessons, totalRevenue] = await Promise.all([
+      prisma.student.count(),
+      prisma.lesson.count({
+        where: {
+          startTime: {
+            gte: weekStart,
+            lte: weekEnd
+          }
+        }
+      }),
+      prisma.payment.aggregate({
+        where: {
+          status: 'COMPLETED'
         },
-      },
-    });
-
-    // Get total unpaid amount
-    const unpaidPayments = await db.query.payment.findMany({
-      where: {
-        status: 'PENDING',
-      },
-      select: {
-        amount: true,
-      },
-    });
-
-    const outstandingAmount = unpaidPayments.reduce(
-      (sum, payment) => sum + payment.amount,
-      0
-    );
-
-    // Calculate overall progress (example metric)
-    const studentsWithProgress = await db.query.student.findMany({
-      select: {
-        level: true,
-      },
-    });
-
-    const progressScore = studentsWithProgress.reduce((score, student) => {
-      const levelScores = {
-        'BEGINNER': 0.25,
-        'INTERMEDIATE': 0.5,
-        'ADVANCED': 0.75,
-        'COMPETITIVE': 1,
-      };
-      return score + levelScores[student.level];
-    }, 0);
-
-    const averageProgress = totalStudents > 0
-      ? Math.round((progressScore / totalStudents) * 100)
-      : 0;
+        _sum: {
+          amount: true
+        }
+      })
+    ]);
 
     return NextResponse.json({
       totalStudents,
       weeklyLessons,
-      outstandingAmount,
-      averageProgress,
+      totalRevenue: totalRevenue._sum.amount || 0
     });
   } catch (error) {
-    console.error('Error fetching overview stats:', error);
-    return new NextResponse('Internal Error', { status: 500 });
+    console.error('Error getting stats overview:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
