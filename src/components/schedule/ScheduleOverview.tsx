@@ -5,7 +5,7 @@ import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 import { useSchedule } from '@/hooks/useSchedule';
 import { Clock, User, MapPin } from 'lucide-react';
 
@@ -22,33 +22,28 @@ type DaySchedule = {
 };
 
 export function ScheduleOverview() {
-  const { lessons, isLoading, fetchLessons } = useSchedule();
+  const [isLoading, setIsLoading] = useState(true);
   const [todaySchedule, setTodaySchedule] = useState<DaySchedule | null>(null);
 
   useEffect(() => {
-    const today = new Date();
-    fetchLessons({
-      startDate: today,
-      endDate: today,
-    });
-  }, [fetchLessons]);
-
-  useEffect(() => {
-    if (lessons) {
-      const today = new Date();
+    // Mock data
+    setTimeout(() => {
       setTodaySchedule({
-        date: today,
-        lessons: lessons.map(lesson => ({
-          id: lesson.id,
-          startTime: new Date(lesson.startTime),
-          endTime: new Date(lesson.endTime),
-          studentName: lesson.student.user.name,
-          rinkName: lesson.rink.name,
-          status: lesson.status,
-        })),
+        date: new Date(),
+        lessons: [
+          {
+            id: '1',
+            startTime: new Date('2024-02-03T15:00:00'),
+            endTime: new Date('2024-02-03T16:00:00'),
+            studentName: 'John Doe',
+            rinkName: 'Main Rink',
+            status: 'SCHEDULED',
+          }
+        ],
       });
-    }
-  }, [lessons]);
+      setIsLoading(false);
+    }, 1000);
+  }, []);
 
   if (isLoading) {
     return (
@@ -62,14 +57,6 @@ export function ScheduleOverview() {
     return (
       <div className="flex h-[200px] flex-col items-center justify-center text-center">
         <p className="text-muted-foreground">No lessons scheduled for today</p>
-        <Button
-          variant="outline"
-          size="sm"
-          className="mt-4"
-          onClick={() => fetchLessons()}
-        >
-          Refresh
-        </Button>
       </div>
     );
   }
@@ -80,13 +67,6 @@ export function ScheduleOverview() {
         <h3 className="text-lg font-medium">
           Today - {format(todaySchedule.date, 'EEEE, MMMM d')}
         </h3>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={() => fetchLessons()}
-        >
-          Refresh
-        </Button>
       </div>
 
       <div className="space-y-4">
