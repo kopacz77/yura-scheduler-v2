@@ -1,11 +1,20 @@
-import { SignInForm } from '@/components/auth/SignInForm';
+'use client';
 
-export const metadata = {
-  title: 'Sign In',
-  description: 'Sign in to your account',
-};
+import { SignInForm } from '@/components/auth/SignInForm';
+import { useAuth } from '@/contexts/auth-context';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 
 export default function SignInPage() {
+  const { user } = useAuth();
+  const router = useRouter();
+
+  useEffect(() => {
+    if (user) {
+      router.push(user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard');
+    }
+  }, [user, router]);
+
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
