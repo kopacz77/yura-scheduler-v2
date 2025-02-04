@@ -1,17 +1,17 @@
 import { NextResponse } from 'next/server';
-import { auth } from '@/lib/auth';
+import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
-import { getResourceAvailability, findAvailableResources } from '@/lib/scheduling/resources';
+import { authOptions } from '@/lib/auth';
 
 export async function GET(req: Request) {
   try {
-    const session = await auth();
+    const session = await getServerSession(authOptions);
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
-    const resourceId = searchParams.get('resourceId');
+    const rinkId = searchParams.get('rinkId');
     const date = searchParams.get('date');
     const startTime = searchParams.get('startTime');
     const endTime = searchParams.get('endTime');
@@ -20,65 +20,69 @@ export async function GET(req: Request) {
       return new NextResponse('Date is required', { status: 400 });
     }
 
-    // If looking for specific resource availability
-    if (resourceId) {
-      const resource = await prisma.resource.findUnique({
-        where: { id: resourceId }
+    // If looking for specific rink availability
+    if (rinkId) {
+      const rink = await prisma.rink.findUnique({
+        where: { id: rinkId },
+        include: { timeSlots: true }
       });
 
-      if (!resource) {
-        return new NextResponse('Resource not found', { status: 404 });
+      if (!rink) {
+        return new NextResponse('Rink not found', { status: 404 });
       }
 
-      const appointments = await prisma.appointment.findMany({
+      const lessons = await prisma.lesson.findMany({
         where: {
-          resourceId,
-          start: {
+          rinkId,
+          startTime: {
             gte: new Date(date)
           },
-          end: {
+          endTime: {
             lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
           }
         }
       });
 
-      const availability = getResourceAvailability(
-        resource,
-        new Date(date),
-        appointments
+      // Find available time slots for the day
+      const dayOfWeek = new Date(date).getDay();
+      const availableTimeSlots = rink.timeSlots.filter(slot => 
+        slot.isActive && slot.daysOfWeek.includes(dayOfWeek)
       );
 
-      return NextResponse.json(availability);
+      return NextResponse.json({
+        rink,
+        timeSlots: availableTimeSlots,
+        lessons
+      });
     }
 
-    // If looking for all available resources for a time slot
+    // If looking for all available rinks for a time slot
     if (startTime && endTime) {
-      const resources = await prisma.resource.findMany({
-        where: { available: true }
-      });
-
-      const appointments = await prisma.appointment.findMany({
-        where: {
-          start: { lte: new Date(endTime) },
-          end: { gte: new Date(startTime) }
+      const rinks = await prisma.rink.findMany({
+        include: { 
+          timeSlots: true,
+          lessons: {
+            where: {
+              startTime: { lte: new Date(endTime) },
+              endTime: { gte: new Date(startTime) }
+            }
+          }
         }
       });
 
-      const availableResources = findAvailableResources(
-        resources,
-        {
-          start: new Date(startTime),
-          end: new Date(endTime)
-        },
-        appointments
-      );
+      const availableRinks = rinks.filter(rink => {
+        if (rink.maxCapacity) {
+          return rink.lessons.length < rink.maxCapacity;
+        }
+        return true;
+      });
 
-      return NextResponse.json(availableResources);
+      return NextResponse.json(availableRinks);
     }
 
     return new NextResponse('Invalid request parameters', { status: 400 });
   } catch (error) {
-    console.error('Error checking resource availability:', error);
+    console.error('Error checking rink availability:', error);
     return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
