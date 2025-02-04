@@ -40,28 +40,52 @@ async function main() {
             relation: 'Father',
           },
           notes: 'Preparing for junior competition',
+          level: 'JUNIOR'
         },
       },
     },
   });
 
-  // Create test rinks
-  const rinks = await Promise.all([
-    prisma.rink.create({
-      data: {
-        name: 'Toyota Sports Center',
+  // Create rinks
+  await prisma.rink.createMany({
+    data: [
+      {
+        name: 'East West Ice Palace',
         timezone: 'America/Los_Angeles',
-        address: '555 N Nash St, El Segundo, CA 90245',
+        address: '23770 S Western Ave, Harbor City, CA 90710'
       },
-    }),
-    prisma.rink.create({
-      data: {
-        name: 'Pickwick Ice',
+      {
+        name: 'Great Park Ice',
         timezone: 'America/Los_Angeles',
-        address: '1001 Riverside Dr, Burbank, CA 91506',
+        address: '888 Ridge Valley, Irvine, CA 92618'
       },
-    }),
-  ]);
+      {
+        name: 'Lakewood Ice',
+        timezone: 'America/Los_Angeles',
+        address: '3975 Pixie Ave, Lakewood, CA 90712'
+      },
+      {
+        name: 'KHS',
+        timezone: 'America/Los_Angeles',
+        address: 'Skating Club of Boston, 750 University Ave, Norwood, MA 02062'
+      },
+      {
+        name: 'San Jose Sharks Arena',
+        timezone: 'America/Los_Angeles',
+        address: '1500 S 10th St, San Jose, CA 95112'
+      },
+      {
+        name: 'Novi Ice Arena',
+        timezone: 'America/Detroit',
+        address: '42400 Nick Lidstrom Dr, Novi, MI 48375'
+      },
+      {
+        name: 'Any Rink in London ON',
+        timezone: 'America/Toronto',
+        address: 'London, ON, Canada'
+      }
+    ]
+  });
 
   console.log('Seed data created successfully');
   console.log('Test Accounts:');
