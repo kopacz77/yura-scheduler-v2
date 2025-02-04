@@ -1,39 +1,51 @@
 import { useState } from 'react';
-import { Student, SkatingLevel } from '@/models/types';
+import { Student, Level } from '@prisma/client';
 
 const mockStudents: Student[] = [
   {
     id: '1',
-    name: 'Sarah Chen',
-    email: 'sarah.chen@example.com',
+    userId: 'user1',
     phone: '+1 (555) 123-4567',
-    level: 'advanced' as SkatingLevel,
-    startDate: new Date('2023-09-01'),
-    packageCredits: 10,
-    preferredDays: ['Monday', 'Wednesday', 'Friday'],
-    notes: 'Preparing for regional competition'
+    maxLessonsPerWeek: 3,
+    level: 'JUNIOR' as Level,
+    emergencyContact: {
+      name: 'Michael Chen',
+      phone: '+1 (555) 123-4568',
+      relation: 'Father'
+    },
+    notes: 'Preparing for regional competition',
+    createdAt: new Date('2023-09-01'),
+    updatedAt: new Date('2023-09-01')
   },
   {
     id: '2',
-    name: 'Michael Kim',
-    email: 'michael.k@example.com',
+    userId: 'user2',
     phone: '+1 (555) 234-5678',
-    level: 'intermediate' as SkatingLevel,
-    startDate: new Date('2023-10-15'),
-    packageCredits: 8,
-    preferredDays: ['Tuesday', 'Thursday'],
-    notes: 'Focus on technical skills'
+    maxLessonsPerWeek: 2,
+    level: 'NOVICE' as Level,
+    emergencyContact: {
+      name: 'Sarah Kim',
+      phone: '+1 (555) 234-5679',
+      relation: 'Mother'
+    },
+    notes: 'Focus on technical skills',
+    createdAt: new Date('2023-10-15'),
+    updatedAt: new Date('2023-10-15')
   },
   {
     id: '3',
-    name: 'Emily Taylor',
-    email: 'emily.t@example.com',
+    userId: 'user3',
     phone: '+1 (555) 345-6789',
-    level: 'beginner' as SkatingLevel,
-    startDate: new Date('2024-01-05'),
-    packageCredits: 4,
-    preferredDays: ['Saturday'],
-    notes: 'New student, starting basics'
+    maxLessonsPerWeek: 1,
+    level: 'PRELIMINARY' as Level,
+    emergencyContact: {
+      name: 'John Taylor',
+      phone: '+1 (555) 345-6780',
+      relation: 'Father'
+    },
+    notes: 'New student, starting basics',
+    createdAt: new Date('2024-01-05'),
+    updatedAt: new Date('2024-01-05')
   }
 ];
 
@@ -41,13 +53,15 @@ export function useStudentManagement() {
   const [students, setStudents] = useState<Student[]>(mockStudents);
   const [isLoading, setIsLoading] = useState(false);
 
-  const addStudent = async (studentData: Omit<Student, 'id'>) => {
+  const addStudent = async (studentData: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
     setIsLoading(true);
     try {
       // TODO: Replace with actual API call
-      const newStudent = {
+      const newStudent: Student = {
         ...studentData,
         id: Math.random().toString(36).substring(7),
+        createdAt: new Date(),
+        updatedAt: new Date()
       };
       setStudents(prev => [...prev, newStudent]);
       return newStudent;
@@ -62,7 +76,9 @@ export function useStudentManagement() {
       // TODO: Replace with actual API call
       setStudents(prev =>
         prev.map(student =>
-          student.id === id ? { ...student, ...data } : student
+          student.id === id 
+            ? { ...student, ...data, updatedAt: new Date() } 
+            : student
         )
       );
     } finally {
@@ -82,7 +98,7 @@ export function useStudentManagement() {
 
   const scheduleLesson = (student: Student) => {
     // TODO: Implement lesson scheduling logic
-    console.log('Scheduling lesson for:', student.name);
+    console.log('Scheduling lesson for student ID:', student.id);
   };
 
   return {
