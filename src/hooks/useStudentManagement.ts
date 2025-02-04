@@ -64,7 +64,6 @@ export function useStudentManagement() {
         updatedAt: new Date()
       };
       setStudents(prev => [...prev, newStudent]);
-      return newStudent;
     } finally {
       setIsLoading(false);
     }
