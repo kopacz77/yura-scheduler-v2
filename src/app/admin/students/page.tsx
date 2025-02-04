@@ -2,28 +2,15 @@
 
 import { PageHeader } from '@/components/layout/PageHeader';
 import { StudentList } from '@/components/admin/StudentList';
-import { useStudentManagement } from '@/hooks/useStudentManagement';
 
-export default function StudentsManagementPage() {
-  const { 
-    students, 
-    addStudent, 
-    updateStudent, 
-    scheduleLesson 
-  } = useStudentManagement();
-
+export default function AdminStudentsPage() {
   return (
     <div className="space-y-6 p-6">
       <PageHeader
-        title="Student Management"
-        description="Manage your students and their schedules"
+        title="Students"
+        description="Manage your students"
       />
-      <StudentList
-        students={students}
-        onAddStudent={addStudent}
-        onUpdateStudent={updateStudent}
-        onScheduleLesson={scheduleLesson}
-      />
+      <StudentList />
     </div>
   );
 }
