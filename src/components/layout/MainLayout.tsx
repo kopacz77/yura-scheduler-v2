@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -9,6 +10,7 @@ import { TopNav } from '@/components/layout/TopNav';
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { isLoading, user } = useAuth();
   const pathname = usePathname();
+  const [isSideNavOpen, setIsSideNavOpen] = useState(false);
   const isPublicPage = pathname === '/' || pathname.startsWith('/auth');
 
   if (isLoading) {
@@ -31,9 +33,12 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <div className="min-h-screen bg-background">
-      <TopNav />
+      <TopNav onMenuClick={() => setIsSideNavOpen(true)} />
       <div className="flex">
-        <SideNav />
+        <SideNav 
+          open={isSideNavOpen}
+          onOpenChange={setIsSideNavOpen}
+        />
         <main className="flex-1 p-6">{children}</main>
       </div>
     </div>
