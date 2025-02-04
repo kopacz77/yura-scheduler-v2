@@ -9,7 +9,7 @@ import { TopNav } from '@/components/layout/TopNav';
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { isLoading, user } = useAuth();
   const pathname = usePathname();
-  const isAuthPage = pathname.startsWith('/auth');
+  const isPublicPage = pathname === '/' || pathname.startsWith('/auth');
 
   if (isLoading) {
     return (
@@ -19,7 +19,13 @@ export function MainLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  if (!user || isAuthPage) {
+  // Don't show navigation on public pages
+  if (isPublicPage) {
+    return <>{children}</>;
+  }
+
+  // If not authenticated, don't show navigation
+  if (!user) {
     return <>{children}</>;
   }
 
