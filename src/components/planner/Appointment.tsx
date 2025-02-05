@@ -1,12 +1,11 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import { format } from 'date-fns';
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Appointment as AppointmentType } from '@/models/types';
 import { Button } from '@/components/ui/button';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Badge } from '@/components/ui/badge';
-import { CalendarIcon, Clock, CreditCard, Edit2, User2 } from 'lucide-react';
-import { draggable } from '@atlaskit/pragmatic-drag-and-drop/element/adapter';
+import { Clock, Edit2, User2 } from 'lucide-react';
 import { cn, formatAppointmentTime, getLessonTypeColor } from '@/lib/utils';
 import { useCalendar } from '@/contexts/PlannerContext';
 import { PaymentDialog } from '../payments/PaymentDialog';
@@ -23,23 +22,7 @@ interface AppointmentProps {
 export function Appointment({ appointment, resourceId, columnIndex }: AppointmentProps) {
   const { updateAppointment } = useCalendar();
   const { recordPayment, isLoading } = usePayments();
-  const ref = useRef<HTMLDivElement>(null);
-  const [isDragging, setIsDragging] = useState(false);
   const [showPaymentHistory, setShowPaymentHistory] = useState(false);
-
-  useEffect(() => {
-    const element = ref.current!;
-    return draggable({
-      element,
-      getInitialData: () => ({
-        appointmentId: appointment.id,
-        columnIndex: columnIndex,
-        resourceId: resourceId,
-      }),
-      onDragStart: () => setIsDragging(true),
-      onDrop: () => setIsDragging(false),
-    });
-  }, [appointment.id, columnIndex, resourceId]);
 
   const handlePaymentSubmit = async (data: any) => {
     try {
@@ -52,10 +35,8 @@ export function Appointment({ appointment, resourceId, columnIndex }: Appointmen
 
   return (
     <Card
-      ref={ref}
       className={cn(
-        'hover:cursor-grab transform transition-all',
-        isDragging ? 'cursor-grabbing opacity-50' : 'hover:scale-105',
+        'transition-all hover:shadow-md',
         getLessonTypeColor(appointment.details.lessonType)
       )}
     >
