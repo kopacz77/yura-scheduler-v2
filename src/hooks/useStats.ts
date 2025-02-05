@@ -45,38 +45,58 @@ const mockStats: DashboardStats = {
   progress: [
     {
       month: '2023-09',
-      beginner: 28,
-      intermediate: 42,
-      advanced: 18,
-      competitive: 12
+      [Level.PRE_PRELIMINARY]: 25,
+      [Level.PRELIMINARY]: 40,
+      [Level.PRE_JUVENILE]: 22,
+      [Level.JUVENILE]: 18,
+      [Level.INTERMEDIATE]: 12,
+      [Level.NOVICE]: 10,
+      [Level.JUNIOR]: 5,
+      [Level.SENIOR]: 2
     },
     {
       month: '2023-10',
-      beginner: 30,
-      intermediate: 45,
-      advanced: 20,
-      competitive: 15
+      [Level.PRE_PRELIMINARY]: 28,
+      [Level.PRELIMINARY]: 42,
+      [Level.PRE_JUVENILE]: 23,
+      [Level.JUVENILE]: 19,
+      [Level.INTERMEDIATE]: 13,
+      [Level.NOVICE]: 11,
+      [Level.JUNIOR]: 5,
+      [Level.SENIOR]: 2
     },
     {
       month: '2023-11',
-      beginner: 32,
-      intermediate: 44,
-      advanced: 22,
-      competitive: 18
+      [Level.PRE_PRELIMINARY]: 29,
+      [Level.PRELIMINARY]: 43,
+      [Level.PRE_JUVENILE]: 24,
+      [Level.JUVENILE]: 19,
+      [Level.INTERMEDIATE]: 14,
+      [Level.NOVICE]: 11,
+      [Level.JUNIOR]: 6,
+      [Level.SENIOR]: 3
     },
     {
       month: '2023-12',
-      beginner: 35,
-      intermediate: 48,
-      advanced: 24,
-      competitive: 20
+      [Level.PRE_PRELIMINARY]: 30,
+      [Level.PRELIMINARY]: 44,
+      [Level.PRE_JUVENILE]: 24,
+      [Level.JUVENILE]: 20,
+      [Level.INTERMEDIATE]: 15,
+      [Level.NOVICE]: 12,
+      [Level.JUNIOR]: 6,
+      [Level.SENIOR]: 3
     },
     {
       month: '2024-01',
-      beginner: 38,
-      intermediate: 50,
-      advanced: 25,
-      competitive: 22
+      [Level.PRE_PRELIMINARY]: 30,
+      [Level.PRELIMINARY]: 45,
+      [Level.PRE_JUVENILE]: 25,
+      [Level.JUVENILE]: 20,
+      [Level.INTERMEDIATE]: 15,
+      [Level.NOVICE]: 12,
+      [Level.JUNIOR]: 6,
+      [Level.SENIOR]: 3
     }
   ],
   lessonTypes: [
