@@ -14,6 +14,8 @@ type Payment = {
   verifiedBy?: string;
   verifiedAt?: Date;
   notes?: string;
+  createdAt: Date;
+  updatedAt: Date;
 };
 
 type PaymentFilters = {
@@ -90,6 +92,9 @@ export function usePayments(studentId?: string) {
         title: 'Success',
         description: 'Payment recorded successfully',
       });
+
+      // Refresh payments after recording a new one
+      fetchPayments();
 
       return result;
     } catch (err) {
