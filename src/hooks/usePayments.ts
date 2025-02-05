@@ -27,6 +27,13 @@ type BadgeProps = {
   label: string;
 };
 
+type RecordPaymentData = {
+  amount: number;
+  method: 'VENMO' | 'ZELLE';
+  referenceCode: string;
+  notes?: string;
+};
+
 export function usePayments() {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -63,6 +70,36 @@ export function usePayments() {
   useEffect(() => {
     fetchPayments();
   }, []);
+
+  const recordPayment = async (appointmentId: string, data: RecordPaymentData) => {
+    try {
+      const response = await fetch(`/api/appointments/${appointmentId}/payment`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) throw new Error('Failed to record payment');
+
+      const result = await response.json();
+      toast({
+        title: 'Success',
+        description: 'Payment recorded successfully',
+      });
+
+      return result;
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to record payment';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
 
   const verifyPayment = async (paymentId: string, notes?: string) => {
     try {
@@ -166,5 +203,6 @@ export function usePayments() {
     markPaymentFailed,
     getPaymentStatusBadgeProps,
     formatReferenceCode,
+    recordPayment,
   };
 }
