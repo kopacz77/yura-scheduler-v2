@@ -4,7 +4,7 @@ import { useDraggable } from '@dnd-kit/core';
 import { format } from 'date-fns';
 import { Card, CardHeader, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { getLessonTypeColor } from '@/lib/utils';
+import { getLessonTypeColor, cn } from '@/lib/utils';
 import type { Appointment } from '@/models/types';
 
 interface DraggableAppointmentProps {
