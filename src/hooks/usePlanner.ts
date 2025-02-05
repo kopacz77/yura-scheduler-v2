@@ -1,78 +1,102 @@
 import { useState } from 'react';
-import { Appointment, Resource, RinkArea } from '@/models/types';
+import { Appointment, Resource } from '@/models/types';
+import { RinkArea } from '@prisma/client';
 
 const mockResources: Resource[] = [
   {
-    id: '1',
+    id: 'rink1',
     name: 'Main Rink',
-    type: 'main-rink' as RinkArea,
+    type: RinkArea.MAIN_RINK,
     details: {
       maxCapacity: 20,
       description: 'Olympic-sized ice rink',
-      available: true
-    }
+      available: true,
+    },
   },
   {
-    id: '2',
+    id: 'rink2',
     name: 'Practice Rink',
-    type: 'practice-rink' as RinkArea,
+    type: RinkArea.PRACTICE_RINK,
     details: {
       maxCapacity: 15,
-      description: 'Smaller practice area',
-      available: true
-    }
+      description: 'Smaller rink for practice sessions',
+      available: true,
+    },
   },
   {
-    id: '3',
+    id: 'studio1',
     name: 'Dance Studio',
-    type: 'dance-studio' as RinkArea,
+    type: RinkArea.DANCE_STUDIO,
     details: {
       maxCapacity: 10,
-      description: 'Off-ice training area',
-      available: true
-    }
-  }
-];
-
-const mockAppointments: Appointment[] = [
-  {
-    id: '1',
-    title: 'Sarah Chen - Private Lesson',
-    start: new Date('2025-01-31T14:00:00'),
-    end: new Date('2025-01-31T15:00:00'),
-    resourceId: '1',
-    order: 0,
-    details: {
-      studentId: '1',
-      lessonType: 'private',
-      notes: 'Jump technique focus',
-      paymentStatus: 'paid',
-      skill: 'triple jumps',
-      focus: 'technique refinement'
-    }
+      description: 'Off-ice training space',
+      available: true,
+    },
   },
-  {
-    id: '2',
-    title: 'Group Class - Intermediate',
-    start: new Date('2025-01-31T15:30:00'),
-    end: new Date('2025-01-31T16:30:00'),
-    resourceId: '2',
-    order: 1,
-    details: {
-      studentId: 'group-1',
-      lessonType: 'group',
-      notes: 'Intermediate level class',
-      paymentStatus: 'paid'
-    }
-  }
 ];
 
 export function usePlanner() {
   const [resources] = useState<Resource[]>(mockResources);
-  const [appointments] = useState<Appointment[]>(mockAppointments);
+  const [appointments, setAppointments] = useState<Appointment[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const addAppointment = async (appointmentData: Omit<Appointment, 'id'>) => {
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      const newAppointment: Appointment = {
+        ...appointmentData,
+        id: Math.random().toString(36).substring(7),
+      };
+      setAppointments(prev => [...prev, newAppointment]);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const updateAppointment = async (id: string, data: Partial<Appointment>) => {
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      setAppointments(prev =>
+        prev.map(appointment =>
+          appointment.id === id 
+            ? { ...appointment, ...data } 
+            : appointment
+        )
+      );
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const deleteAppointment = async (id: string) => {
+    setIsLoading(true);
+    try {
+      // TODO: Replace with actual API call
+      setAppointments(prev => prev.filter(appointment => appointment.id !== id));
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const moveAppointment = (id: string, resourceId: string) => {
+    setAppointments(prev =>
+      prev.map(appointment =>
+        appointment.id === id
+          ? { ...appointment, resourceId }
+          : appointment
+      )
+    );
+  };
 
   return {
     resources,
-    appointments
+    appointments,
+    isLoading,
+    addAppointment,
+    updateAppointment,
+    deleteAppointment,
+    moveAppointment,
   };
 }
