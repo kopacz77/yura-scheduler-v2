@@ -1,30 +1,25 @@
-'use client';
+import { ReactNode } from 'react';
+import { NextAuthProvider } from './NextAuthProvider';
+import { ThemeProvider } from 'next-themes';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-import { ThemeProvider } from '@/contexts/ThemeContext';
-import { AppProvider } from '@/contexts/AppContext';
-import { AuthProvider } from '@/app/AuthProvider';
-import { Toaster } from '@/components/ui/toaster';
-import { RouteChangeLoader } from '@/components/loading/RouteChangeLoader';
+interface ProvidersProps {
+  children: ReactNode;
+}
 
-type ProvidersProps = {
-  children: React.ReactNode;
-};
+const queryClient = new QueryClient();
 
 export function Providers({ children }: ProvidersProps) {
   return (
     <ThemeProvider
-      attribute="class"
+      themes={["light", "dark", "system"]}
       defaultTheme="system"
       enableSystem
       disableTransitionOnChange
     >
-      <AuthProvider>
-        <AppProvider>
-          {children}
-          <Toaster />
-          <RouteChangeLoader />
-        </AppProvider>
-      </AuthProvider>
+      <QueryClientProvider client={queryClient}>
+        <NextAuthProvider>{children}</NextAuthProvider>
+      </QueryClientProvider>
     </ThemeProvider>
   );
 }
