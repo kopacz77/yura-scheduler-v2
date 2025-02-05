@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop';
+import { useDroppable } from '@atlaskit/pragmatic-drag-and-drop/react';
 import { TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -17,31 +17,9 @@ export function DropTableCell({
   className, 
   ...props 
 }: DropTableCellProps) {
-  const ref = useRef<HTMLTableCellElement>(null);
-
-  React.useEffect(() => {
-    if (!ref.current || !isDropTarget) return;
-
-    return dropTargetForElements({
-      element: ref.current,
-      onDragStart: () => {
-        if (ref.current) {
-          ref.current.classList.add('bg-primary/10');
-        }
-      },
-      onDragLeave: () => {
-        if (ref.current) {
-          ref.current.classList.remove('bg-primary/10');
-        }
-      },
-      onDrop: ({ source }) => {
-        if (ref.current) {
-          ref.current.classList.remove('bg-primary/10');
-          onDrop?.(source.data);
-        }
-      },
-    });
-  }, [isDropTarget, onDrop]);
+  const [isActivated, ref] = useDroppable({
+    onDrop: ({ source }) => onDrop?.(source.data),
+  });
 
   return (
     <TableCell
@@ -49,7 +27,8 @@ export function DropTableCell({
       {...props}
       className={cn(
         'transition-colors duration-200',
-        isDropTarget && 'hover:bg-primary/5',
+        isActivated && 'bg-primary/10',
+        !isActivated && isDropTarget && 'hover:bg-primary/5',
         className
       )}
       data-droppable={isDropTarget}
