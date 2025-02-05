@@ -1,17 +1,7 @@
 import React from 'react';
 import { format } from 'date-fns';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { usePayments } from '@/hooks/usePayments';
-
-interface Payment {
-  id: string;
-  date: string;
-  amount: number;
-  method: string;
-  status: 'completed' | 'pending' | 'failed';
-  reference?: string;
-}
 
 interface PaymentHistoryProps {
   studentId?: string;  // Optional: if not provided, uses current user's student ID
@@ -40,17 +30,17 @@ export function PaymentHistory({ studentId }: PaymentHistoryProps) {
               ${payment.amount.toFixed(2)}
             </p>
             <p className="text-sm text-muted-foreground">
-              {format(new Date(payment.date), 'MMM d, yyyy')}
+              {format(new Date(payment.createdAt), 'MMM d, yyyy')}
             </p>
           </div>
           <div className="text-right">
             <Badge
               variant={
-                payment.status === 'completed' ? 'default' :
-                payment.status === 'pending' ? 'secondary' : 'destructive'
+                payment.status === 'COMPLETED' ? 'default' :
+                payment.status === 'PENDING' ? 'secondary' : 'destructive'
               }
             >
-              {payment.status}
+              {payment.status.toLowerCase()}
             </Badge>
             <p className="text-sm text-muted-foreground">
               {payment.method}
