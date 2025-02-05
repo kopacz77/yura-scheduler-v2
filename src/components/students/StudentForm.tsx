@@ -78,8 +78,8 @@ export function StudentForm({ initialData, onSubmit, isLoading = false }: Studen
   };
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
+    <Form form={form} onSubmit={handleSubmit}>
+      <div className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -236,7 +236,7 @@ export function StudentForm({ initialData, onSubmit, isLoading = false }: Studen
         <Button type="submit" disabled={isLoading}>
           {isLoading ? 'Saving...' : (initialData ? 'Update Student' : 'Add Student')}
         </Button>
-      </form>
+      </div>
     </Form>
   );
 }
