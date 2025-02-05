@@ -1,13 +1,33 @@
 import { useState } from 'react';
-import { Student, Level } from '@prisma/client';
+import { Student, Level, User } from '@prisma/client';
 
-const mockStudents: Student[] = [
+type StudentWithUser = Student & {
+  user: Pick<User, 'name' | 'email'>;
+};
+
+const mockUsers: Record<string, Pick<User, 'name' | 'email'>> = {
+  'user1': {
+    name: 'Emily Wilson',
+    email: 'emily.w@example.com',
+  },
+  'user2': {
+    name: 'David Lee',
+    email: 'david.lee@example.com',
+  },
+  'user3': {
+    name: 'Sophie Brown',
+    email: 'sophie.b@example.com',
+  },
+};
+
+const mockStudents: StudentWithUser[] = [
   {
     id: '1',
     userId: 'user1',
+    user: mockUsers['user1'],
     phone: '+1 (555) 123-4567',
     maxLessonsPerWeek: 3,
-    level: 'JUNIOR' as Level,
+    level: Level.JUNIOR,
     emergencyContact: {
       name: 'Michael Chen',
       phone: '+1 (555) 123-4568',
@@ -20,9 +40,10 @@ const mockStudents: Student[] = [
   {
     id: '2',
     userId: 'user2',
+    user: mockUsers['user2'],
     phone: '+1 (555) 234-5678',
     maxLessonsPerWeek: 2,
-    level: 'NOVICE' as Level,
+    level: Level.NOVICE,
     emergencyContact: {
       name: 'Sarah Kim',
       phone: '+1 (555) 234-5679',
@@ -35,9 +56,10 @@ const mockStudents: Student[] = [
   {
     id: '3',
     userId: 'user3',
+    user: mockUsers['user3'],
     phone: '+1 (555) 345-6789',
     maxLessonsPerWeek: 1,
-    level: 'PRELIMINARY' as Level,
+    level: Level.PRELIMINARY,
     emergencyContact: {
       name: 'John Taylor',
       phone: '+1 (555) 345-6780',
@@ -50,14 +72,14 @@ const mockStudents: Student[] = [
 ];
 
 export function useStudentManagement() {
-  const [students, setStudents] = useState<Student[]>(mockStudents);
+  const [students, setStudents] = useState<StudentWithUser[]>(mockStudents);
   const [isLoading, setIsLoading] = useState(false);
 
-  const addStudent = async (studentData: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => {
+  const addStudent = async (studentData: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => {
     setIsLoading(true);
     try {
       // TODO: Replace with actual API call
-      const newStudent: Student = {
+      const newStudent: StudentWithUser = {
         ...studentData,
         id: Math.random().toString(36).substring(7),
         createdAt: new Date(),
@@ -69,7 +91,7 @@ export function useStudentManagement() {
     }
   };
 
-  const updateStudent = async (id: string, data: Partial<Student>) => {
+  const updateStudent = async (id: string, data: Partial<StudentWithUser>) => {
     setIsLoading(true);
     try {
       // TODO: Replace with actual API call
@@ -95,9 +117,9 @@ export function useStudentManagement() {
     }
   };
 
-  const scheduleLesson = (student: Student) => {
+  const scheduleLesson = (student: StudentWithUser) => {
     // TODO: Implement lesson scheduling logic
-    console.log('Scheduling lesson for student ID:', student.id);
+    console.log('Scheduling lesson for student:', student.user.name);
   };
 
   return {
