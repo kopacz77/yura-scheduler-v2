@@ -1,7 +1,5 @@
-import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar } from '@/components/ui/calendar';
 import { Badge } from '@/components/ui/badge';
+import { format } from 'date-fns';
 
 interface AttendanceRecord {
   date: Date;
@@ -10,78 +8,64 @@ interface AttendanceRecord {
 }
 
 interface StudentAttendanceProps {
-  attendanceRecords: AttendanceRecord[];
+  records: AttendanceRecord[];
 }
 
-export function StudentAttendance({ attendanceRecords }: StudentAttendanceProps) {
-  const [selectedDate, setSelectedDate] = React.useState<Date | undefined>(
-    new Date()
-  );
+const getVariantFromStatus = (status: AttendanceRecord['status']): 'success' | 'destructive' | 'warning' => {
+  switch (status) {
+    case 'present':
+      return 'success';
+    case 'absent':
+      return 'destructive';
+    case 'late':
+      return 'warning';
+  }
+};
 
-  const getAttendanceForDate = (date: Date) => {
-    return attendanceRecords.find(
-      (record) =>
-        record.date.toDateString() === date.toDateString()
-    );
-  };
+export function StudentAttendance({ records = [] }: StudentAttendanceProps) {
+  const sortedRecords = [...records].sort((a, b) => b.date.getTime() - a.date.getTime());
+  const attendanceRate = records.length > 0
+    ? (records.filter(r => r.status === 'present').length / records.length * 100).toFixed(1)
+    : 0;
 
   return (
-    <Card className="w-full">
-      <CardHeader>
-        <CardTitle>Attendance History</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="grid gap-4 md:grid-cols-2">
-          <Calendar
-            mode="single"
-            selected={selectedDate}
-            onSelect={setSelectedDate}
-            className="rounded-md border"
-            modifiers={{
-              booked: (date) => {
-                const record = getAttendanceForDate(date);
-                return !!record;
-              }
-            }}
-            modifiersStyles={{
-              booked: {
-                fontWeight: 'bold'
-              }
-            }}
-          />
-          <div className="space-y-4">
-            {selectedDate && (
-              <div>
-                <h4 className="font-medium mb-2">
-                  {selectedDate.toLocaleDateString()}
-                </h4>
-                {getAttendanceForDate(selectedDate) ? (
-                  <div className="space-y-2">
-                    <Badge
-                      variant={{
-                        present: 'success',
-                        absent: 'destructive',
-                        late: 'warning'
-                      }[getAttendanceForDate(selectedDate)!.status]}
-                    >
-                      {getAttendanceForDate(selectedDate)!.status}
-                    </Badge>
-                    {getAttendanceForDate(selectedDate)!.notes && (
-                      <p className="text-sm text-muted-foreground">
-                        {getAttendanceForDate(selectedDate)!.notes}
-                      </p>
-                    )}
+    <div className="space-y-4">
+      <div className="flex items-center justify-between">
+        <h3 className="text-lg font-medium">Attendance History</h3>
+        <Badge variant="secondary">{attendanceRate}% Present</Badge>
+      </div>
+
+      {sortedRecords.length > 0 ? (
+        <div className="space-y-4">
+          {sortedRecords.map((record) => (
+            <div
+              key={record.date.toISOString()}
+              className="flex items-start justify-between border-b pb-2"
+            >
+              <div className="space-y-1">
+                <div className="text-sm font-medium">
+                  {format(record.date, 'MMMM d, yyyy')}
+                </div>
+                <Badge variant={getVariantFromStatus(record.status)}>
+                  {record.status.charAt(0).toUpperCase() + record.status.slice(1)}
+                </Badge>
+                {record.notes && (
+                  <div className="text-sm text-muted-foreground mt-1">
+                    {record.notes}
                   </div>
-                ) : (
-                  <p className="text-sm text-muted-foreground">
-                    No attendance record for this date
-                  </p>
                 )}
               </div>
-            )}
-          </div>
+              <div className="text-sm text-muted-foreground">
+                {format(record.date, 'h:mm a')}
+              </div>
+            </div>
+          ))}
         </div>
-      </CardContent>
-    </Card>
+      ) : (
+        <div className="text-center text-muted-foreground py-8">
+          No attendance records found
+        </div>
+      )}
+    </div>
   );
 }
