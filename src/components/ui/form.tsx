@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { useForm, useFormContext, FormProvider, Form as FormComponent } from 'react-hook-form';
+import { Control, useForm, useFormContext, FormProvider, Form as FormComponent } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
@@ -24,22 +24,26 @@ Form.displayName = 'Form';
 
 type FormFieldProps = {
   name: string;
-  id?: string;
+  control: Control<any>;
   render: (props: {
-    field: ReturnType<typeof useFormContext>['register'];
+    field: any;
     fieldState: { error?: { message?: string } };
   }) => React.ReactElement;
 };
 
-const FormField = ({ name, id = name, render }: FormFieldProps) => {
-  const formContext = useFormContext();
-  if (!formContext) {
-    throw new Error('FormField must be used within a Form');
-  }
-  const { register, formState } = formContext;
+const FormField = ({ name, control, render }: FormFieldProps) => {
+  const { formState } = useFormContext();
   return render({
-    field: register(name),
-    fieldState: formState.errors[name] || {},
+    field: {
+      name,
+      value: control._getWatch(name),
+      onChange: control._subjects.watch.next,
+      onBlur: control._subjects.blur.next,
+      ref: control.register(name).ref
+    },
+    fieldState: {
+      error: formState.errors[name]
+    },
   });
 };
 
