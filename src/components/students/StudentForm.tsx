@@ -39,10 +39,11 @@ type StudentFormData = z.infer<typeof studentSchema>;
 interface StudentFormProps {
   initialData?: Partial<StudentWithUser>;
   onSubmit: (data: StudentFormData) => void;
+  onCancel?: () => void;
   isLoading?: boolean;
 }
 
-export function StudentForm({ initialData, onSubmit, isLoading = false }: StudentFormProps) {
+export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false }: StudentFormProps) {
   const { toast } = useToast();
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
@@ -233,9 +234,16 @@ export function StudentForm({ initialData, onSubmit, isLoading = false }: Studen
           />
         </div>
 
-        <Button type="submit" disabled={isLoading}>
-          {isLoading ? 'Saving...' : (initialData ? 'Update Student' : 'Add Student')}
-        </Button>
+        <div className="flex justify-end gap-4">
+          {onCancel && (
+            <Button type="button" variant="outline" onClick={onCancel}>
+              Cancel
+            </Button>
+          )}
+          <Button type="submit" disabled={isLoading}>
+            {isLoading ? 'Saving...' : (initialData ? 'Update Student' : 'Add Student')}
+          </Button>
+        </div>
       </div>
     </Form>
   );
