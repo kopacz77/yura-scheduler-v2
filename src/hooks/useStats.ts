@@ -42,6 +42,43 @@ const mockStats: DashboardStats = {
     { level: Level.JUNIOR, count: 6, percentage: 3.8 },
     { level: Level.SENIOR, count: 3, percentage: 1.9 }
   ],
+  progress: [
+    {
+      month: '2023-09',
+      beginner: 28,
+      intermediate: 42,
+      advanced: 18,
+      competitive: 12
+    },
+    {
+      month: '2023-10',
+      beginner: 30,
+      intermediate: 45,
+      advanced: 20,
+      competitive: 15
+    },
+    {
+      month: '2023-11',
+      beginner: 32,
+      intermediate: 44,
+      advanced: 22,
+      competitive: 18
+    },
+    {
+      month: '2023-12',
+      beginner: 35,
+      intermediate: 48,
+      advanced: 24,
+      competitive: 20
+    },
+    {
+      month: '2024-01',
+      beginner: 38,
+      intermediate: 50,
+      advanced: 25,
+      competitive: 22
+    }
+  ],
   lessonTypes: [
     { type: LessonType.PRIVATE, count: 285 },
     { type: LessonType.GROUP, count: 95 },
