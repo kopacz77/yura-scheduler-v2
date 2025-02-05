@@ -1,5 +1,12 @@
 import { LessonType, PaymentStatus } from '@prisma/client';
 
+export interface Payment {
+  id: string;
+  status: PaymentStatus;
+  amount: number;
+  timestamp: Date;
+}
+
 export interface Appointment {
   id: string;
   title: string;
@@ -8,6 +15,7 @@ export interface Appointment {
   duration: number;
   resourceId: string;  // rinkAreaId
   order: number;
+  payment?: Payment;
   details: {
     studentId: string;
     lessonType: LessonType;
