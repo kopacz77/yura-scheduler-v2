@@ -1,13 +1,17 @@
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent } from '@/components/ui/card';
-import { Student } from '@prisma/client';
+import { Button } from '@/components/ui/button';
+import { Edit2, CalendarPlus } from 'lucide-react';
+import { Student, User } from '@prisma/client';
+
+type StudentWithUser = Student & {
+  user: Pick<User, 'name' | 'email'>;
+};
 
 interface StudentCardProps {
-  student: Student & {
-    user: {
-      name: string;
-    };
-  };
+  student: StudentWithUser;
+  onEdit?: (student: StudentWithUser) => void;
+  onSchedule?: (student: StudentWithUser) => void;
 }
 
 const getSkatingLevelBadge = (level: string) => {
@@ -33,16 +37,42 @@ const getSkatingLevelBadge = (level: string) => {
   }
 };
 
-export function StudentCard({ student }: StudentCardProps) {
+export function StudentCard({ student, onEdit, onSchedule }: StudentCardProps) {
   return (
-    <Card>
+    <Card className="relative overflow-hidden">
       <CardContent className="p-6">
+        <div className="absolute right-4 top-4 flex gap-2">
+          {onSchedule && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onSchedule(student)}
+            >
+              <CalendarPlus className="h-4 w-4" />
+            </Button>
+          )}
+          {onEdit && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-8 w-8"
+              onClick={() => onEdit(student)}
+            >
+              <Edit2 className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
+
         <div className="space-y-1">
           <h3 className="font-semibold leading-none tracking-tight">
             {student.user.name}
           </h3>
+          <p className="text-sm text-muted-foreground">
+            {student.user.email}
+          </p>
           <Badge className={getSkatingLevelBadge(student.level)}>
-            {student.level.toLowerCase()}
+            {student.level.replace('_', ' ').toLowerCase()}
           </Badge>
           {student.phone && (
             <p className="text-sm text-muted-foreground">
