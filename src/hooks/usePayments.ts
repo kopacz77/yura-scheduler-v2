@@ -20,6 +20,7 @@ type PaymentFilters = {
   status?: string;
   startDate?: Date;
   endDate?: Date;
+  studentId?: string;
 };
 
 type BadgeProps = {
@@ -34,7 +35,7 @@ type RecordPaymentData = {
   notes?: string;
 };
 
-export function usePayments() {
+export function usePayments(studentId?: string) {
   const [payments, setPayments] = useState<Payment[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +49,7 @@ export function usePayments() {
       if (filters.status) params.append('status', filters.status);
       if (filters.startDate) params.append('startDate', filters.startDate.toISOString());
       if (filters.endDate) params.append('endDate', filters.endDate.toISOString());
+      if (studentId) params.append('studentId', studentId);
 
       const response = await fetch(`/api/payments?${params}`);
       if (!response.ok) throw new Error('Failed to fetch payments');
@@ -69,7 +71,7 @@ export function usePayments() {
 
   useEffect(() => {
     fetchPayments();
-  }, []);
+  }, [studentId]);
 
   const recordPayment = async (appointmentId: string, data: RecordPaymentData) => {
     try {
