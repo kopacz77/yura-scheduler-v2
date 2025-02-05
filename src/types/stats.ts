@@ -6,6 +6,14 @@ export interface Stat {
   trend: 'up' | 'down' | 'neutral';
 }
 
+export interface ProgressDataPoint {
+  month: string;
+  beginner: number;
+  intermediate: number;
+  advanced: number;
+  competitive: number;
+}
+
 export interface DashboardStats {
   overview: {
     totalStudents: Stat;
@@ -22,6 +30,7 @@ export interface DashboardStats {
     count: number;
     percentage: number;
   }[];
+  progress: ProgressDataPoint[];
   lessonTypes: {
     type: LessonType;
     count: number;
