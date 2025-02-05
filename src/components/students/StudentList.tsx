@@ -3,15 +3,19 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Plus, Search } from 'lucide-react';
-import { Student } from '@prisma/client';
+import { Student, User } from '@prisma/client';
 import { StudentCard } from './StudentCard';
 import { StudentForm } from './StudentForm';
 
+type StudentWithUser = Student & {
+  user: Pick<User, 'name' | 'email'>;
+};
+
 interface StudentListProps {
-  students: Student[];
-  onAddStudent: (student: Omit<Student, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
-  onUpdateStudent: (id: string, data: Partial<Student>) => Promise<void>;
-  onScheduleLesson: (student: Student) => void;
+  students: StudentWithUser[];
+  onAddStudent: (student: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
+  onUpdateStudent: (id: string, data: Partial<StudentWithUser>) => Promise<void>;
+  onScheduleLesson: (student: StudentWithUser) => void;
 }
 
 export function StudentList({ 
@@ -22,10 +26,11 @@ export function StudentList({
 }: StudentListProps) {
   const [search, setSearch] = useState('');
   const [isAddingStudent, setIsAddingStudent] = useState(false);
-  const [editingStudent, setEditingStudent] = useState<Student | null>(null);
+  const [editingStudent, setEditingStudent] = useState<StudentWithUser | null>(null);
 
   const filteredStudents = students.filter(student =>
-    student.notes?.toLowerCase().includes(search.toLowerCase()) ||
+    student.user.name?.toLowerCase().includes(search.toLowerCase()) ||
+    student.user.email?.toLowerCase().includes(search.toLowerCase()) ||
     student.phone?.toLowerCase().includes(search.toLowerCase())
   );
 
@@ -86,7 +91,7 @@ export function StudentList({
           <DialogTitle>Edit Student</DialogTitle>
           {editingStudent && (
             <StudentForm
-              student={editingStudent}
+              initialData={editingStudent}
               onSubmit={handleUpdateStudent}
               onCancel={() => setEditingStudent(null)}
             />
