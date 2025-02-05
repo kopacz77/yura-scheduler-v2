@@ -14,7 +14,11 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Student, Level } from '@prisma/client';
+import { Student, Level, User } from '@prisma/client';
+
+type StudentWithUser = Student & {
+  user: Pick<User, 'name' | 'email'>;
+};
 
 const studentSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
@@ -33,7 +37,7 @@ const studentSchema = z.object({
 type StudentFormData = z.infer<typeof studentSchema>;
 
 interface StudentFormProps {
-  initialData?: Partial<Student>;
+  initialData?: Partial<StudentWithUser>;
   onSubmit: (data: StudentFormData) => void;
   isLoading?: boolean;
 }
@@ -43,8 +47,8 @@ export function StudentForm({ initialData, onSubmit, isLoading = false }: Studen
   const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
-      name: initialData?.name || '',
-      email: initialData?.email || '',
+      name: initialData?.user?.name || '',
+      email: initialData?.user?.email || '',
       phone: initialData?.phone || '',
       level: initialData?.level || Level.PRE_PRELIMINARY,
       maxLessonsPerWeek: initialData?.maxLessonsPerWeek || 3,
