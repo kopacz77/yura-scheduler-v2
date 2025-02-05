@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { format } from 'date-fns';
+import { addMinutes, setMinutes, setHours, addDays } from 'date-fns';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -34,4 +34,19 @@ export function getLessonTypeColor(type: string) {
     'COMPETITION_PREP': 'bg-orange-50 border-orange-200',
   };
   return colors[type] || 'bg-gray-50 border-gray-200';
+}
+
+export function calculateNewDates(date: Date, time: string, duration: number) {
+  const [hours, minutes] = time.split(':').map(Number);
+  const start = setMinutes(setHours(date, hours), minutes);
+  const end = addMinutes(start, duration);
+  return { start, end };
+}
+
+export function filterAppointments(appointments: any[], startDate: Date, days: number) {
+  const endDate = addDays(startDate, days);
+  return appointments.filter(appointment => {
+    const appointmentDate = new Date(appointment.start);
+    return appointmentDate >= startDate && appointmentDate <= endDate;
+  });
 }
