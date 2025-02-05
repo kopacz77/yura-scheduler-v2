@@ -1,8 +1,7 @@
 'use client';
 
 import React, { useRef } from 'react';
-import { draggable } from '@atlaskit/pragmatic-drag-and-drop-core';
-import { monitorForElements } from '@atlaskit/pragmatic-drag-and-drop-core/element/monitor';
+import { draggable, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop';
 import { TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -23,17 +22,25 @@ export function DropTableCell({
   React.useEffect(() => {
     if (!ref.current || !isDropTarget) return;
 
-    const unsubscribe = monitorForElements({
-      onDrop: ({ location, source }) => {
-        if (location.element === ref.current) {
+    return dropTargetForElements({
+      element: ref.current,
+      onDragStart: () => {
+        if (ref.current) {
+          ref.current.classList.add('bg-primary/10');
+        }
+      },
+      onDragLeave: () => {
+        if (ref.current) {
+          ref.current.classList.remove('bg-primary/10');
+        }
+      },
+      onDrop: ({ source }) => {
+        if (ref.current) {
+          ref.current.classList.remove('bg-primary/10');
           onDrop?.(source.data);
         }
       },
     });
-
-    return () => {
-      unsubscribe();
-    };
   }, [isDropTarget, onDrop]);
 
   return (
