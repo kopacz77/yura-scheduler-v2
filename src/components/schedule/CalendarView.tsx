@@ -8,7 +8,7 @@ import { UserCircle2, Clock } from 'lucide-react';
 
 interface CalendarViewProps {
   currentWeek: Date;
-  lessons: Lesson[];
+  lessons: (Lesson & { student?: { name: string } })[];
   onSlotSelect?: (date: Date) => void;
   onLessonSelect?: (lesson: Lesson) => void;
 }
@@ -25,7 +25,6 @@ export function CalendarView({
   onSlotSelect,
   onLessonSelect
 }: CalendarViewProps) {
-  // Generate week days
   const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
 
   const getLessonForSlot = (day: Date, timeSlot: string) => {
@@ -111,7 +110,7 @@ export function CalendarView({
                       <div className="flex items-center space-x-1">
                         <UserCircle2 className="h-3 w-3" />
                         <span className="font-medium truncate">
-                          {lesson.student?.user?.name || 'Student'}
+                          {lesson.student?.name || 'Student'}
                         </span>
                       </div>
                       <div className="flex items-center space-x-1 text-muted-foreground">
