@@ -49,13 +49,28 @@ export function useNotifications() {
     if (session) {
       fetchNotifications();
       // Set up WebSocket connection for real-time updates
+      const accessToken = ((session as any).token?.accessToken) || ((session as any).accessToken);
+      if (!accessToken) {
+        console.error('No access token available for WebSocket connection');
+        return;
+      }
+
       const ws = new WebSocket(
-        `${process.env.NEXT_PUBLIC_WS_URL}/notifications?token=${session.token}`
+        `${process.env.NEXT_PUBLIC_WS_URL}/notifications?token=${accessToken}`
       );
 
       ws.onmessage = (event) => {
         const notification = JSON.parse(event.data);
         handleNewNotification(notification);
+      };
+
+      ws.onerror = (error) => {
+        console.error('WebSocket error:', error);
+        toast({
+          title: 'Connection Error',
+          description: 'Failed to connect to notification service',
+          variant: 'destructive',
+        });
       };
 
       return () => ws.close();
