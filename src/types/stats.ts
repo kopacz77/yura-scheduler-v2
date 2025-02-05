@@ -1,4 +1,4 @@
-import { LessonType, PaymentStatus } from '@prisma/client';
+import { LessonType, PaymentStatus, Level } from '@prisma/client';
 
 export interface Stat {
   value: number;
@@ -16,6 +16,11 @@ export interface DashboardStats {
   studentActivity: {
     date: string;
     activeStudents: number;
+  }[];
+  distribution: {
+    level: Level;
+    count: number;
+    percentage: number;
   }[];
   lessonTypes: {
     type: LessonType;
