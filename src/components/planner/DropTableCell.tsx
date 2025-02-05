@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useRef, useEffect } from 'react';
-import { combine, dropTargetForElements } from '@atlaskit/pragmatic-drag-and-drop';
+import { dropTarget } from '@atlaskit/pragmatic-drag-and-drop';
 import { TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -22,17 +22,19 @@ export function DropTableCell({
   useEffect(() => {
     if (!ref.current || !isDropTarget) return;
 
-    const cleanup = combine([
-      dropTargetForElements({
-        element: ref.current,
-        onGenerateDragPreview: ({ nativeEvent }) => {
-          nativeEvent.dataTransfer.setDragImage(ref.current!, 0, 0);
-        },
-        onDrop: ({ source }) => {
-          onDrop?.(source.data);
-        },
-      })
-    ]);
+    const cleanup = dropTarget({
+      element: ref.current,
+      onDragEnter() {
+        ref.current?.setAttribute('data-dragging', 'true');
+      },
+      onDragLeave() {
+        ref.current?.removeAttribute('data-dragging');
+      },
+      onDrop: ({ source }) => {
+        ref.current?.removeAttribute('data-dragging');
+        onDrop?.(source.data);
+      },
+    });
 
     return cleanup;
   }, [isDropTarget, onDrop]);
