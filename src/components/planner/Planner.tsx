@@ -1,133 +1,61 @@
-import React, { FC, useEffect } from "react";
-import { PlannerToolbar } from "./PlannerToolbar";
-import { Appointment as AppointmentComponent } from "./Appointment";
-import { Appointment as AppointmentType, Resource } from "@/models/types";
-import { PlannerProvider, useCalendar } from "@/contexts/PlannerContext";
-import { Timeline } from "./Timeline";
+import React, { useState, useEffect } from "react";
+import { DndContext, DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
+import { Resource, Appointment } from "@/models/types";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
 import { Table, TableBody, TableRow } from "@/components/ui/table";
 import { ResourceTableCell } from "./ResourceTableCell";
 import { calculateNewDates, filterAppointments } from "@/lib/utils";
 import { DropTableCell } from "./DropTableCell";
-import { monitorForElements } from "@atlaskit/pragmatic-drag-and-drop/element/adapter";
 
 export interface PlannerProps extends React.HTMLAttributes<HTMLDivElement> {
   initialResources: Resource[];
-  initialAppointments: AppointmentType[];
+  initialAppointments: Appointment[];
+  onAppointmentMove?: (appointment: Appointment, newStart: Date, resourceId: string) => void;
 }
 
-const Planner: React.FC<PlannerProps> = ({
+export function Planner({
   initialResources,
   initialAppointments,
+  onAppointmentMove,
   ...props
-}) => {
-  return (
-    <PlannerProvider
-      initialAppointments={initialAppointments}
-      initialResources={initialResources}
-    >
-      <PlannerMainComponent {...props} />
-    </PlannerProvider>
-  );
-};
+}: PlannerProps) {
+  const [resources] = useState<Resource[]>(initialResources);
+  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
 
-export interface PlannerMainComponentProps
-  extends React.HTMLAttributes<HTMLDivElement> {}
+  const sensors = useSensors(useSensor(PointerSensor));
 
-const PlannerMainComponent: FC<PlannerMainComponentProps> = ({ ...props }) => {
-  return (
-    <div className="flex flex-col gap-2 bg-background">
-      <PlannerToolbar />
-      <CalendarContent {...props} />
-    </div>
-  );
-};
+  const handleDragEnd = (event: DragEndEvent) => {
+    const { active, over } = event;
+    if (!over) return;
 
-interface CalendarContentProps extends React.HTMLAttributes<HTMLDivElement> {}
+    const appointment = appointments.find(app => app.id === active.id);
+    const dropData = over.data.current;
+    if (!appointment || !dropData?.time || !dropData?.resourceId) return;
 
-const CalendarContent: React.FC<CalendarContentProps> = ({ ...props }) => {
-  const { viewMode, dateRange, timeLabels, resources, appointments, updateAppointment } = useCalendar();
+    const { start, end } = calculateNewDates(
+      appointment.start,
+      dropData.time,
+      appointment.duration
+    );
 
-  useEffect(() => {
-    return monitorForElements({
-      onDrop({ source, location }) {
-        const destination = location.current.dropTargets[0]?.data;
-        const sourceData = source.data;
-
-        if (!destination || !sourceData) return;
-
-        const appointment = appointments.find(
-          (appt) => appt.id === sourceData.appointmentId,
-        );
-        if (!appointment) return;
-
-        const newResource = resources.find(
-          (res) => res.id === destination.resourceId,
-        );
-        if (!newResource) return;
-
-        const newDates = calculateNewDates(
-          viewMode,
-          destination.columnIndex as unknown as number,
-          sourceData.columnIndex as unknown as number,
-          {
-            from: appointment.start,
-            to: appointment.end,
-          },
-        );
-
-        updateAppointment({
-          ...appointment,
-          start: newDates.start as Date,
-          end: newDates.end as Date,
-          resourceId: newResource.id,
-        });
-      },
-    });
-  }, [appointments, resources, updateAppointment, viewMode]);
+    onAppointmentMove?.(appointment, start, dropData.resourceId);
+  };
 
   return (
-    <div className="flex max-h-[calc(80vh_-_theme(spacing.16))] flex-col">
-      <div className="calendar-scroll flex-grow overflow-auto">
+    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
+      <Card {...props}>
         <Table>
-          <Timeline />
           <TableBody>
             {resources.map((resource) => (
               <TableRow key={resource.id}>
                 <ResourceTableCell resource={resource} />
-                {timeLabels?.map((label, index) => (
-                  <DropTableCell
-                    resourceId={resource.id}
-                    columnIndex={index}
-                    key={`${resource.id}-${index}`}
-                  >
-                    {appointments
-                      .filter(
-                        (appt) =>
-                          filterAppointments(
-                            appt,
-                            index,
-                            dateRange,
-                            viewMode,
-                          ) && appt.resourceId === resource.id,
-                      )
-                      .sort((a, b) => a.start.getTime() - b.start.getTime())
-                      .map((appt) => (
-                        <AppointmentComponent
-                          appointment={appt}
-                          columnIndex={index}
-                          resourceId={resource.id}
-                          key={appt.id}
-                        />
-                      ))}
-                  </DropTableCell>
-                ))}
+                {/* Time slots will go here */}
               </TableRow>
             ))}
           </TableBody>
         </Table>
-      </div>
-    </div>
+      </Card>
+    </DndContext>
   );
-};
-
-export default Planner;
+}
