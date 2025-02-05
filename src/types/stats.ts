@@ -8,10 +8,14 @@ export interface Stat {
 
 export interface ProgressDataPoint {
   month: string;
-  beginner: number;
-  intermediate: number;
-  advanced: number;
-  competitive: number;
+  [Level.PRE_PRELIMINARY]: number;
+  [Level.PRELIMINARY]: number;
+  [Level.PRE_JUVENILE]: number;
+  [Level.JUVENILE]: number;
+  [Level.INTERMEDIATE]: number;
+  [Level.NOVICE]: number;
+  [Level.JUNIOR]: number;
+  [Level.SENIOR]: number;
 }
 
 export interface DashboardStats {
