@@ -2,12 +2,13 @@
 
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
+import { PaymentStatus } from '@prisma/client';
 
 type Payment = {
   id: string;
   lessonId: string;
   amount: number;
-  status: 'PENDING' | 'COMPLETED' | 'FAILED';
+  status: PaymentStatus;
   method: 'VENMO' | 'ZELLE';
   referenceCode: string;
   verifiedBy?: string;
@@ -19,6 +20,11 @@ type PaymentFilters = {
   status?: string;
   startDate?: Date;
   endDate?: Date;
+};
+
+type BadgeProps = {
+  variant: 'default' | 'secondary' | 'destructive' | 'outline' | 'success' | 'warning';
+  label: string;
 };
 
 export function usePayments() {
@@ -133,6 +139,24 @@ export function usePayments() {
     }
   };
 
+  const getPaymentStatusBadgeProps = (status: PaymentStatus): BadgeProps => {
+    switch (status) {
+      case 'COMPLETED':
+        return { variant: 'success', label: 'Completed' };
+      case 'PENDING':
+        return { variant: 'warning', label: 'Pending' };
+      case 'FAILED':
+        return { variant: 'destructive', label: 'Failed' };
+      default:
+        return { variant: 'secondary', label: status };
+    }
+  };
+
+  const formatReferenceCode = (code: string): string => {
+    // Format code into groups of 4 characters
+    return code.match(/.{1,4}/g)?.join('-') || code;
+  };
+
   return {
     payments,
     isLoading,
@@ -140,5 +164,7 @@ export function usePayments() {
     fetchPayments,
     verifyPayment,
     markPaymentFailed,
+    getPaymentStatusBadgeProps,
+    formatReferenceCode,
   };
 }
