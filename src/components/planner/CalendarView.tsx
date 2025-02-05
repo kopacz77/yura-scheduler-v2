@@ -1,156 +1,126 @@
-import React, { useState } from 'react';
-import { format, startOfWeek, endOfWeek, eachDayOfInterval, addDays, isSameMonth, isSameDay, startOfDay } from 'date-fns';
-import { Button } from '@/components/ui/button';
-import { Card } from '@/components/ui/card';
+'use client';
+
+import { useState } from 'react';
+import { format, subDays, addDays, startOfDay, startOfWeek, startOfMonth, endOfDay, endOfWeek, endOfMonth } from 'date-fns';
 import { Calendar as CalendarIcon, ChevronLeft, ChevronRight } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import type { Appointment as AppointmentType } from '@prisma/client';
+import type { Appointment } from '@/models/types';
 
 type ViewType = 'day' | 'week' | 'month';
 
 interface CalendarViewProps {
-  appointments: AppointmentType[];
-  onDateSelect: (date: Date) => void;
-  onViewAppointment: (appointment: AppointmentType) => void;
-  onCreateAppointment: (date: Date) => void;
+  appointments: Appointment[];
+  onRangeChange?: (start: Date, end: Date) => void;
+  onViewChange?: (view: ViewType) => void;
 }
 
-export function CalendarView({
-  appointments,
-  onDateSelect,
-  onViewAppointment,
-  onCreateAppointment,
+export function CalendarView({ 
+  appointments, 
+  onRangeChange, 
+  onViewChange 
 }: CalendarViewProps) {
-  const [currentDate, setCurrentDate] = useState(new Date());
+  const [selectedDate, setSelectedDate] = useState(new Date());
   const [view, setView] = useState<ViewType>('week');
 
-  const getDaysInView = () => {
-    switch (view) {
-      case 'day':
-        return [currentDate];
-      case 'week':
-        return eachDayOfInterval({
-          start: startOfWeek(currentDate),
-          end: endOfWeek(currentDate)
-        });
-      case 'month':
-        const start = startOfWeek(startOfMonth(currentDate));
-        const end = endOfWeek(endOfMonth(currentDate));
-        return eachDayOfInterval({ start, end });
-    }
+  const handlePrevious = () => {
+    const newDate = view === 'day' ? subDays(selectedDate, 1)
+      : view === 'week' ? subDays(selectedDate, 7)
+      : subDays(selectedDate, 30);
+
+    setSelectedDate(newDate);
+    updateRange(newDate);
   };
 
-  const navigateDate = (direction: 'prev' | 'next') => {
-    const intervals = {
-      day: 1,
-      week: 7,
-      month: 30
-    };
-    const days = intervals[view];
-    setCurrentDate(prevDate => 
-      direction === 'prev' ? addDays(prevDate, -days) : addDays(prevDate, days)
-    );
+  const handleNext = () => {
+    const newDate = view === 'day' ? addDays(selectedDate, 1)
+      : view === 'week' ? addDays(selectedDate, 7)
+      : addDays(selectedDate, 30);
+
+    setSelectedDate(newDate);
+    updateRange(newDate);
   };
 
-  const getAppointmentsForDay = (date: Date) => {
-    return appointments.filter(appointment => 
-      isSameDay(new Date(appointment.start), date)
-    );
+  const updateRange = (date: Date) => {
+    if (!onRangeChange) return;
+
+    const start = view === 'day' ? startOfDay(date)
+      : view === 'week' ? startOfWeek(date)
+      : startOfMonth(date);
+
+    const end = view === 'day' ? endOfDay(date)
+      : view === 'week' ? endOfWeek(date)
+      : endOfMonth(date);
+
+    onRangeChange(start, end);
+  };
+
+  const handleViewChange = (newView: ViewType) => {
+    setView(newView);
+    onViewChange?.(newView);
+    updateRange(selectedDate);
   };
 
   return (
-    <Card className="p-4">
-      <div className="flex items-center justify-between mb-4">
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigateDate('prev')}
-          >
-            <ChevronLeft className="h-4 w-4" />
-          </Button>
-          <Button
-            variant="outline"
-            size="icon"
-            onClick={() => navigateDate('next')}
-          >
-            <ChevronRight className="h-4 w-4" />
-          </Button>
-          <h2 className="text-lg font-semibold">
-            {format(currentDate, 'MMMM yyyy')}
-          </h2>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant={view === 'day' ? 'default' : 'outline'}
-            onClick={() => setView('day')}
-          >
-            Day
-          </Button>
-          <Button
-            variant={view === 'week' ? 'default' : 'outline'}
-            onClick={() => setView('week')}
-          >
-            Week
-          </Button>
-          <Button
-            variant={view === 'month' ? 'default' : 'outline'}
-            onClick={() => setView('month')}
-          >
-            Month
-          </Button>
-        </div>
+    <div className="flex items-center justify-between">
+      <div className="flex items-center space-x-2">
+        <CalendarIcon className="h-5 w-5" />
+        <h2 className="text-lg font-semibold">
+          {format(selectedDate, 'MMMM d, yyyy')}
+        </h2>
       </div>
 
-      <div className={cn(
-        'grid gap-2',
-        view === 'month' ? 'grid-cols-7' : 'grid-cols-1'
-      )}>
-        {getDaysInView().map((date, index) => (
-          <div
-            key={date.toISOString()}
+      <div className="flex items-center space-x-4">
+        <div className="flex space-x-1">
+          <button
+            onClick={() => handleViewChange('day')}
             className={cn(
-              'p-2 border rounded-lg',
-              isSameMonth(date, currentDate) ? 'bg-white' : 'bg-gray-50',
-              'min-h-[120px] cursor-pointer'
+              'px-3 py-1 text-sm rounded-md',
+              view === 'day' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
             )}
-            onClick={() => onDateSelect(date)}
           >
-            <div className="flex justify-between items-center mb-2">
-              <span className={cn(
-                'text-sm font-medium',
-                isSameDay(date, new Date()) && 'text-blue-600'
-              )}>
-                {format(date, view === 'month' ? 'd' : 'EEE, MMM d')}
-              </span>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onCreateAppointment(date);
-                }}
-              >
-                <CalendarIcon className="h-4 w-4" />
-              </Button>
-            </div>
-            <div className="space-y-1">
-              {getAppointmentsForDay(date).map((appointment) => (
-                <div
-                  key={appointment.id}
-                  className="text-sm p-1 bg-blue-100 rounded truncate"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onViewAppointment(appointment);
-                  }}
-                >
-                  {format(new Date(appointment.start), 'HH:mm')} - {appointment.title}
-                </div>
-              ))}
-            </div>
-          </div>
-        ))}
+            Day
+          </button>
+          <button
+            onClick={() => handleViewChange('week')}
+            className={cn(
+              'px-3 py-1 text-sm rounded-md',
+              view === 'week' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            )}
+          >
+            Week
+          </button>
+          <button
+            onClick={() => handleViewChange('month')}
+            className={cn(
+              'px-3 py-1 text-sm rounded-md',
+              view === 'month' ? 'bg-primary text-primary-foreground' : 'hover:bg-muted'
+            )}
+          >
+            Month
+          </button>
+        </div>
+
+        <div className="flex items-center space-x-2">
+          <button
+            onClick={handlePrevious}
+            className="p-2 hover:bg-muted rounded-md"
+          >
+            <ChevronLeft className="h-4 w-4" />
+          </button>
+          <button
+            onClick={() => setSelectedDate(new Date())}
+            className="px-3 py-1 text-sm hover:bg-muted rounded-md"
+          >
+            Today
+          </button>
+          <button
+            onClick={handleNext}
+            className="p-2 hover:bg-muted rounded-md"
+          >
+            <ChevronRight className="h-4 w-4" />
+          </button>
+        </div>
       </div>
-    </Card>
+    </div>
   );
 }
