@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { Control, useForm, useFormContext, FormProvider, Form as FormComponent } from 'react-hook-form';
+import { Control, UseFormReturn, useForm, useFormContext, useController, FormProvider } from 'react-hook-form';
 import { Label } from '@/components/ui/label';
 import { cn } from '@/lib/utils';
 
@@ -26,25 +26,18 @@ type FormFieldProps = {
   name: string;
   control: Control<any>;
   render: (props: {
-    field: any;
+    field: ReturnType<typeof useController>['field'];
     fieldState: { error?: { message?: string } };
   }) => React.ReactElement;
 };
 
 const FormField = ({ name, control, render }: FormFieldProps) => {
-  const { formState } = useFormContext();
-  return render({
-    field: {
-      name,
-      value: control._getWatch(name),
-      onChange: control._subjects.watch.next,
-      onBlur: control._subjects.blur.next,
-      ref: control.register(name).ref
-    },
-    fieldState: {
-      error: formState.errors[name]
-    },
+  const { field, fieldState } = useController({
+    name,
+    control,
   });
+
+  return render({ field, fieldState });
 };
 
 const FormItem = React.forwardRef<
