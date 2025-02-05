@@ -1,4 +1,4 @@
-import { LessonType, PaymentStatus } from '@prisma/client';
+import { LessonType, PaymentStatus, RinkArea } from '@prisma/client';
 
 export interface Payment {
   id: string;
@@ -29,7 +29,7 @@ export interface Appointment {
 export interface Resource {
   id: string;
   name: string;
-  type: string;
+  type: RinkArea;
   details: {
     maxCapacity?: number;
     description?: string;
