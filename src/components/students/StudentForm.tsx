@@ -1,57 +1,81 @@
-import React from 'react';
 import { useForm } from 'react-hook-form';
-import { z } from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
+import * as z from 'zod';
 import {
   Form,
   FormControl,
-  FormDescription,
   FormField,
   FormItem,
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Student, SkatingLevel } from '@prisma/client';
+import { Student, Level } from '@prisma/client';
 
 const studentSchema = z.object({
   name: z.string().min(2, 'Name must be at least 2 characters'),
   email: z.string().email('Invalid email address'),
   phone: z.string().optional(),
-  level: z.enum(['BEGINNER', 'INTERMEDIATE', 'ADVANCED', 'COMPETITIVE']),
-  emergencyName: z.string().optional(),
-  emergencyPhone: z.string().optional(),
+  level: z.nativeEnum(Level),
+  maxLessonsPerWeek: z.number().min(1).max(10),
   notes: z.string().optional(),
+  emergencyContact: z.object({
+    name: z.string(),
+    phone: z.string(),
+    relationship: z.string(),
+  }),
 });
 
-type StudentFormValues = z.infer<typeof studentSchema>;
+type StudentFormData = z.infer<typeof studentSchema>;
 
 interface StudentFormProps {
-  student?: Student;
-  onSubmit: (data: StudentFormValues) => void;
-  onCancel: () => void;
+  initialData?: Partial<Student>;
+  onSubmit: (data: StudentFormData) => void;
+  isLoading?: boolean;
 }
 
-export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
-  const form = useForm<StudentFormValues>({
+export function StudentForm({ initialData, onSubmit, isLoading = false }: StudentFormProps) {
+  const { toast } = useToast();
+  const form = useForm<StudentFormData>({
     resolver: zodResolver(studentSchema),
     defaultValues: {
-      name: student?.name || '',
-      email: student?.email || '',
-      phone: student?.phone || '',
-      level: student?.level || 'BEGINNER',
-      emergencyName: student?.emergencyName || '',
-      emergencyPhone: student?.emergencyPhone || '',
-      notes: student?.notes || '',
+      name: initialData?.name || '',
+      email: initialData?.email || '',
+      phone: initialData?.phone || '',
+      level: initialData?.level || Level.PRE_PRELIMINARY,
+      maxLessonsPerWeek: initialData?.maxLessonsPerWeek || 3,
+      notes: initialData?.notes || '',
+      emergencyContact: {
+        name: '',
+        phone: '',
+        relationship: '',
+      },
     },
   });
 
+  const handleSubmit = async (data: StudentFormData) => {
+    try {
+      await onSubmit(data);
+      toast({
+        title: 'Success',
+        description: initialData ? 'Student updated successfully' : 'Student created successfully',
+      });
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Something went wrong. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
           name="name"
@@ -59,42 +83,40 @@ export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
             <FormItem>
               <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input {...field} />
+                <Input placeholder="John Doe" {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="email"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Email</FormLabel>
-                <FormControl>
-                  <Input type="email" {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input type="email" placeholder="john@example.com" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
-          <FormField
-            control={form.control}
-            name="phone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Phone (optional)</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="phone"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Phone</FormLabel>
+              <FormControl>
+                <Input type="tel" placeholder="+1 (555) 000-0000" {...field} />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
@@ -102,16 +124,19 @@ export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
           render={({ field }) => (
             <FormItem>
               <FormLabel>Skating Level</FormLabel>
-              <Select onValueChange={field.onChange} defaultValue={field.value}>
+              <Select 
+                onValueChange={field.onChange} 
+                defaultValue={field.value}
+              >
                 <FormControl>
                   <SelectTrigger>
-                    <SelectValue placeholder="Select a level" />
+                    <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {Object.values(SkatingLevel).map((level) => (
+                  {Object.values(Level).map((level) => (
                     <SelectItem key={level} value={level}>
-                      {level.charAt(0) + level.slice(1).toLowerCase()}
+                      {level.replace('_', ' ').toLowerCase()}
                     </SelectItem>
                   ))}
                 </SelectContent>
@@ -121,35 +146,25 @@ export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
           )}
         />
 
-        <div className="grid gap-4 sm:grid-cols-2">
-          <FormField
-            control={form.control}
-            name="emergencyName"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Emergency Contact Name</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-
-          <FormField
-            control={form.control}
-            name="emergencyPhone"
-            render={({ field }) => (
-              <FormItem>
-                <FormLabel>Emergency Contact Phone</FormLabel>
-                <FormControl>
-                  <Input {...field} />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        </div>
+        <FormField
+          control={form.control}
+          name="maxLessonsPerWeek"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Maximum Lessons per Week</FormLabel>
+              <FormControl>
+                <Input 
+                  type="number" 
+                  min={1} 
+                  max={10} 
+                  {...field} 
+                  onChange={(e) => field.onChange(parseInt(e.target.value))}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
 
         <FormField
           control={form.control}
@@ -158,24 +173,65 @@ export function StudentForm({ student, onSubmit, onCancel }: StudentFormProps) {
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea {...field} />
+                <Textarea 
+                  placeholder="Any additional notes or comments" 
+                  {...field} 
+                />
               </FormControl>
-              <FormDescription>
-                Add any additional notes about the student
-              </FormDescription>
               <FormMessage />
             </FormItem>
           )}
         />
 
-        <div className="flex gap-2 justify-end">
-          <Button type="button" variant="outline" onClick={onCancel}>
-            Cancel
-          </Button>
-          <Button type="submit">
-            {student ? 'Update Student' : 'Add Student'}
-          </Button>
+        <div className="space-y-4">
+          <h3 className="text-lg font-medium">Emergency Contact</h3>
+          
+          <FormField
+            control={form.control}
+            name="emergencyContact.name"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Name</FormLabel>
+                <FormControl>
+                  <Input placeholder="Emergency contact name" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="emergencyContact.phone"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Phone</FormLabel>
+                <FormControl>
+                  <Input type="tel" placeholder="Emergency contact phone" {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
+
+          <FormField
+            control={form.control}
+            name="emergencyContact.relationship"
+            render={({ field }) => (
+              <FormItem>
+                <FormLabel>Relationship</FormLabel>
+                <FormControl>
+                  <Input placeholder="e.g., Parent, Spouse, etc." {...field} />
+                </FormControl>
+                <FormMessage />
+              </FormItem>
+            )}
+          />
         </div>
+
+        <Button type="submit" disabled={isLoading}>
+          {isLoading ? 'Saving...' : (initialData ? 'Update Student' : 'Add Student')}
+        </Button>
       </form>
     </Form>
   );
