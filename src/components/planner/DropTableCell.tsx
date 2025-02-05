@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useRef, useEffect } from 'react';
-import { DragSource, DropTarget } from '@atlaskit/drag-and-drop';
+import React, { useRef } from 'react';
+import { draggable, dropTargetForElements } from '@atlaskit/drag-and-drop/adapter/element';
 import { TableCell } from '@/components/ui/table';
 import { cn } from '@/lib/utils';
 
@@ -19,39 +19,31 @@ export function DropTableCell({
 }: DropTableCellProps) {
   const ref = useRef<HTMLTableCellElement>(null);
 
-  if (!isDropTarget) {
-    return (
-      <TableCell
-        ref={ref}
-        {...props}
-        className={className}
-      >
-        {children}
-      </TableCell>
-    );
-  }
+  React.useEffect(() => {
+    if (!ref.current || !isDropTarget) return;
+
+    const cleanup = dropTargetForElements({
+      element: ref.current,
+      onDrop: ({ source }) => {
+        onDrop?.(source.data);
+      },
+    });
+
+    return cleanup;
+  }, [isDropTarget, onDrop]);
 
   return (
-    <DropTarget
-      onDrop={(element) => onDrop?.(element.data)}
-    >
-      {({ isActivated, ref: dropRef }) => (
-        <TableCell
-          ref={(node) => {
-            ref.current = node;
-            dropRef(node);
-          }}
-          {...props}
-          className={cn(
-            'transition-colors duration-200',
-            isActivated && 'bg-primary/10',
-            !isActivated && 'hover:bg-primary/5',
-            className
-          )}
-        >
-          {children}
-        </TableCell>
+    <TableCell
+      ref={ref}
+      {...props}
+      className={cn(
+        'transition-colors duration-200',
+        isDropTarget && 'hover:bg-primary/5',
+        className
       )}
-    </DropTarget>
+      data-droppable={isDropTarget}
+    >
+      {children}
+    </TableCell>
   );
 }
