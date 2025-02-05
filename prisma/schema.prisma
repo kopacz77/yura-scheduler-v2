@@ -44,6 +44,7 @@ model Lesson {
   endTime           DateTime
   duration          Int          // in minutes
   type              LessonType   @default(PRIVATE)
+  area              RinkArea     @default(MAIN_RINK)
   status            LessonStatus @default(SCHEDULED)
   cancellationReason String?
   cancellationTime  DateTime?
@@ -134,6 +135,12 @@ enum LessonType {
   GROUP
   CHOREOGRAPHY
   COMPETITION_PREP
+}
+
+enum RinkArea {
+  MAIN_RINK
+  PRACTICE_RINK
+  DANCE_STUDIO
 }
 
 enum LessonStatus {
