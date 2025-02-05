@@ -1,12 +1,28 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, Legend } from 'recharts';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Level } from '@prisma/client';
 import type { ProgressDataPoint } from '@/types/stats';
 
 interface StudentProgressProps {
   progressData?: ProgressDataPoint[];
   isLoading: boolean;
 }
+
+const LEVEL_COLORS: Record<Level, string> = {
+  [Level.PRE_PRELIMINARY]: '#22c55e',  // Green
+  [Level.PRELIMINARY]: '#3b82f6',      // Blue
+  [Level.PRE_JUVENILE]: '#a855f7',     // Purple
+  [Level.JUVENILE]: '#ec4899',         // Pink
+  [Level.INTERMEDIATE]: '#f59e0b',     // Orange
+  [Level.NOVICE]: '#ef4444',          // Red
+  [Level.JUNIOR]: '#6366f1',          // Indigo
+  [Level.SENIOR]: '#0ea5e9',          // Sky Blue
+};
+
+const formatLevel = (level: Level): string => {
+  return level.replace('_', ' ').toLowerCase().replace(/\b\w/g, l => l.toUpperCase());
+};
 
 export function StudentProgress({ progressData, isLoading }: StudentProgressProps) {
   if (isLoading) {
@@ -27,7 +43,7 @@ export function StudentProgress({ progressData, isLoading }: StudentProgressProp
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Student Progress Over Time</CardTitle>
+        <CardTitle>Student Level Distribution Over Time</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="h-[400px]">
@@ -40,30 +56,16 @@ export function StudentProgress({ progressData, isLoading }: StudentProgressProp
               <XAxis dataKey="month" />
               <YAxis />
               <Tooltip />
-              <Line 
-                type="monotone" 
-                dataKey="beginner" 
-                stroke="#22c55e"
-                name="Beginners"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="intermediate" 
-                stroke="#3b82f6"
-                name="Intermediate"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="advanced" 
-                stroke="#a855f7"
-                name="Advanced"
-              />
-              <Line 
-                type="monotone" 
-                dataKey="competitive" 
-                stroke="#ef4444"
-                name="Competitive"
-              />
+              <Legend />
+              {Object.entries(LEVEL_COLORS).map(([level, color]) => (
+                <Line
+                  key={level}
+                  type="monotone"
+                  dataKey={level}
+                  stroke={color}
+                  name={formatLevel(level as Level)}
+                />
+              ))}
             </LineChart>
           </ResponsiveContainer>
         </div>
