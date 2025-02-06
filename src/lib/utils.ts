@@ -1,6 +1,6 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
-import { format, parseISO, addDays, isSameDay } from 'date-fns';
+import { format, parseISO, addDays, isSameDay, addMinutes } from 'date-fns';
 import { Level, LessonType } from '@prisma/client';
 
 export function cn(...inputs: ClassValue[]) {
@@ -63,12 +63,30 @@ export function getTimeSlots(startHour = 6, endHour = 22, interval = 30) {
   return slots;
 }
 
-export function calculateNewDates(sourceDate: Date, targetDate: Date, currentDate: Date): Date {
-  const daysDiff = targetDate.getDay() - sourceDate.getDay();
-  return addDays(currentDate, daysDiff);
+interface TimeRange {
+  startTime: Date;
+  endTime: Date;
 }
 
-export function filterAppointments<T extends { startTime: Date }>(appointments: T[], date: Date): T[] {
+export function calculateNewDates(
+  sourceDate: Date,
+  targetDate: Date,
+  duration: number
+): TimeRange {
+  const daysDiff = targetDate.getDay() - sourceDate.getDay();
+  const startTime = addDays(targetDate, daysDiff);
+  const endTime = addMinutes(startTime, duration);
+  
+  return {
+    startTime,
+    endTime
+  };
+}
+
+export function filterAppointments<T extends { startTime: Date }>(
+  appointments: T[],
+  date: Date
+): T[] {
   return appointments.filter(appointment => 
     isSameDay(new Date(appointment.startTime), date)
   );
