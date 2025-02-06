@@ -1,4 +1,4 @@
-import { type Student } from '@prisma/client';
+import { type Student, type User } from '@prisma/client';
 import type { Appointment } from '@/models/types';
 import * as React from 'react';
 import { format } from 'date-fns';
@@ -15,7 +15,7 @@ import {
 
 interface LessonConfirmationProps {
   appointment: Appointment;
-  student: Student;
+  student: Student & { user: User };
   coachName: string;
 }
 
@@ -36,7 +36,7 @@ export function LessonConfirmation({
           
           <Section style={section}>
             <Text style={text}>
-              Hello {student.name},
+              Hello {student.user.name},
             </Text>
             <Text style={text}>
               Your lesson with {coachName} has been confirmed for:
