@@ -6,12 +6,17 @@ import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { format } from 'date-fns';
-import { Lesson } from '@/types/schedule';
+import { Lesson, Rink, Student, User } from '@prisma/client';
 import { useLessons } from '@/hooks/useLessons';
-import { AlertCircle, Clock, MapPin } from 'lucide-react';
+import { AlertCircle, Clock, MapPin, UserCircle2 } from 'lucide-react';
 
 interface LessonDetailsProps {
-  lesson: Lesson;
+  lesson: Lesson & {
+    student: Student & {
+      user: User;
+    };
+    rink: Rink;
+  };
   isOpen: boolean;
   onClose: () => void;
 }
@@ -45,20 +50,25 @@ export function LessonDetails({ lesson, isOpen, onClose }: LessonDetailsProps) {
         <div className="space-y-4">
           <div className="space-y-2">
             <div className="flex items-center space-x-2 text-muted-foreground">
+              <UserCircle2 className="h-4 w-4" />
+              <span>{lesson.student.user.name || 'Unnamed Student'}</span>
+            </div>
+
+            <div className="flex items-center space-x-2 text-muted-foreground">
               <Clock className="h-4 w-4" />
               <span>
-                {format(new Date(lesson.startTime), 'MMM d, yyyy h:mm a')} -
-                {format(new Date(lesson.endTime), 'h:mm a')}
+                {format(lesson.startTime, 'MMM d, yyyy h:mm a')} -
+                {format(lesson.endTime, 'h:mm a')}
               </span>
             </div>
 
             <div className="flex items-center space-x-2 text-muted-foreground">
               <MapPin className="h-4 w-4" />
-              <span>{lesson.rinkId}</span>
+              <span>{lesson.rink.name}</span>
             </div>
           </div>
 
-          {lesson.status === 'cancelled' && (
+          {lesson.status === 'CANCELLED' && (
             <div className="rounded-md bg-red-50 p-4">
               <div className="flex items-center">
                 <AlertCircle className="h-5 w-5 text-red-400" />
@@ -74,7 +84,7 @@ export function LessonDetails({ lesson, isOpen, onClose }: LessonDetailsProps) {
             </div>
           )}
 
-          {isUpcoming && lesson.status !== 'cancelled' && (
+          {isUpcoming && lesson.status !== 'CANCELLED' && (
             <div className="space-y-4">
               <div className="space-y-2">
                 <Label htmlFor="cancellationReason">Cancellation Reason</Label>
