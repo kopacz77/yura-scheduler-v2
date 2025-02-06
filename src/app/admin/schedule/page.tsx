@@ -5,7 +5,7 @@ import { CalendarView } from '@/components/schedule/CalendarView';
 import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { LessonDetails } from '@/components/schedule/LessonDetails';
 import { RinkSelector } from '@/components/schedule/RinkSelector';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
@@ -159,6 +159,9 @@ export default function AdminSchedulePage() {
       {/* Modals */}
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>Schedule New Lesson</DialogTitle>
+          </DialogHeader>
           <ScheduleForm
             initialDate={selectedDate}
             onSchedule={() => {
