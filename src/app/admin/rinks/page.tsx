@@ -1,13 +1,50 @@
+'use client';
+
 import React from 'react';
 import { RinkCard } from '@/components/admin/rinks/RinkCard';
 import { RinkDialog } from '@/components/admin/rinks/RinkDialog';
-import { Button } from '@/components/ui/button';
 import { Heading } from '@/components/ui/heading';
 import { Plus } from 'lucide-react';
-import { getRinks } from '@/lib/actions/rinks';
+import { useEffect, useState } from 'react';
+import { LoadingSpinner } from '@/components/ui/loading-spinner';
 
-export default async function RinksPage() {
-  const rinks = await getRinks();
+interface Rink {
+  id: string;
+  name: string;
+  address: string;
+  timezone: string;
+  _count?: {
+    lessons: number;
+  };
+}
+
+export default function RinksPage() {
+  const [rinks, setRinks] = useState<Rink[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchRinks = async () => {
+      try {
+        const response = await fetch('/api/resources');
+        const data = await response.json();
+        setRinks(data.resources);
+      } catch (error) {
+        console.error('Error fetching rinks:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchRinks();
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex justify-center items-center h-screen">
+        <LoadingSpinner />
+      </div>
+    );
+  }
 
   return (
     <div className="p-8 space-y-8">
@@ -38,7 +75,7 @@ export default async function RinksPage() {
             onDelete={(id) => console.log('Delete rink:', id)}
             onManageSchedule={(id) => console.log('Manage schedule:', id)}
           />
-        ))}      
+        ))}
       </div>
     </div>
   );
