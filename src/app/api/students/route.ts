@@ -12,22 +12,19 @@ export async function GET() {
 
     const students = await prisma.student.findMany({
       include: {
-        user: true,
-        lessons: {
-          where: {
-            startTime: {
-              gte: new Date(),
-            },
-          },
-          orderBy: {
-            startTime: 'asc',
-          },
-          take: 1,
-        },
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
       },
       orderBy: {
-        createdAt: 'desc',
-      },
+        user: {
+          name: 'asc'
+        }
+      }
     });
 
     return NextResponse.json(students);
@@ -69,7 +66,13 @@ export async function POST(req: Request) {
         maxLessonsPerWeek: 3, // Default value
       },
       include: {
-        user: true,
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          }
+        }
       },
     });
 
