@@ -1,13 +1,14 @@
-import type { Appointment, Resource, Student, Payment } from '@prisma/client';
+import type { Lesson, Student, Payment, Rink, RinkTimeSlot } from '@prisma/client';
 
-export interface AppointmentWithRelations extends Appointment {
+export interface LessonWithRelations extends Lesson {
   student: Student;
-  resource: Resource;
+  rink: Rink;
   payment?: Payment;
 }
 
-export interface ResourceWithAppointments extends Resource {
-  appointments: Appointment[];
+export interface RinkWithLessons extends Rink {
+  lessons: Lesson[];
+  timeSlots: RinkTimeSlot[];
 }
 
 export interface MaintenanceSlot {
@@ -19,33 +20,34 @@ export interface TimeSlot {
   start: Date;
   end: Date;
   available: boolean;
-  appointments: Appointment[];
+  lessons: Lesson[];
 }
 
 export interface AvailabilityCheck {
   available: boolean;
-  conflicts: Appointment[];
+  conflicts: Lesson[];
   reason?: string;
 }
 
-export interface RecurringAppointmentPattern {
+export interface RecurringLessonPattern {
   pattern: 'weekly' | 'biweekly';
   endDate: Date;
 }
 
 export interface ScheduleConflict {
-  appointment: Omit<Appointment, 'id' | 'createdAt' | 'updatedAt'>;
+  lesson: Omit<Lesson, 'id' | 'createdAt' | 'updatedAt'>;
   reason: string;
 }
 
-export interface ResourceSchedule {
-  resource: Resource;
-  appointments: Appointment[];
+export interface RinkSchedule {
+  rink: Rink;
+  lessons: Lesson[];
+  timeSlots: RinkTimeSlot[];
   maintenanceSlots: MaintenanceSlot[];
   utilization: number;
 }
 
-export interface AppointmentValidation {
+export interface LessonValidation {
   valid: boolean;
   conflicts: ScheduleConflict[];
 }
