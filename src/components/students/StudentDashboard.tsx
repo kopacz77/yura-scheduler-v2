@@ -1,3 +1,5 @@
+'use client';
+
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { UpcomingLessons } from '@/components/schedule/UpcomingLessons';
 import { PaymentHistory } from '@/components/payments/PaymentHistory';
