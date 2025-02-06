@@ -32,6 +32,15 @@ export function formatAppointmentTime(date: Date | string) {
   return format(date, 'h:mm a');
 }
 
+export function formatCurrency(amount: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
+  }).format(amount);
+}
+
 export function getTimeSlots(startHour = 6, endHour = 22, interval = 30) {
   const slots: string[] = [];
   for (let hour = startHour; hour < endHour; hour++) {
