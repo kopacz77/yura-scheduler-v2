@@ -1,3 +1,5 @@
+'use client';
+
 import { Suspense } from 'react';
 import { StudentDashboard } from '@/components/students/StudentDashboard';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
