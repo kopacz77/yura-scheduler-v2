@@ -64,8 +64,8 @@ export function getTimeSlots(startHour = 6, endHour = 22, interval = 30) {
 }
 
 interface TimeRange {
-  startTime: Date;
-  endTime: Date;
+  start: Date;
+  end: Date;
 }
 
 export function calculateNewDates(
@@ -74,20 +74,20 @@ export function calculateNewDates(
   duration: number
 ): TimeRange {
   const daysDiff = targetDate.getDay() - sourceDate.getDay();
-  const startTime = addDays(targetDate, daysDiff);
-  const endTime = addMinutes(startTime, duration);
+  const start = addDays(targetDate, daysDiff);
+  const end = addMinutes(start, duration);
   
   return {
-    startTime,
-    endTime
+    start,
+    end
   };
 }
 
-export function filterAppointments<T extends { startTime: Date }>(
+export function filterAppointments<T extends { start: Date }>(
   appointments: T[],
   date: Date
 ): T[] {
   return appointments.filter(appointment => 
-    isSameDay(new Date(appointment.startTime), date)
+    isSameDay(new Date(appointment.start), date)
   );
 }
