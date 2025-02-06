@@ -21,7 +21,7 @@ declare module 'next-auth' {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { 
-    strategy: 'database',
+    strategy: 'jwt',
     maxAge: 30 * 24 * 60 * 60, // 30 days
     updateAge: 24 * 60 * 60, // 24 hours
   },
@@ -67,16 +67,21 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    session: async ({ session, user }) => {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: user.id,
-          role: user.role as Role,
-          emailVerified: user.emailVerified
-        }
-      };
+    async jwt({ token, user }) {
+      if (user) {
+        token.id = user.id;
+        token.role = user.role;
+        token.emailVerified = user.emailVerified;
+      }
+      return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+        session.user.emailVerified = token.emailVerified as Date | null;
+      }
+      return session;
     },
   },
   secret: process.env.NEXTAUTH_SECRET,
