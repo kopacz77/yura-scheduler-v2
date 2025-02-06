@@ -1,40 +1,75 @@
+import { Level, LessonStatus, LessonType, RinkArea, Role } from '@prisma/client';
+
 export interface Rink {
   id: string;
   name: string;
   timezone: string;
   address: string;
+  maxCapacity?: number;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface User {
+  id: string;
+  email: string;
+  name: string | null;
+  role: Role;
+  emailVerified: Date | null;
+  createdAt: Date;
+  updatedAt: Date;
+}
+
+export interface Student {
+  id: string;
+  userId: string;
+  user: User;
+  phone: string | null;
+  maxLessonsPerWeek: number;
+  notes: string | null;
+  level: Level;
+  emergencyContact: {
+    name: string;
+    phone: string;
+    relationship: string;
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface Lesson {
   id: string;
   studentId: string;
+  student: Student;
   rinkId: string;
+  rink: Rink;
   startTime: Date;
   endTime: Date;
-  duration: 30 | 60;  // in minutes
-  status: 'scheduled' | 'cancelled' | 'completed';
-  cancellationReason?: string;
-  cancellationTime?: Date;
-  notes?: string;
+  duration: number;
+  type: LessonType;
+  area: RinkArea;
+  status: LessonStatus;
+  cancellationReason: string | null;
+  cancellationTime: Date | null;
+  notes: string | null;
+  price: number;
+  googleCalendarEventId: string | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
-export interface Student {
+export interface RinkTimeSlot {
   id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  maxLessonsPerWeek: number;
-  notes?: string;
-  emergencyContact?: {
-    name: string;
-    phone: string;
-    relationship: string;
-  };
-}
-
-export interface CancellationPolicy {
-  withinHours: number;  // 24 for your case
-  refundPercentage: number;  // 50 for half refund
+  rinkId: string;
+  rink: Rink;
+  startTime: string;
+  endTime: string;
+  daysOfWeek: number[];
+  maxStudents: number;
+  lessons: Lesson[];
+  isActive: boolean;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export const DEFAULT_RINKS: Record<string, Pick<Rink, 'timezone' | 'address'>> = {
