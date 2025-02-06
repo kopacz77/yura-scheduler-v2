@@ -20,14 +20,14 @@ export function RinkSelector({ selectedRink, onRinkChange }: RinkSelectorProps) 
         </div>
 
         <Select
-          value={selectedRink}
+          value={selectedRink || 'all'}
           onValueChange={onRinkChange}
         >
           <SelectTrigger className="w-[300px]">
             <SelectValue placeholder="Select a rink" />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="">All Locations</SelectItem>
+            <SelectItem value="all">All Locations</SelectItem>
             {Object.entries(DEFAULT_RINKS).map(([name, details]) => (
               <SelectItem key={name} value={name}>
                 <div className="flex flex-col">
