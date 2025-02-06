@@ -1,10 +1,9 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import { type NextAuthOptions } from 'next-auth';
-import { getServerSession } from 'next-auth';
-import CredentialsProvider from 'next-auth/providers/credentials';
+import type { NextAuthConfig } from 'next-auth';
+import Credentials from 'next-auth/providers/credentials';
 import prisma from './prisma';
 import { compare } from 'bcryptjs';
-import { User, Role } from '@prisma/client';
+import { Role } from '@prisma/client';
 
 declare module 'next-auth' {
   interface Session {
@@ -18,11 +17,12 @@ declare module 'next-auth' {
   }
 }
 
-export const authOptions: NextAuthOptions = {
-  session: { strategy: 'jwt' },
+export const authConfig = {
+  adapter: PrismaAdapter(prisma),
+  session: { strategy: 'database' },
   pages: { signIn: '/auth/signin' },
   providers: [
-    CredentialsProvider({
+    Credentials({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -58,27 +58,25 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    jwt: async ({ token, user }) => {
-      if (user) {
-        token.id = user.id;
-        token.role = user.role;
-        token.emailVerified = user.emailVerified;
-      }
-      return token;
+    async session({ session, user }) {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: user.id,
+          role: user.role as Role,
+          emailVerified: user.emailVerified
+        }
+      };
     },
-    session: async ({ session, token }) => {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-        session.user.emailVerified = token.emailVerified as Date | null;
-      }
-      return session;
-    }
   },
-};
+} satisfies NextAuthConfig;
 
 // Helper to get auth session in route handlers
-export const auth = async () => await getServerSession(authOptions);
+export const auth = async () => {
+  const session = await getServerSession(authConfig);
+  return session;
+};
 
-// Export auth options for API routes
-export default authOptions;
+// Export auth config for API routes
+export default authConfig;
