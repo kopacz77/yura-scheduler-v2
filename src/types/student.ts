@@ -1,25 +1,20 @@
-export interface Student {
+import { Level, User } from '@prisma/client';
+
+export interface StudentWithUser {
   id: string;
-  name: string;
-  email: string;
-  phone: string;
-  level: string;
-  dateOfBirth?: string;
-  joinedDate: string;
-  emergencyContact?: {
+  userId: string;
+  user: User;
+  phone: string | null;
+  maxLessonsPerWeek: number;
+  notes: string | null;
+  level: Level;
+  emergencyContact: {
     name: string;
     phone: string;
     relationship: string;
-  };
-  preferences?: {
-    preferredDays: string[];
-    preferredTimes: string[];
-    notes: string;
-  };
-  paymentInfo?: {
-    defaultMethod: string;
-    billingAddress: string;
-  };
+  } | null;
+  createdAt: Date;
+  updatedAt: Date;
 }
 
 export interface StudentProgress {
@@ -36,6 +31,6 @@ export interface StudentStats {
   completedLessons: number;
   upcomingLessons: number;
   averageAttendance: number;
-  currentLevel: string;
+  currentLevel: Level;
   progressRate: number;
 }
