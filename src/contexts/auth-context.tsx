@@ -1,89 +1,54 @@
 'use client';
 
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
-import { signIn, signOut } from 'next-auth/react';
+import { Role } from '@prisma/client';
 
-type UserRole = 'ADMIN' | 'STUDENT';
-
-interface User {
+type User = {
   id: string;
-  name: string;
   email: string;
-  role: UserRole;
-}
+  name: string | null;
+  role: Role;
+  emailVerified: Date | null;
+};
 
-interface AuthContextType {
+type AuthContextType = {
   user: User | null;
   isLoading: boolean;
-  login: (credentials: { email: string; password: string }) => Promise<void>;
-  logout: () => Promise<void>;
-  isAuthenticated: boolean;
-}
+  error: Error | null;
+};
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
+const AuthContext = createContext<AuthContextType>({
+  user: null,
+  isLoading: true,
+  error: null,
+});
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
+  const { data: session, status } = useSession();
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
   const router = useRouter();
 
   useEffect(() => {
-    const checkAuth = async () => {
-      try {
-        const response = await fetch('/api/auth/session');
-        const data = await response.json();
-
-        if (data.user) {
-          setUser(data.user);
-        }
-      } catch (error) {
-        console.error('Failed to check auth status:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    checkAuth();
-  }, []);
-
-  const login = async (credentials: { email: string; password: string }) => {
-    try {
-      const result = await signIn('credentials', {
-        ...credentials,
-        redirect: false,
-      });
-
-      if (result?.error) {
-        throw new Error(result.error);
-      }
-
-      router.push('/dashboard');
-    } catch (error) {
-      console.error('Login error:', error);
-      throw error;
-    }
-  };
-
-  const logout = async () => {
-    try {
-      await signOut({ redirect: false });
+    if (status === 'authenticated' && session?.user) {
+      setUser(session.user as User);
+      
+      // Redirect based on role
+      const path = session.user.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
+      router.push(path);
+    } else if (status === 'unauthenticated') {
       setUser(null);
-      router.push('/');
-    } catch (error) {
-      console.error('Logout error:', error);
-      throw error;
     }
-  };
+  }, [session, status, router]);
 
   return (
     <AuthContext.Provider
       value={{
         user,
-        isLoading,
-        login,
-        logout,
-        isAuthenticated: !!user,
+        isLoading: status === 'loading',
+        error,
       }}
     >
       {children}
@@ -93,7 +58,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  if (context === undefined) {
+  if (!context) {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
