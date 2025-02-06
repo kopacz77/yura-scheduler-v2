@@ -6,7 +6,7 @@ import { PaymentVerification } from './PaymentVerification';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PaymentStatus as PaymentStatusType } from '@prisma/client';
+import { PaymentStatus as PaymentStatusType, PaymentMethod } from '@prisma/client';
 import { format } from 'date-fns';
 
 export interface PaymentWithDetails {
@@ -14,21 +14,26 @@ export interface PaymentWithDetails {
   studentId: string;
   lessonId: string;
   amount: number;
-  method: 'VENMO' | 'ZELLE';
+  method: PaymentMethod;
   status: PaymentStatusType;
   referenceCode: string;
-  verifiedBy?: string | null;
-  verifiedAt?: Date | null;
+  verifiedBy: string | null;
+  verifiedAt: Date | null;
+  reminderSentAt: Date | null;
+  notes: string | null;
   createdAt: Date;
-  student?: {
+  updatedAt: Date;
+  student: {
     user: {
-      name: string;
+      name: string | null;
       email: string;
     };
   };
-  lesson?: {
+  lesson: {
     startTime: Date;
+    endTime: Date;
     duration: number;
+    type: string;
   };
 }
 
@@ -42,7 +47,7 @@ export function PaymentsList({ payments }: PaymentsListProps) {
 
   const filteredPayments = payments.filter(payment => {
     const matchesSearch = (
-      payment.student?.user.name.toLowerCase().includes(search.toLowerCase()) ||
+      (payment.student?.user.name?.toLowerCase() ?? '').includes(search.toLowerCase()) ||
       payment.referenceCode.toLowerCase().includes(search.toLowerCase()) ||
       payment.student?.user.email.toLowerCase().includes(search.toLowerCase())
     );
@@ -83,7 +88,7 @@ export function PaymentsList({ payments }: PaymentsListProps) {
             <CardHeader>
               <div className="flex justify-between items-start">
                 <div>
-                  <CardTitle className="text-lg">{payment.student?.user.name}</CardTitle>
+                  <CardTitle className="text-lg">{payment.student?.user.name || 'Unnamed Student'}</CardTitle>
                   <div className="text-sm text-muted-foreground">{payment.student?.user.email}</div>
                 </div>
               </div>
@@ -92,12 +97,24 @@ export function PaymentsList({ payments }: PaymentsListProps) {
               <div className="space-y-4">
                 {payment.lesson && (
                   <div className="text-sm text-muted-foreground">
-                    <div>Lesson Date: {format(new Date(payment.lesson.startTime), 'MMM d, yyyy')}</div>
-                    <div>Time: {format(new Date(payment.lesson.startTime), 'h:mm a')}</div>
+                    <div>Lesson Date: {format(payment.lesson.startTime, 'MMM d, yyyy')}</div>
+                    <div>Time: {format(payment.lesson.startTime, 'h:mm a')} - {format(payment.lesson.endTime, 'h:mm a')}</div>
                     <div>Duration: {payment.lesson.duration} minutes</div>
+                    <div>Type: {payment.lesson.type}</div>
                   </div>
                 )}
                 <PaymentStatus payment={payment} />
+                {payment.notes && (
+                  <div className="text-sm mt-2 text-muted-foreground">
+                    <div className="font-medium">Notes:</div>
+                    <div>{payment.notes}</div>
+                  </div>
+                )}
+                {payment.reminderSentAt && (
+                  <div className="text-sm mt-2 text-muted-foreground">
+                    <div>Reminder sent: {format(payment.reminderSentAt, 'MMM d, yyyy h:mm a')}</div>
+                  </div>
+                )}
               </div>
             </CardContent>
           </Card>
