@@ -1,4 +1,9 @@
 import { Resend } from 'resend';
+import { PaymentMethod, LessonType } from '@prisma/client';
+import { render } from '@react-email/components';
+import { LessonConfirmation } from './templates/LessonConfirmation';
+import { PaymentReceipt } from './templates/PaymentReceipt';
+import { ScheduleReminder } from './templates/ScheduleReminder';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -25,18 +30,60 @@ export async function sendEmail({
   }
 }
 
-export async function sendLessonReminder(to: string, lessonDetails: any) {
+interface LessonReminderDetails {
+  studentName: string;
+  email: string;
+  lessonDate: Date;
+  lessonType: LessonType;
+  rinkName: string;
+}
+
+interface PaymentReminderDetails {
+  studentName: string;
+  email: string;
+  amount: number;
+  lessonDate: Date;
+  paymentMethod: PaymentMethod;
+}
+
+export async function sendLessonReminder(details: LessonReminderDetails) {
+  const emailHtml = render(
+    <ScheduleReminder
+      student={{ user: { name: details.studentName } } as any}
+      lesson={{
+        startTime: details.lessonDate,
+        type: details.lessonType,
+      } as any}
+      manageUrl="/dashboard/schedule"
+    />
+  );
+
   return sendEmail({
-    to,
+    to: details.email,
     subject: 'Upcoming Lesson Reminder',
-    html: `<p>You have an upcoming lesson...</p>`, // Expand this template
+    html: emailHtml,
   });
 }
 
-export async function sendPaymentReminder(to: string, paymentDetails: any) {
+export async function sendPaymentReminder(details: PaymentReminderDetails) {
+  const emailHtml = render(
+    <PaymentReceipt
+      student={{ user: { name: details.studentName } } as any}
+      payment={{
+        amount: details.amount,
+        method: details.paymentMethod,
+        createdAt: new Date(),
+      } as any}
+      lesson={{
+        startTime: details.lessonDate,
+        type: 'PRIVATE',
+      } as any}
+    />
+  );
+
   return sendEmail({
-    to,
+    to: details.email,
     subject: 'Payment Reminder',
-    html: `<p>Payment reminder...</p>`, // Expand this template
+    html: emailHtml,
   });
 }
