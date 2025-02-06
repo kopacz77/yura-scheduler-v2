@@ -34,7 +34,9 @@ export function ScheduleForm({ initialDate, onSchedule }: ScheduleFormProps) {
   
   const { register, handleSubmit, setValue, watch, formState: { errors, isSubmitting } } = useForm<ScheduleFormData>({
     defaultValues: {
-      duration: '60' // Default to 1-hour lessons
+      duration: '60', // Default to 1-hour lessons
+      rinkId: '', // Initialize rinkId
+      studentId: '' // Initialize studentId
     }
   });
 
@@ -72,6 +74,8 @@ export function ScheduleForm({ initialDate, onSchedule }: ScheduleFormProps) {
     }
   };
 
+  const formValues = watch();
+
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-6 p-6">
       <div className="space-y-4">
@@ -87,7 +91,7 @@ export function ScheduleForm({ initialDate, onSchedule }: ScheduleFormProps) {
           </div>
         ) : (
           <Select
-            {...register('studentId', { required: true })}
+            value={formValues.studentId}
             onValueChange={(value) => setValue('studentId', value)}
           >
             <SelectTrigger>
@@ -114,7 +118,7 @@ export function ScheduleForm({ initialDate, onSchedule }: ScheduleFormProps) {
         </div>
 
         <Select
-          {...register('rinkId', { required: true })}
+          value={formValues.rinkId}
           onValueChange={(value) => {
             setValue('rinkId', value);
             setSelectedRink(value);
@@ -176,9 +180,8 @@ export function ScheduleForm({ initialDate, onSchedule }: ScheduleFormProps) {
         <div className="space-y-2">
           <Label htmlFor="duration">Duration</Label>
           <Select
-            {...register('duration', { required: true })}
+            value={formValues.duration}
             onValueChange={(value) => setValue('duration', value as '30' | '60')}
-            defaultValue="60"
           >
             <SelectTrigger>
               <SelectValue placeholder="Select duration" />
