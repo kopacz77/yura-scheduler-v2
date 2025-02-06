@@ -1,6 +1,7 @@
 import { PrismaAdapter } from '@auth/prisma-adapter';
-import type { NextAuthConfig } from 'next-auth';
-import Credentials from 'next-auth/providers/credentials';
+import { type NextAuthOptions } from 'next-auth';
+import { getServerSession } from 'next-auth/next';
+import CredentialsProvider from 'next-auth/providers/credentials';
 import prisma from './prisma';
 import { compare } from 'bcryptjs';
 import { Role } from '@prisma/client';
@@ -17,12 +18,16 @@ declare module 'next-auth' {
   }
 }
 
-export const authConfig = {
+export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
-  session: { strategy: 'database' },
+  session: { 
+    strategy: 'database',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
+  },
   pages: { signIn: '/auth/signin' },
   providers: [
-    Credentials({
+    CredentialsProvider({
       name: 'credentials',
       credentials: {
         email: { label: 'Email', type: 'email' },
@@ -58,7 +63,7 @@ export const authConfig = {
     })
   ],
   callbacks: {
-    async session({ session, user }) {
+    session: async ({ session, user }) => {
       return {
         ...session,
         user: {
@@ -70,13 +75,10 @@ export const authConfig = {
       };
     },
   },
-} satisfies NextAuthConfig;
-
-// Helper to get auth session in route handlers
-export const auth = async () => {
-  const session = await getServerSession(authConfig);
-  return session;
 };
 
-// Export auth config for API routes
-export default authConfig;
+// Helper to get auth session in route handlers
+export const auth = async () => await getServerSession(authOptions);
+
+// Export auth options for API routes
+export default authOptions;
