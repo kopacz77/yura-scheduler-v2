@@ -1,7 +1,7 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 import { format, parseISO } from 'date-fns';
-import { Level } from '@prisma/client';
+import { Level, LessonType } from '@prisma/client';
 
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
@@ -23,6 +23,16 @@ export function getLevelBadgeColor(level: Level) {
     SENIOR: 'bg-green-200 text-green-800'
   };
   return badges[level];
+}
+
+export function getLessonTypeColor(type: LessonType) {
+  const colors: Record<LessonType, string> = {
+    PRIVATE: 'bg-blue-100 text-blue-800',
+    GROUP: 'bg-green-100 text-green-800',
+    CHOREOGRAPHY: 'bg-purple-100 text-purple-800',
+    COMPETITION_PREP: 'bg-amber-100 text-amber-800'
+  };
+  return colors[type];
 }
 
 export function formatAppointmentTime(date: Date | string) {
