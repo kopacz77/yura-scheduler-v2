@@ -11,26 +11,31 @@ export async function scheduleNotifications() {
     const tomorrowStart = addDays(new Date(), 1);
     const tomorrowEnd = addDays(tomorrowStart, 1);
 
-    const upcomingLessons = await prisma.appointment.findMany({
+    const upcomingLessons = await prisma.lesson.findMany({
       where: {
-        start: {
+        startTime: {
           gte: tomorrowStart,
           lt: tomorrowEnd
-        }
+        },
+        status: 'SCHEDULED'
       },
       include: {
-        student: true,
-        resource: true
+        student: {
+          include: {
+            user: true
+          }
+        },
+        rink: true
       }
     });
 
     for (const lesson of upcomingLessons) {
       await sendLessonReminder({
-        studentName: lesson.student.name,
-        email: lesson.student.email,
-        lessonDate: lesson.start,
-        lessonType: lesson.lessonType,
-        resourceName: lesson.resource.name
+        studentName: lesson.student.user.name!,
+        email: lesson.student.user.email!,
+        lessonDate: lesson.startTime,
+        lessonType: lesson.type,
+        rinkName: lesson.rink.name
       });
     }
 
@@ -43,19 +48,23 @@ export async function scheduleNotifications() {
         }
       },
       include: {
-        student: true,
-        appointment: true
+        student: {
+          include: {
+            user: true
+          }
+        },
+        lesson: true
       }
     });
 
     for (const payment of pendingPayments) {
       // Only send reminder if the lesson hasn't happened yet
-      if (isAfter(payment.appointment.start, new Date())) {
+      if (isAfter(payment.lesson.startTime, new Date())) {
         await sendPaymentReminder({
-          studentName: payment.student.name,
-          email: payment.student.email,
+          studentName: payment.student.user.name!,
+          email: payment.student.user.email!,
           amount: payment.amount,
-          lessonDate: payment.appointment.start,
+          lessonDate: payment.lesson.startTime,
           paymentMethod: payment.method
         });
 
@@ -63,6 +72,7 @@ export async function scheduleNotifications() {
         await prisma.payment.update({
           where: { id: payment.id },
           data: {
+            reminderSentAt: new Date(),
             notes: payment.notes
               ? `${payment.notes}\nReminder sent on ${new Date().toLocaleString()}`
               : `Reminder sent on ${new Date().toLocaleString()}`
