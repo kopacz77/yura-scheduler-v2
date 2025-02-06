@@ -51,10 +51,15 @@ export async function sendLessonReminder(details: LessonReminderDetails) {
     to: details.email,
     subject: 'Upcoming Lesson Reminder',
     htmlContent: React.createElement(ScheduleReminder, {
-      student: { user: { name: details.studentName } },
+      student: {
+        user: {
+          name: details.studentName
+        }
+      },
       lesson: {
         startTime: details.lessonDate,
-        type: details.lessonType,
+        endTime: new Date(details.lessonDate.getTime() + 60 * 60 * 1000), // Add 1 hour for end time
+        type: details.lessonType
       },
       manageUrl: '/dashboard/schedule'
     })
@@ -66,15 +71,20 @@ export async function sendPaymentReminder(details: PaymentReminderDetails) {
     to: details.email,
     subject: 'Payment Reminder',
     htmlContent: React.createElement(PaymentReceipt, {
-      student: { user: { name: details.studentName } },
+      student: {
+        user: {
+          name: details.studentName
+        }
+      },
       payment: {
         amount: details.amount,
         method: details.paymentMethod,
-        createdAt: new Date(),
+        createdAt: new Date()
       },
       lesson: {
         startTime: details.lessonDate,
-        type: 'PRIVATE',
+        endTime: new Date(details.lessonDate.getTime() + 60 * 60 * 1000), // Add 1 hour for end time
+        type: 'PRIVATE'
       }
     })
   });
