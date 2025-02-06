@@ -34,7 +34,7 @@ export function Planner({
   const handleDrop = () => {
     if (!currentAppointment || !dropData?.time || !dropData?.resourceId) return;
 
-    const { startTime, endTime } = calculateNewDates(
+    const { start, end } = calculateNewDates(
       currentAppointment.start,
       dropData.time,
       currentAppointment.duration
@@ -42,9 +42,9 @@ export function Planner({
 
     onAppointmentMove?.({
       ...currentAppointment,
-      start: startTime,
-      end: endTime,
-    }, dropData.resourceId, startTime);
+      start,
+      end,
+    }, dropData.resourceId, start);
   };
 
   useDndMonitor({
