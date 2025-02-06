@@ -1,6 +1,16 @@
+'use client';
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+import {
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from 'recharts';
 
 interface ActivityData {
   day: string;
@@ -52,9 +62,7 @@ export function StudentActivityChart({ data }: StudentActivityChartProps) {
                           <span className="text-[0.70rem] uppercase text-muted-foreground">
                             Lessons
                           </span>
-                          <span className="font-bold">
-                            {payload[0].value}
-                          </span>
+                          <span className="font-bold">{payload[0].value}</span>
                         </div>
                       </div>
                     </div>
@@ -63,11 +71,7 @@ export function StudentActivityChart({ data }: StudentActivityChartProps) {
                 return null;
               }}
             />
-            <Bar
-              dataKey="lessons"
-              fill="#3b82f6"
-              radius={[4, 4, 0, 0]}
-            />
+            <Bar dataKey="lessons" fill="#3b82f6" radius={[4, 4, 0, 0]} />
           </BarChart>
         </ResponsiveContainer>
       </CardContent>
