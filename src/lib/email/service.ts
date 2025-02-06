@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { emailTemplates, generateReferenceCode } from './templates';
-import { Lesson, Student, User } from '@prisma/client';
+import { Lesson, Student, User, PaymentMethod } from '@prisma/client';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -38,7 +38,7 @@ export class EmailService {
     lesson: Lesson;
     student: Student & { user: User };
     price: number;
-    paymentMethod: 'VENMO' | 'ZELLE';
+    paymentMethod: PaymentMethod;
   }) {
     const referenceCode = generateReferenceCode(
       student.user.name || 'Student',
@@ -80,7 +80,7 @@ export class EmailService {
       location: lesson.rinkId,
       address: 'TODO: Get rink address',
       duration: lesson.duration,
-      price: 0, // Not needed for cancellation
+      price: lesson.price,
     });
 
     return this.sendEmail({
