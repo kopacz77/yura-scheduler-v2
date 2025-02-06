@@ -12,7 +12,8 @@ export default withAuth(
     // Redirect authenticated users away from auth pages
     if (isAuthPage) {
       if (isAuth) {
-        return NextResponse.redirect(new URL('/dashboard', request.url));
+        const redirectUrl = role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
+        return NextResponse.redirect(new URL(redirectUrl, request.url));
       }
       return null;
     }
@@ -24,6 +25,17 @@ export default withAuth(
       }
       if (role !== 'ADMIN') {
         return NextResponse.redirect(new URL('/dashboard', request.url));
+      }
+      return null;
+    }
+
+    // Handle dashboard routes
+    if (request.nextUrl.pathname === '/dashboard') {
+      if (!isAuth) {
+        return NextResponse.redirect(new URL('/auth/signin', request.url));
+      }
+      if (role === 'ADMIN') {
+        return NextResponse.redirect(new URL('/admin/dashboard', request.url));
       }
       return null;
     }
