@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { signIn } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,6 +12,7 @@ import { LoadingSpinner } from '@/components/ui/loading-spinner';
 export function SignInForm() {
   const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
+  const searchParams = useSearchParams();
 
   async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -21,6 +22,12 @@ export function SignInForm() {
       const formData = new FormData(event.currentTarget);
       const email = formData.get('email') as string;
       const password = formData.get('password') as string;
+
+      const callbackUrl = searchParams.get('callbackUrl');
+      // Ensure callback URL isn't a sign-in page to prevent loops
+      const safeCallbackUrl = callbackUrl && !callbackUrl.includes('/auth/signin')
+        ? callbackUrl
+        : '/dashboard';
 
       const result = await signIn('credentials', {
         email,
@@ -37,7 +44,7 @@ export function SignInForm() {
         return;
       }
 
-      // Let the middleware handle the redirection
+      // Let the auth context handle role-based redirection
       router.refresh();
       
     } catch (error) {
@@ -62,6 +69,7 @@ export function SignInForm() {
           placeholder="you@example.com"
           required
           disabled={isLoading}
+          autoComplete="email"
         />
       </div>
       <div className="space-y-2">
@@ -72,6 +80,7 @@ export function SignInForm() {
           type="password"
           required
           disabled={isLoading}
+          autoComplete="current-password"
         />
       </div>
       <Button className="w-full" type="submit" disabled={isLoading}>
