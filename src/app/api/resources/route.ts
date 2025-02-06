@@ -8,7 +8,12 @@ export async function GET() {
   try {
     const resources = await prisma.rink.findMany({
       include: {
-        timeSlots: true
+        timeSlots: true,
+        _count: {
+          select: {
+            lessons: true
+          }
+        }
       }
     });
 
