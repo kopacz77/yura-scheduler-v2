@@ -1,7 +1,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState } from 'react';
-import { useSession } from 'next-auth/react';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Role } from '@prisma/client';
 
@@ -17,12 +17,14 @@ type AuthContextType = {
   user: User | null;
   isLoading: boolean;
   error: Error | null;
+  logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
   error: null,
+  logout: async () => {},
 });
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
@@ -43,12 +45,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, [session, status, router]);
 
+  const logout = async () => {
+    try {
+      await signOut({ redirect: false });
+      router.push('/auth/signin');
+    } catch (error) {
+      console.error('Logout error:', error);
+      setError(error as Error);
+    }
+  };
+
   return (
     <AuthContext.Provider
       value={{
         user,
         isLoading: status === 'loading',
         error,
+        logout,
       }}
     >
       {children}
