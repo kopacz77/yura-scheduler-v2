@@ -9,11 +9,18 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
-import { Lesson } from '@prisma/client';
+import { Lesson, Rink, Student, User } from '@prisma/client';
+
+type LessonWithRelations = Lesson & {
+  student: Student & {
+    user: User;
+  };
+  rink: Rink;
+};
 
 export default function SchedulePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<LessonWithRelations | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRink, setSelectedRink] = useState('');
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
@@ -47,6 +54,18 @@ export default function SchedulePage() {
     }
   };
 
+  const fetchLessonDetails = async (lessonId: string) => {
+    try {
+      const response = await fetch(`/api/lessons/${lessonId}`);
+      if (!response.ok) throw new Error('Failed to fetch lesson details');
+      const data = await response.json();
+      return data.lesson;
+    } catch (error) {
+      console.error('Error fetching lesson details:', error);
+      return null;
+    }
+  };
+
   useEffect(() => {
     fetchLessons();
   }, [currentWeek, selectedRink]);
@@ -56,8 +75,11 @@ export default function SchedulePage() {
     setIsFormOpen(true);
   };
 
-  const handleLessonSelect = (lesson: Lesson) => {
-    setSelectedLesson(lesson);
+  const handleLessonSelect = async (lesson: Lesson) => {
+    const details = await fetchLessonDetails(lesson.id);
+    if (details) {
+      setSelectedLesson(details);
+    }
   };
 
   const handleWeekChange = (direction: 'prev' | 'next') => {
