@@ -1,6 +1,5 @@
 import { Resend } from 'resend';
 import { PaymentMethod, LessonType } from '@prisma/client';
-import { render } from '@react-email/render';
 import { LessonConfirmation } from './templates/LessonConfirmation';
 import { PaymentReceipt } from './templates/PaymentReceipt';
 import { ScheduleReminder } from './templates/ScheduleReminder';
@@ -10,18 +9,18 @@ const resend = new Resend(process.env.RESEND_API_KEY);
 export async function sendEmail({
   to,
   subject,
-  html,
+  htmlContent,
 }: {
   to: string;
   subject: string;
-  html: string;
+  htmlContent: React.ReactElement;
 }) {
   try {
     const data = await resend.emails.send({
       from: 'YM Movement <no-reply@ymmove.com>',
       to,
       subject,
-      html,
+      react: htmlContent,
     });
     return { success: true, data };
   } catch (error) {
@@ -47,8 +46,10 @@ interface PaymentReminderDetails {
 }
 
 export async function sendLessonReminder(details: LessonReminderDetails) {
-  const emailHtml = render(
-    ScheduleReminder({
+  return sendEmail({
+    to: details.email,
+    subject: 'Upcoming Lesson Reminder',
+    htmlContent: ScheduleReminder({
       student: { user: { name: details.studentName } },
       lesson: {
         startTime: details.lessonDate,
@@ -56,18 +57,14 @@ export async function sendLessonReminder(details: LessonReminderDetails) {
       },
       manageUrl: '/dashboard/schedule'
     })
-  );
-
-  return sendEmail({
-    to: details.email,
-    subject: 'Upcoming Lesson Reminder',
-    html: emailHtml,
   });
 }
 
 export async function sendPaymentReminder(details: PaymentReminderDetails) {
-  const emailHtml = render(
-    PaymentReceipt({
+  return sendEmail({
+    to: details.email,
+    subject: 'Payment Reminder',
+    htmlContent: PaymentReceipt({
       student: { user: { name: details.studentName } },
       payment: {
         amount: details.amount,
@@ -79,11 +76,5 @@ export async function sendPaymentReminder(details: PaymentReminderDetails) {
         type: 'PRIVATE',
       }
     })
-  );
-
-  return sendEmail({
-    to: details.email,
-    subject: 'Payment Reminder',
-    html: emailHtml,
   });
 }
