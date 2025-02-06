@@ -1,30 +1,31 @@
-import { type Appointment, type Student } from '@prisma/client';
+import { type Lesson, type Student, type User } from '@prisma/client';
 import * as React from 'react';
 import { format } from 'date-fns';
 
 interface ScheduleReminderProps {
-  student: Student;
-  appointment: Appointment;
+  student: Student & { user: User };
+  lesson: Lesson;
   manageUrl: string;
 }
 
 export const ScheduleReminder: React.FC<ScheduleReminderProps> = ({
   student,
-  appointment,
+  lesson,
   manageUrl,
 }) => (
   <div>
     <h1>Lesson Reminder</h1>
-    <p>Hello {student.name},</p>
+    <p>Hello {student.user.name},</p>
     <p>
       This is a friendly reminder about your upcoming lesson with Yura Min:
     </p>
 
     <div style={{ margin: '20px 0', padding: '20px', backgroundColor: '#f9fafb', borderRadius: '8px' }}>
-      <p><strong>Date:</strong> {format(appointment.start, 'MMMM d, yyyy')}</p>
-      <p><strong>Time:</strong> {format(appointment.start, 'h:mm a')} - {format(appointment.end, 'h:mm a')}</p>
-      <p><strong>Type:</strong> {appointment.lessonType}</p>
-      {appointment.notes && <p><strong>Notes:</strong> {appointment.notes}</p>}
+      <p><strong>Date:</strong> {format(lesson.startTime, 'MMMM d, yyyy')}</p>
+      <p><strong>Time:</strong> {format(lesson.startTime, 'h:mm a')} - {format(lesson.endTime, 'h:mm a')}</p>
+      <p><strong>Type:</strong> {lesson.type}</p>
+      <p><strong>Duration:</strong> {lesson.duration} minutes</p>
+      {lesson.notes && <p><strong>Notes:</strong> {lesson.notes}</p>}
     </div>
 
     <div style={{ marginTop: '20px' }}>
@@ -47,7 +48,7 @@ export const ScheduleReminder: React.FC<ScheduleReminderProps> = ({
           textDecoration: 'underline',
         }}
       >
-        Manage Appointment
+        Manage Lesson
       </a>
     </p>
 
@@ -58,7 +59,7 @@ export const ScheduleReminder: React.FC<ScheduleReminderProps> = ({
       </p>
     </div>
 
-    <p>See you soon!</p>
-    <p>Best regards,<br />Yura Min</p>
+    <p>See you on the ice!</p>
+    <p>Best regards,<br />Coach Yura Min</p>
   </div>
 );
