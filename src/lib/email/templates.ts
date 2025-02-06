@@ -1,5 +1,5 @@
 import { format } from 'date-fns';
-import { Lesson, Student } from '@/types/schedule';
+import { PaymentMethod } from '@prisma/client';
 
 export function generateReferenceCode(studentName: string, date: Date): string {
   const firstName = studentName.split(' ')[0].toUpperCase();
@@ -17,7 +17,7 @@ interface EmailData {
   address: string;
   duration: number;
   price: number;
-  paymentMethod?: 'venmo' | 'zelle';
+  paymentMethod?: PaymentMethod;
   referenceCode?: string;
 }
 
@@ -43,9 +43,9 @@ export const emailTemplates = {
         <div style="background-color: #e8f4ff; padding: 20px; border-radius: 8px; margin: 20px 0;">
           <h2 style="color: #333; margin-top: 0;">Payment Information</h2>
           <p style="margin-bottom: 15px;">💰 <strong>Amount Due:</strong> $${data.price}</p>
-          <p style="margin-bottom: 15px;">💳 <strong>Payment Method:</strong> ${data.paymentMethod.toUpperCase()}</p>
+          <p style="margin-bottom: 15px;">💳 <strong>Payment Method:</strong> ${data.paymentMethod}</p>
           
-          ${data.paymentMethod === 'venmo' 
+          ${data.paymentMethod === 'VENMO' 
             ? `<p style="margin-bottom: 15px;"><strong>Venmo:</strong> @yura-min</p>`
             : `<p style="margin-bottom: 15px;"><strong>Zelle:</strong> 714-743-7071</p>`
           }
