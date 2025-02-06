@@ -1,9 +1,8 @@
 import { Resend } from 'resend';
 import { PaymentMethod, LessonType } from '@prisma/client';
-import { render } from '@react-email/components';
-import { LessonConfirmation } from './templates/LessonConfirmation';
-import { PaymentReceipt } from './templates/PaymentReceipt';
 import { ScheduleReminder } from './templates/ScheduleReminder';
+import { PaymentReceipt } from './templates/PaymentReceipt';
+import { render } from '@react-email/render';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -48,14 +47,14 @@ interface PaymentReminderDetails {
 
 export async function sendLessonReminder(details: LessonReminderDetails) {
   const emailHtml = render(
-    <ScheduleReminder
-      student={{ user: { name: details.studentName } } as any}
-      lesson={{
+    ScheduleReminder({
+      student: { user: { name: details.studentName } },
+      lesson: {
         startTime: details.lessonDate,
         type: details.lessonType,
-      } as any}
-      manageUrl="/dashboard/schedule"
-    />
+      },
+      manageUrl: '/dashboard/schedule'
+    })
   );
 
   return sendEmail({
@@ -67,18 +66,18 @@ export async function sendLessonReminder(details: LessonReminderDetails) {
 
 export async function sendPaymentReminder(details: PaymentReminderDetails) {
   const emailHtml = render(
-    <PaymentReceipt
-      student={{ user: { name: details.studentName } } as any}
-      payment={{
+    PaymentReceipt({
+      student: { user: { name: details.studentName } },
+      payment: {
         amount: details.amount,
         method: details.paymentMethod,
         createdAt: new Date(),
-      } as any}
-      lesson={{
+      },
+      lesson: {
         startTime: details.lessonDate,
         type: 'PRIVATE',
-      } as any}
-    />
+      }
+    })
   );
 
   return sendEmail({
