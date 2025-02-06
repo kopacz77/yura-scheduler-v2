@@ -35,15 +35,15 @@ export function Planner({
     if (!currentAppointment || !dropData?.time || !dropData?.resourceId) return;
 
     const { startTime, endTime } = calculateNewDates(
-      currentAppointment.startTime,
+      currentAppointment.start,
       dropData.time,
       currentAppointment.duration
     );
 
     onAppointmentMove?.({
       ...currentAppointment,
-      startTime,
-      endTime,
+      start: startTime,
+      end: endTime,
     }, dropData.resourceId, startTime);
   };
 
