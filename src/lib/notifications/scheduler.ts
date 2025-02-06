@@ -30,13 +30,15 @@ export async function scheduleNotifications() {
     });
 
     for (const lesson of upcomingLessons) {
-      await sendLessonReminder({
-        studentName: lesson.student.user.name!,
-        email: lesson.student.user.email!,
-        lessonDate: lesson.startTime,
-        lessonType: lesson.type,
-        rinkName: lesson.rink.name
-      });
+      if (lesson.student?.user?.email) {
+        await sendLessonReminder({
+          studentName: lesson.student.user.name || 'Student',
+          email: lesson.student.user.email,
+          lessonDate: lesson.startTime,
+          lessonType: lesson.type,
+          rinkName: lesson.rink.name
+        });
+      }
     }
 
     // Check for pending payments older than 48 hours
@@ -45,7 +47,8 @@ export async function scheduleNotifications() {
         status: 'PENDING',
         createdAt: {
           lt: subHours(new Date(), 48)
-        }
+        },
+        reminderSentAt: null // Only send if no reminder was sent yet
       },
       include: {
         student: {
@@ -59,10 +62,10 @@ export async function scheduleNotifications() {
 
     for (const payment of pendingPayments) {
       // Only send reminder if the lesson hasn't happened yet
-      if (isAfter(payment.lesson.startTime, new Date())) {
+      if (payment.student?.user?.email && isAfter(payment.lesson.startTime, new Date())) {
         await sendPaymentReminder({
-          studentName: payment.student.user.name!,
-          email: payment.student.user.email!,
+          studentName: payment.student.user.name || 'Student',
+          email: payment.student.user.email,
           amount: payment.amount,
           lessonDate: payment.lesson.startTime,
           paymentMethod: payment.method
@@ -82,5 +85,6 @@ export async function scheduleNotifications() {
     }
   } catch (error) {
     console.error('Error scheduling notifications:', error);
+    throw error; // Re-throw to be handled by the API route
   }
 }
