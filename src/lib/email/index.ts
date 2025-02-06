@@ -1,8 +1,10 @@
 import { Resend } from 'resend';
 import { PaymentMethod, LessonType } from '@prisma/client';
-import { ScheduleReminder } from './templates/ScheduleReminder';
+import type { ReactElement } from 'react';
+import { renderToString } from 'react-dom/server';
+import { LessonConfirmation } from './templates/LessonConfirmation';
 import { PaymentReceipt } from './templates/PaymentReceipt';
-import { render } from '@react-email/render';
+import { ScheduleReminder } from './templates/ScheduleReminder';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -46,7 +48,7 @@ interface PaymentReminderDetails {
 }
 
 export async function sendLessonReminder(details: LessonReminderDetails) {
-  const emailHtml = render(
+  const emailHtml = renderToString(
     ScheduleReminder({
       student: { user: { name: details.studentName } },
       lesson: {
@@ -65,7 +67,7 @@ export async function sendLessonReminder(details: LessonReminderDetails) {
 }
 
 export async function sendPaymentReminder(details: PaymentReminderDetails) {
-  const emailHtml = render(
+  const emailHtml = renderToString(
     PaymentReceipt({
       student: { user: { name: details.studentName } },
       payment: {
