@@ -1,14 +1,20 @@
 'use client';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { Lesson } from '@/types/schedule';
 import { format, addDays, endOfWeek, isSameDay, parseISO, isToday } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { UserCircle2, Clock } from 'lucide-react';
+import { Lesson } from '@prisma/client';
 
 interface CalendarViewProps {
   currentWeek: Date;
-  lessons: (Lesson & { student?: { name: string } })[];
+  lessons: Array<Lesson & {
+    student: {
+      user: {
+        name: string | null;
+      };
+    };
+  }>;
   onSlotSelect?: (date: Date) => void;
   onLessonSelect?: (lesson: Lesson) => void;
 }
@@ -104,20 +110,20 @@ export function CalendarView({
                     <div 
                       className={cn(
                         'p-2 rounded text-xs space-y-1',
-                        lesson.status === 'cancelled' && 'line-through opacity-50'
+                        lesson.status === 'CANCELLED' && 'line-through opacity-50'
                       )}
                     >
                       <div className="flex items-center space-x-1">
                         <UserCircle2 className="h-3 w-3" />
                         <span className="font-medium truncate">
-                          {lesson.student?.name || 'Student'}
+                          {lesson.student?.user?.name || 'Unnamed Student'}
                         </span>
                       </div>
                       <div className="flex items-center space-x-1 text-muted-foreground">
                         <Clock className="h-3 w-3" />
                         <span>
-                          {format(parseISO(lesson.startTime.toString()), 'h:mm a')} -
-                          {format(parseISO(lesson.endTime.toString()), 'h:mm a')}
+                          {format(lesson.startTime, 'h:mm a')} -
+                          {format(lesson.endTime, 'h:mm a')}
                         </span>
                       </div>
                     </div>
