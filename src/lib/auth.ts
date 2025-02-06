@@ -21,7 +21,9 @@ declare module 'next-auth' {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { 
-    strategy: 'jwt'
+    strategy: 'database',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   pages: { 
     signIn: '/auth/signin',
@@ -65,24 +67,20 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    jwt: async ({ token, user }) => {
-      if (user) {
-        // This will only be executed at login. Each next invocation will skip this part.
-        token.id = user.id;
-        token.role = user.role;
-        token.emailVerified = user.emailVerified;
-      }
-      return token;
-    },
-    session: async ({ session, token }) => {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-        session.user.emailVerified = token.emailVerified as Date | null;
-      }
-      return session;
+    session: async ({ session, user }) => {
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: user.id,
+          role: user.role as Role,
+          emailVerified: user.emailVerified
+        }
+      };
     },
   },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 };
 
 // Helper to get auth session in route handlers
