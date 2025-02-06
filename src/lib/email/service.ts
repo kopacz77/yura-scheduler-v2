@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { emailTemplates, generateReferenceCode } from './templates';
-import { Lesson, Student } from '@/types/schedule';
+import { Lesson, Student, User } from '@prisma/client';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -36,20 +36,20 @@ export class EmailService {
     paymentMethod,
   }: {
     lesson: Lesson;
-    student: Student;
+    student: Student & { user: User };
     price: number;
-    paymentMethod: 'venmo' | 'zelle';
+    paymentMethod: 'VENMO' | 'ZELLE';
   }) {
     const referenceCode = generateReferenceCode(
-      student.name,
-      new Date(lesson.startTime)
+      student.user.name || 'Student',
+      lesson.startTime
     );
 
     const { subject, html } = emailTemplates.bookingConfirmation({
-      studentName: student.name,
-      date: new Date(lesson.startTime),
-      startTime: new Date(lesson.startTime),
-      endTime: new Date(lesson.endTime),
+      studentName: student.user.name || 'Student',
+      date: lesson.startTime,
+      startTime: lesson.startTime,
+      endTime: lesson.endTime,
       location: lesson.rinkId,
       address: 'TODO: Get rink address', // We'll need to add this to our rink data
       duration: lesson.duration,
@@ -59,7 +59,7 @@ export class EmailService {
     });
 
     return this.sendEmail({
-      to: student.email,
+      to: student.user.email,
       subject,
       html,
     });
@@ -70,13 +70,13 @@ export class EmailService {
     student,
   }: {
     lesson: Lesson;
-    student: Student;
+    student: Student & { user: User };
   }) {
     const { subject, html } = emailTemplates.lessonCancelled({
-      studentName: student.name,
-      date: new Date(lesson.startTime),
-      startTime: new Date(lesson.startTime),
-      endTime: new Date(lesson.endTime),
+      studentName: student.user.name || 'Student',
+      date: lesson.startTime,
+      startTime: lesson.startTime,
+      endTime: lesson.endTime,
       location: lesson.rinkId,
       address: 'TODO: Get rink address',
       duration: lesson.duration,
@@ -84,7 +84,7 @@ export class EmailService {
     });
 
     return this.sendEmail({
-      to: student.email,
+      to: student.user.email,
       subject,
       html,
     });
@@ -97,24 +97,24 @@ export class EmailService {
     isPaid,
   }: {
     lesson: Lesson;
-    student: Student;
+    student: Student & { user: User };
     price: number;
     isPaid: boolean;
   }) {
     const { subject, html } = emailTemplates.lessonReminder({
-      studentName: student.name,
-      date: new Date(lesson.startTime),
-      startTime: new Date(lesson.startTime),
-      endTime: new Date(lesson.endTime),
+      studentName: student.user.name || 'Student',
+      date: lesson.startTime,
+      startTime: lesson.startTime,
+      endTime: lesson.endTime,
       location: lesson.rinkId,
       address: 'TODO: Get rink address',
       duration: lesson.duration,
       price,
-      paymentMethod: isPaid ? undefined : 'venmo', // Show payment reminder if not paid
+      paymentMethod: isPaid ? undefined : 'VENMO', // Show payment reminder if not paid
     });
 
     return this.sendEmail({
-      to: student.email,
+      to: student.user.email,
       subject,
       html,
     });
