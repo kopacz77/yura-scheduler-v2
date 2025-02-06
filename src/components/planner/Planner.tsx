@@ -1,12 +1,12 @@
 import * as React from "react";
 import { cn } from "@/lib/utils";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { type Appointment, type Resource } from "@/models/types";
-import { useDndMonitor, useDroppable } from "@dnd-kit/core";
+import { useDndMonitor } from "@dnd-kit/core";
 import { Table, TableBody, TableRow } from "@/components/ui/table";
 import { ResourceTableCell } from "./ResourceTableCell";
 import { calculateNewDates, filterAppointments } from "@/lib/utils";
-import { DropTableCell } from "./DropTableCell";
+import { DropTableCell, type DropTableCellProps } from "./DropTableCell";
 
 export interface PlannerProps extends React.HTMLAttributes<HTMLDivElement> {
   resources: Resource[];
@@ -59,6 +59,14 @@ export function Planner({
     },
   });
 
+  // Filter appointments by date and resource
+  const getFilteredAppointments = (resourceId: string, date: Date): Appointment[] => {
+    return filterAppointments(
+      appointments.filter(a => a.resourceId === resourceId),
+      date
+    );
+  };
+
   return (
     <div className={cn("relative overflow-x-auto", className)} {...props}>
       <Table>
@@ -67,23 +75,20 @@ export function Planner({
             <TableRow key={resource.id}>
               <ResourceTableCell
                 resource={resource}
-                appointments={filterAppointments(
-                  appointments.filter((a) => a.resourceId === resource.id),
-                  dates[0]
-                )}
+                appointments={getFilteredAppointments(resource.id, dates[0])}
               />
-              {dates.map((date) => (
-                <DropTableCell
-                  key={date.toISOString()}
-                  date={date}
-                  resourceId={resource.id}
-                  onActivate={(time) => setDropData({ resourceId: resource.id, time })}
-                  appointments={filterAppointments(
-                    appointments.filter((a) => a.resourceId === resource.id),
-                    date
-                  )}
-                />
-              ))}
+              {dates.map((date) => {
+                const cellAppointments = getFilteredAppointments(resource.id, date);
+                return (
+                  <DropTableCell
+                    key={`${resource.id}-${date.toISOString()}`}
+                    date={date}
+                    resourceId={resource.id}
+                    onActivate={(time) => setDropData({ resourceId: resource.id, time })}
+                    appointments={cellAppointments}
+                  />
+                );
+              })}
             </TableRow>
           ))}
         </TableBody>
