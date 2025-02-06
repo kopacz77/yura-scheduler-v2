@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { usePathname } from 'next/navigation';
 import { useAuth } from '@/contexts/auth-context';
 import { LoadingSpinner } from '@/components/ui/loading-spinner';
@@ -10,10 +10,15 @@ import { TopNav } from '@/components/layout/TopNav';
 export function MainLayout({ children }: { children: React.ReactNode }) {
   const { isLoading, user } = useAuth();
   const pathname = usePathname();
+  const [mounted, setMounted] = useState(false);
   const [isSideNavOpen, setIsSideNavOpen] = useState(false);
-  const isPublicPage = pathname === '/' || pathname.startsWith('/auth');
+  const isPublicPage = pathname === '/' || pathname?.startsWith('/auth');
 
-  if (isLoading) {
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  if (!mounted || isLoading) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background">
         <LoadingSpinner size="lg" />
