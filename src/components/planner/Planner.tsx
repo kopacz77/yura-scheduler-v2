@@ -1,61 +1,93 @@
-import React, { useState, useEffect } from "react";
-import { DndContext, DragEndEvent, useSensors, useSensor, PointerSensor } from "@dnd-kit/core";
-import { Resource, Appointment } from "@/models/types";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import * as React from "react";
+import { cn } from "@/lib/utils";
+import { useEffect, useState } from "react";
+import { type Appointment, type Resource } from "@/models/types";
+import { useDndMonitor, useDroppable } from "@dnd-kit/core";
 import { Table, TableBody, TableRow } from "@/components/ui/table";
 import { ResourceTableCell } from "./ResourceTableCell";
 import { calculateNewDates, filterAppointments } from "@/lib/utils";
 import { DropTableCell } from "./DropTableCell";
 
 export interface PlannerProps extends React.HTMLAttributes<HTMLDivElement> {
-  initialResources: Resource[];
-  initialAppointments: Appointment[];
-  onAppointmentMove?: (appointment: Appointment, newStart: Date, resourceId: string) => void;
+  resources: Resource[];
+  appointments: Appointment[];
+  dates: Date[];
+  onAppointmentMove?: (appointment: Appointment, resourceId: string, time: Date) => void;
 }
 
+type DropData = {
+  resourceId: string;
+  time: Date;
+};
+
 export function Planner({
-  initialResources,
-  initialAppointments,
+  resources,
+  appointments,
+  dates,
   onAppointmentMove,
+  className,
   ...props
 }: PlannerProps) {
-  const [resources] = useState<Resource[]>(initialResources);
-  const [appointments, setAppointments] = useState<Appointment[]>(initialAppointments);
+  const [currentAppointment, setCurrentAppointment] = useState<Appointment | null>(null);
+  const [dropData, setDropData] = useState<DropData | null>(null);
 
-  const sensors = useSensors(useSensor(PointerSensor));
+  const handleDrop = () => {
+    if (!currentAppointment || !dropData?.time || !dropData?.resourceId) return;
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (!over) return;
-
-    const appointment = appointments.find(app => app.id === active.id);
-    const dropData = over.data.current;
-    if (!appointment || !dropData?.time || !dropData?.resourceId) return;
-
-    const { start, end } = calculateNewDates(
-      appointment.start,
+    const { startTime, endTime } = calculateNewDates(
+      currentAppointment.startTime,
       dropData.time,
-      appointment.duration
+      currentAppointment.duration
     );
 
-    onAppointmentMove?.(appointment, start, dropData.resourceId);
+    onAppointmentMove?.({
+      ...currentAppointment,
+      startTime,
+      endTime,
+    }, dropData.resourceId, startTime);
   };
 
+  useDndMonitor({
+    onDragStart(event) {
+      const appointment = event.active.data.current as Appointment;
+      setCurrentAppointment(appointment);
+    },
+    onDragEnd() {
+      handleDrop();
+      setCurrentAppointment(null);
+      setDropData(null);
+    },
+  });
+
   return (
-    <DndContext sensors={sensors} onDragEnd={handleDragEnd}>
-      <Card {...props}>
-        <Table>
-          <TableBody>
-            {resources.map((resource) => (
-              <TableRow key={resource.id}>
-                <ResourceTableCell resource={resource} />
-                {/* Time slots will go here */}
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </Card>
-    </DndContext>
+    <div className={cn("relative overflow-x-auto", className)} {...props}>
+      <Table>
+        <TableBody>
+          {resources.map((resource) => (
+            <TableRow key={resource.id}>
+              <ResourceTableCell
+                resource={resource}
+                appointments={filterAppointments(
+                  appointments.filter((a) => a.resourceId === resource.id),
+                  dates[0]
+                )}
+              />
+              {dates.map((date) => (
+                <DropTableCell
+                  key={date.toISOString()}
+                  date={date}
+                  resourceId={resource.id}
+                  onActivate={(time) => setDropData({ resourceId: resource.id, time })}
+                  appointments={filterAppointments(
+                    appointments.filter((a) => a.resourceId === resource.id),
+                    date
+                  )}
+                />
+              ))}
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
   );
 }
