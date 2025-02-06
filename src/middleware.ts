@@ -9,6 +9,13 @@ export default withAuth(
     const isAuthPage = request.nextUrl.pathname.startsWith('/auth');
     const role = token?.role;
 
+    // Prevent redirect loops
+    const callbackUrl = request.nextUrl.searchParams.get('callbackUrl');
+    if (callbackUrl?.includes('/auth/signin')) {
+      request.nextUrl.searchParams.delete('callbackUrl');
+      return NextResponse.redirect(new URL('/auth/signin', request.url));
+    }
+
     // Redirect authenticated users away from auth pages
     if (isAuthPage) {
       if (isAuth) {
