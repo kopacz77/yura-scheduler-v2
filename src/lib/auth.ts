@@ -6,6 +6,7 @@ import { prisma } from './prisma';
 import { compare } from 'bcryptjs';
 import { Role } from '@prisma/client';
 
+// Extend the built-in session types
 declare module 'next-auth' {
   interface Session {
     user: {
@@ -15,6 +16,25 @@ declare module 'next-auth' {
       role: Role;
       emailVerified: Date | null;
     };
+  }
+
+  interface User {
+    id: string;
+    email: string;
+    name: string | null;
+    role: Role;
+    emailVerified: Date | null;
+  }
+}
+
+// Extend JWT type
+declare module 'next-auth/jwt' {
+  interface JWT {
+    id: string;
+    role: Role;
+    email: string;
+    name: string | null;
+    emailVerified: Date | null;
   }
 }
 
@@ -71,19 +91,30 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
+        token.email = user.email;
+        token.name = user.name;
         token.emailVerified = user.emailVerified;
       }
+
+      // Handle user updates
+      if (trigger === 'update' && session) {
+        token.name = session.user.name;
+        token.email = session.user.email;
+      }
+
       return token;
     },
     async session({ session, token }) {
       if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-        session.user.emailVerified = token.emailVerified as Date | null;
+        session.user.id = token.id;
+        session.user.role = token.role;
+        session.user.email = token.email;
+        session.user.name = token.name;
+        session.user.emailVerified = token.emailVerified;
       }
       return session;
     },
