@@ -86,20 +86,6 @@ export type KeyboardEventHandler = EventHandler<KeyboardEvent>;
 
 export type MouseEventHandler = EventHandler<MouseEvent>;
 
-// Style Types
-export type Theme = 'light' | 'dark' | 'system';
-
-export type ColorScheme = {
-  primary: string;
-  secondary: string;
-  accent: string;
-  background: string;
-  text: string;
-  error: string;
-  success: string;
-  warning: string;
-};
-
 // Animation Types
 export type TransitionOptions = {
   duration?: number;
