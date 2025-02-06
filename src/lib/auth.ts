@@ -21,11 +21,13 @@ declare module 'next-auth' {
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: { 
-    strategy: 'database',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
-    updateAge: 24 * 60 * 60, // 24 hours
+    strategy: 'jwt'
   },
-  pages: { signIn: '/auth/signin' },
+  pages: { 
+    signIn: '/auth/signin',
+    error: '/auth/error',
+    signOut: '/auth/signout',
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -63,16 +65,22 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   callbacks: {
-    session: async ({ session, user }) => {
-      return {
-        ...session,
-        user: {
-          ...session.user,
-          id: user.id,
-          role: user.role as Role,
-          emailVerified: user.emailVerified
-        }
-      };
+    jwt: async ({ token, user }) => {
+      if (user) {
+        // This will only be executed at login. Each next invocation will skip this part.
+        token.id = user.id;
+        token.role = user.role;
+        token.emailVerified = user.emailVerified;
+      }
+      return token;
+    },
+    session: async ({ session, token }) => {
+      if (token) {
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+        session.user.emailVerified = token.emailVerified as Date | null;
+      }
+      return session;
     },
   },
 };
