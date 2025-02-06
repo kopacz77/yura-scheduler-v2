@@ -1,19 +1,35 @@
 'use client';
 
-import { SignInForm } from '@/components/auth/SignInForm';
-import { useAuth } from '@/contexts/auth-context';
-import { useEffect } from 'react';
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function SignInPage() {
-  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(false);
   const router = useRouter();
 
-  useEffect(() => {
-    if (user) {
-      router.push(user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard');
+  async function onSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    setIsLoading(true);
+
+    const formData = new FormData(e.currentTarget);
+    
+    const result = await signIn('credentials', {
+      email: formData.get('email'),
+      password: formData.get('password'),
+      redirect: false
+    });
+
+    if (result?.ok) {
+      router.push('/dashboard');
+      router.refresh();
     }
-  }, [user, router]);
+
+    setIsLoading(false);
+  }
 
   return (
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
@@ -23,16 +39,36 @@ export default function SignInPage() {
             Welcome back
           </h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email below to sign in to your account
+            Enter your credentials to sign in
           </p>
         </div>
-        <SignInForm />
-        <p className="text-center text-sm text-muted-foreground">
-          New user?{' '}
-          <a href="/auth/signup" className="underline hover:text-primary">
-            Create an account
-          </a>
-        </p>
+
+        <form onSubmit={onSubmit} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              placeholder="you@example.com"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              required
+              disabled={isLoading}
+            />
+          </div>
+          <Button className="w-full" type="submit" disabled={isLoading}>
+            {isLoading ? 'Signing in...' : 'Sign In'}
+          </Button>
+        </form>
       </div>
     </div>
   );
