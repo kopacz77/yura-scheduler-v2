@@ -1,4 +1,5 @@
 import { Dispatch } from 'react';
+import { Theme } from './shared';
 
 // App Context Types
 export type Student = {
@@ -56,8 +57,6 @@ export type AppContextType = {
 };
 
 // Theme Context Types
-export type Theme = 'light' | 'dark' | 'system';
-
 export type ThemeProviderState = {
   theme: Theme;
   setTheme: (theme: Theme) => void;
