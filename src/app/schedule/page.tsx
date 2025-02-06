@@ -8,9 +8,8 @@ import { RinkSelector } from '@/components/schedule/RinkSelector';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
-import { useLessons } from '@/hooks/useLessons';
-import { Lesson } from '@/types/schedule';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
+import { Lesson } from '@prisma/client';
 
 export default function SchedulePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
@@ -18,21 +17,39 @@ export default function SchedulePage() {
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRink, setSelectedRink] = useState('');
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
-  
-  const {
-    lessons,
-    isLoading,
-    error,
-    fetchLessons
-  } = useLessons();
+  const [lessons, setLessons] = useState<Array<Lesson & { 
+    student: { 
+      user: { 
+        name: string | null 
+      } 
+    } 
+  }>>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  const fetchLessons = async () => {
+    try {
+      setIsLoading(true);
+      const response = await fetch(`/api/lessons?${new URLSearchParams({
+        startDate: currentWeek.toISOString(),
+        endDate: endOfWeek(currentWeek).toISOString(),
+        ...(selectedRink ? { rinkId: selectedRink } : {})
+      })}`);
+      
+      if (!response.ok) throw new Error('Failed to fetch lessons');
+      
+      const data = await response.json();
+      setLessons(data.lessons);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load lessons');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
-    fetchLessons({
-      rinkId: selectedRink || undefined,
-      startDate: currentWeek,
-      endDate: endOfWeek(currentWeek)
-    });
-  }, [fetchLessons, selectedRink, currentWeek]);
+    fetchLessons();
+  }, [currentWeek, selectedRink]);
 
   const handleSlotSelect = (date: Date) => {
     setSelectedDate(date);
@@ -48,10 +65,6 @@ export default function SchedulePage() {
       direction === 'next' ? addWeeks(prev, 1) : subWeeks(prev, 1)
     );
   };
-
-  const filteredLessons = selectedRink
-    ? lessons.filter(lesson => lesson.rinkId === selectedRink)
-    : lessons;
 
   return (
     <div className="container mx-auto py-8 space-y-6">
@@ -97,11 +110,7 @@ export default function SchedulePage() {
             onSchedule={() => {
               setIsFormOpen(false);
               setSelectedDate(null);
-              fetchLessons({
-                rinkId: selectedRink || undefined,
-                startDate: currentWeek,
-                endDate: endOfWeek(currentWeek)
-              });
+              fetchLessons();
             }}
           />
         </DialogContent>
@@ -113,11 +122,7 @@ export default function SchedulePage() {
           isOpen={!!selectedLesson}
           onClose={() => {
             setSelectedLesson(null);
-            fetchLessons({
-              rinkId: selectedRink || undefined,
-              startDate: currentWeek,
-              endDate: endOfWeek(currentWeek)
-            });
+            fetchLessons();
           }}
         />
       )}
@@ -150,7 +155,7 @@ export default function SchedulePage() {
       ) : (
         <CalendarView
           currentWeek={currentWeek}
-          lessons={filteredLessons}
+          lessons={lessons}
           onSlotSelect={handleSlotSelect}
           onLessonSelect={handleLessonSelect}
         />
