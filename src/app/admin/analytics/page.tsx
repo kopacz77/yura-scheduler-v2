@@ -6,6 +6,8 @@ import { TopStudentsCard } from '@/components/admin/analytics/TopStudentsCard';
 import { getAnalyticsData } from '@/lib/actions/analytics';
 import { Heading } from '@/components/ui/heading';
 
+export const dynamic = 'force-dynamic';
+
 export default async function AdminAnalyticsPage() {
   const { stats, revenueData, activityData, topStudents } = await getAnalyticsData();
 
