@@ -6,6 +6,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { toast } from '@/components/ui/use-toast';
 
 export default function SignInPage() {
   const [isLoading, setIsLoading] = useState(false);
@@ -15,20 +16,33 @@ export default function SignInPage() {
     e.preventDefault();
     setIsLoading(true);
 
-    const formData = new FormData(e.currentTarget);
-    
-    const result = await signIn('credentials', {
-      email: formData.get('email'),
-      password: formData.get('password'),
-      redirect: false
-    });
+    try {
+      const formData = new FormData(e.currentTarget);
+      const result = await signIn('credentials', {
+        email: formData.get('email'),
+        password: formData.get('password'),
+        redirect: false
+      });
 
-    if (result?.ok) {
+      if (result?.error) {
+        toast({
+          title: 'Error',
+          description: 'Invalid credentials',
+          variant: 'destructive'
+        });
+        return;
+      }
+
       router.push('/dashboard');
-      router.refresh();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Something went wrong',
+        variant: 'destructive'
+      });
+    } finally {
+      setIsLoading(false);
     }
-
-    setIsLoading(false);
   }
 
   return (
