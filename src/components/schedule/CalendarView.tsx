@@ -43,8 +43,13 @@ export function CalendarView({
   const getTimeSlotForCell = (day: Date, timeSlot: string) => {
     const dayOfWeek = day.getDay();
     return timeSlots.find(ts => {
+      const startHour = parseInt(ts.startTime.split(':')[0]);
+      const slotHour = parseInt(timeSlot.split(':')[0]);
+      const slotMinute = parseInt(timeSlot.split(':')[1]);
+      
       return ts.daysOfWeek.includes(dayOfWeek) && 
-             ts.startTime === timeSlot;
+             startHour === slotHour &&
+             (slotMinute === 0 || slotMinute === 30);
     });
   };
 
@@ -102,29 +107,21 @@ export function CalendarView({
               timeSlot.endsWith('00') && 'bg-muted/5'
             )}
           >
-            <div className="p-2 border-r text-sm font-medium text-muted-foreground flex items-center justify-end pr-4 min-h-[4rem]">
+            <div className="p-2 border-r text-sm font-medium text-muted-foreground flex items-center justify-end pr-4 min-h-[3rem]">
               {format(parse(timeSlot, 'HH:mm', new Date()), 'h:mm a')}
             </div>
             {weekDays.map(day => {
               const availableSlot = getTimeSlotForCell(day, timeSlot);
               const isPast = isSlotPast(day, timeSlot);
 
-              // Check if this is a continuation cell of a previous slot
-              const prevTimeSlot = index > 0 ? TIME_SLOTS[index - 1] : null;
-              const prevSlot = prevTimeSlot ? getTimeSlotForCell(day, prevTimeSlot) : null;
-              if (prevSlot && prevSlot === availableSlot) {
-                return null;
-              }
-
               return (
                 <div
                   key={`${day.toISOString()}-${timeSlot}`}
                   className={cn(
-                    'border-r relative transition-colors p-2 min-h-[4rem]',
+                    'border-r min-h-[3rem] relative',
                     !isPast && availableSlot && 'cursor-pointer hover:bg-primary/5',
-                    availableSlot && 'bg-blue-100 dark:bg-blue-900/20 row-span-2'
+                    availableSlot && 'bg-blue-100'
                   )}
-                  style={availableSlot ? { gridRow: 'span 2' } : {}}
                   onClick={() => {
                     if (!isPast && availableSlot && onSlotSelect) {
                       const [hours, minutes] = timeSlot.split(':').map(Number);
@@ -135,7 +132,7 @@ export function CalendarView({
                   }}
                 >
                   {availableSlot && (
-                    <div className="text-xs text-muted-foreground">
+                    <div className="text-xs p-2 text-muted-foreground">
                       <div className="flex items-center gap-1">
                         <MapPin className="h-3 w-3" />
                         <span>{availableSlot.rink.name}</span>
