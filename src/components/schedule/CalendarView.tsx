@@ -1,10 +1,11 @@
 'use client';
 
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { format, addDays, endOfWeek, isSameDay, parseISO, isToday } from 'date-fns';
+import { format, addDays, endOfWeek, isSameDay, parseISO, isToday, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { UserCircle2, Clock, Calendar } from 'lucide-react';
 import { Lesson } from '@prisma/client';
+import { useMemo } from 'react';
 
 interface CalendarViewProps {
   currentWeek: Date;
@@ -31,7 +32,9 @@ export function CalendarView({
   onSlotSelect,
   onLessonSelect
 }: CalendarViewProps) {
-  const weekDays = Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i));
+  const weekDays = useMemo(() => (
+    Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i))
+  ), [currentWeek]);
 
   const getLessonForSlot = (day: Date, timeSlot: string) => {
     const [hours, minutes] = timeSlot.split(':').map(Number);
