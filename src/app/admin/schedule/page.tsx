@@ -1,9 +1,9 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { CalendarView } from '@/components/schedule/CalendarView';
 import { SlotManagement } from '@/components/schedule/SlotManagement';
-import { LessonDetails } from '@/components/schedule/LessonDetails';
+import { EditSlotDialog } from '@/components/schedule/EditSlotDialog';
 import { RinkSelector } from '@/components/schedule/RinkSelector';
 import { Button } from '@/components/ui/button';
 import { CalendarDays, AlertCircle, Loader2 } from 'lucide-react';
@@ -25,13 +25,12 @@ type ScheduleData = {
 
 export default function AdminSchedulePage() {
   const [isSlotManagementOpen, setIsSlotManagementOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRink, setSelectedRink] = useState('all');
   const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
   const [scheduleData, setScheduleData] = useState<ScheduleData>({ lessons: [], timeSlots: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedSlot, setSelectedSlot] = useState<RinkTimeSlot | null>(null);
 
   const fetchSchedule = async () => {
     try {
@@ -64,22 +63,13 @@ export default function AdminSchedulePage() {
     }
   };
 
-  useEffect(() => {
-    fetchSchedule();
-  }, [currentWeek, selectedRink]);
-
-  const handleSlotSelect = (date: Date) => {
-    setSelectedDate(date);
-    setIsSlotManagementOpen(true);
-  };
-
   const handleWeekChange = (direction: 'prev' | 'next') => {
     setCurrentWeek(prev => 
       direction === 'next' ? addWeeks(prev, 1) : subWeeks(prev, 1)
     );
   };
 
-  const handleSaveSlot = async (data: any) => {
+  const handleSlotSave = async (data: any) => {
     try {
       const response = await fetch('/api/schedule/slots', {
         method: 'POST',
@@ -172,8 +162,8 @@ export default function AdminSchedulePage() {
             currentWeek={currentWeek}
             lessons={scheduleData.lessons}
             timeSlots={scheduleData.timeSlots}
-            onSlotSelect={handleSlotSelect}
-            onLessonSelect={setSelectedLesson}
+            onRefresh={fetchSchedule}
+            onEditSlot={setSelectedSlot}
           />
         )}
       </div>
@@ -181,15 +171,15 @@ export default function AdminSchedulePage() {
       <SlotManagement
         isOpen={isSlotManagementOpen}
         onClose={() => setIsSlotManagementOpen(false)}
-        onSave={handleSaveSlot}
-        initialDate={selectedDate}
+        onSave={handleSlotSave}
       />
 
-      {selectedLesson && (
-        <LessonDetails
-          lesson={selectedLesson}
-          isOpen={!!selectedLesson}
-          onClose={() => setSelectedLesson(null)}
+      {selectedSlot && (
+        <EditSlotDialog
+          slot={selectedSlot}
+          isOpen={!!selectedSlot}
+          onClose={() => setSelectedSlot(null)}
+          onSave={fetchSchedule}
         />
       )}
     </div>
