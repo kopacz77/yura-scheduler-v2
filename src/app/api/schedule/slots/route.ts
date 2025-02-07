@@ -39,15 +39,12 @@ async function handleSingleSlot(data: any) {
     // Calculate end time
     const parsedEndTime = addMinutes(parsedStartTime, parseInt(duration));
 
-    // Format times for database
-    const formattedStartTime = format(parsedStartTime, 'HH:mm');
-    const formattedEndTime = format(parsedEndTime, 'HH:mm');
-
+    // Create time slot with parsed times
     const timeSlot = await prisma.rinkTimeSlot.create({
       data: {
         rinkId,
-        startTime: formattedStartTime,
-        endTime: formattedEndTime,
+        startTime: format(parsedStartTime, 'HH:mm'),
+        endTime: format(parsedEndTime, 'HH:mm'),
         daysOfWeek: [parsedStartTime.getDay()],
         maxStudents: parseInt(maxStudents),
         isActive: true,
