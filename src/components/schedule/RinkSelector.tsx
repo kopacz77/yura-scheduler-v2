@@ -1,6 +1,6 @@
 'use client';
 
-import { DEFAULT_RINKS } from '@/types/schedule';
+import { DEFAULT_RINKS } from '@/config/rinks';
 import { Card } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { MapPin } from 'lucide-react';
