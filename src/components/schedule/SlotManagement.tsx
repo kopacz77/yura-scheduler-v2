@@ -1,5 +1,6 @@
 'use client';
 
+import { useState } from 'react';
 import {
   Dialog,
   DialogContent,
@@ -15,6 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
 import { format } from 'date-fns';
+import { DEFAULT_RINKS } from '@/config/rinks';
 
 interface SlotManagementProps {
   isOpen: boolean;
@@ -23,7 +25,27 @@ interface SlotManagementProps {
   initialDate?: Date;
 }
 
+const DAYS_OF_WEEK = [
+  { name: 'Mon', value: '1' },
+  { name: 'Tue', value: '2' },
+  { name: 'Wed', value: '3' },
+  { name: 'Thu', value: '4' },
+  { name: 'Fri', value: '5' },
+  { name: 'Sat', value: '6' },
+  { name: 'Sun', value: '0' },
+];
+
 export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotManagementProps) {
+  const [selectedDays, setSelectedDays] = useState<string[]>([]);
+
+  const toggleDay = (dayValue: string) => {
+    setSelectedDays(current =>
+      current.includes(dayValue)
+        ? current.filter(d => d !== dayValue)
+        : [...current, dayValue]
+    );
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-4xl">
@@ -52,8 +74,14 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                         <SelectValue placeholder="Select a rink" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="east-west">East West Ice Palace</SelectItem>
-                        <SelectItem value="great-park">Great Park Ice</SelectItem>
+                        {Object.entries(DEFAULT_RINKS).map(([name, details]) => (
+                          <SelectItem key={name} value={name}>
+                            <div className="flex flex-col">
+                              <span>{name}</span>
+                              <span className="text-xs text-muted-foreground">{details.address}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -122,8 +150,14 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                         <SelectValue placeholder="Select a rink" />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="east-west">East West Ice Palace</SelectItem>
-                        <SelectItem value="great-park">Great Park Ice</SelectItem>
+                        {Object.entries(DEFAULT_RINKS).map(([name, details]) => (
+                          <SelectItem key={name} value={name}>
+                            <div className="flex flex-col">
+                              <span>{name}</span>
+                              <span className="text-xs text-muted-foreground">{details.address}</span>
+                            </div>
+                          </SelectItem>
+                        ))}
                       </SelectContent>
                     </Select>
                   </div>
@@ -131,16 +165,19 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                   {/* Days Selection */}
                   <div className="space-y-2">
                     <Label>Days of Week</Label>
-                    <Select>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select days" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="1,3,5">Mon, Wed, Fri</SelectItem>
-                        <SelectItem value="2,4">Tue, Thu</SelectItem>
-                        <SelectItem value="6,7">Sat, Sun</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <div className="flex flex-wrap gap-2">
+                      {DAYS_OF_WEEK.map((day) => (
+                        <Button
+                          key={day.value}
+                          variant={selectedDays.includes(day.value) ? "default" : "outline"}
+                          onClick={() => toggleDay(day.value)}
+                          className="w-14"
+                          type="button"
+                        >
+                          {day.name}
+                        </Button>
+                      ))}
+                    </div>
                   </div>
                 </div>
 
@@ -195,7 +232,7 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
 
             <div className="flex justify-end space-x-2">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
-              <Button onClick={() => onSave({})}>Create Recurring Slots</Button>
+              <Button onClick={() => onSave({ selectedDays })}>Create Recurring Slots</Button>
             </div>
           </TabsContent>
         </Tabs>
