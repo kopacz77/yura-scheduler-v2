@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
+import { startOfDay, endOfDay } from 'date-fns';
 
 export async function GET(req: Request) {
   try {
@@ -15,7 +16,15 @@ export async function GET(req: Request) {
     const endDate = searchParams.get('endDate');
     const rinkId = searchParams.get('rinkId');
 
-    // Get time slots
+    if (!startDate || !endDate) {
+      return new NextResponse('Start and end dates are required', { status: 400 });
+    }
+
+    // Parse date strings to Date objects
+    const start = startOfDay(new Date(startDate));
+    const end = endOfDay(new Date(endDate));
+
+    // Get available time slots
     const timeSlots = await prisma.rinkTimeSlot.findMany({
       where: {
         rinkId: rinkId || undefined,
@@ -31,8 +40,8 @@ export async function GET(req: Request) {
       where: {
         rinkId: rinkId || undefined,
         startTime: {
-          gte: startDate ? new Date(startDate) : undefined,
-          lte: endDate ? new Date(endDate) : undefined,
+          gte: start,
+          lte: end,
         },
       },
       include: {
@@ -42,6 +51,7 @@ export async function GET(req: Request) {
           },
         },
         rink: true,
+        timeSlot: true,
       },
       orderBy: {
         startTime: 'asc',
