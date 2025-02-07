@@ -67,6 +67,11 @@ export function CalendarView({
     return format(addMinutes(date, duration), 'HH:mm');
   };
 
+  const getSlotColor = (timeSlot: string) => {
+    const hour = parseInt(timeSlot.split(':')[0]);
+    return hour % 2 === 0 ? 'bg-blue-100' : 'bg-indigo-100';
+  };
+
   return (
     <Card className="overflow-hidden border rounded-lg shadow-sm">
       <CardHeader className="bg-primary/5 py-3 px-4 border-b">
@@ -121,7 +126,7 @@ export function CalendarView({
                     className={cn(
                       'border-r min-h-[3rem] relative',
                       !isPast && availableSlot && 'cursor-pointer hover:bg-primary/5',
-                      availableSlot && 'bg-blue-100'
+                      availableSlot && getSlotColor(timeSlot)
                     )}
                     onClick={() => {
                       if (!isPast && availableSlot && onSlotSelect) {
