@@ -48,12 +48,8 @@ export function CalendarView({
     });
   };
 
-  const getSlotEndTime = (startTimeStr: string, minutes: number) => {
-    const [hours, mins] = startTimeStr.split(':').map(Number);
-    const startTime = new Date();
-    startTime.setHours(hours, mins, 0, 0);
-    const endTime = addMinutes(startTime, minutes);
-    return format(endTime, 'HH:mm');
+  const getSlotSpan = (startTime: string, duration: number = 60) => {
+    return Math.ceil(duration / 30);
   };
 
   const getLessonForSlot = (day: Date, timeSlot: string) => {
@@ -74,6 +70,13 @@ export function CalendarView({
     const slotTime = new Date(day);
     slotTime.setHours(hours, minutes, 0, 0);
     return slotTime < new Date();
+  };
+
+  const getEndTime = (startTime: string, duration: number = 60) => {
+    const [hours, minutes] = startTime.split(':').map(Number);
+    const date = new Date();
+    date.setHours(hours, minutes, 0, 0);
+    return format(addMinutes(date, duration), 'HH:mm');
   };
 
   return (
@@ -108,7 +111,7 @@ export function CalendarView({
 
       {/* Time Slots Grid */}
       <div className="overflow-auto max-h-[600px] bg-background/50">
-        {TIME_SLOTS.map(timeSlot => (
+        {TIME_SLOTS.map((timeSlot, index) => (
           <div 
             key={timeSlot} 
             className={cn(
@@ -123,19 +126,28 @@ export function CalendarView({
               const lesson = getLessonForSlot(day, timeSlot);
               const availableSlot = getTimeSlotForCell(day, timeSlot);
               const isPast = isSlotPast(day, timeSlot);
+              const slotSpan = availableSlot ? getSlotSpan(availableSlot.startTime) : 1;
+              
+              // Skip cells that are part of a spanning slot
+              if (availableSlot && timeSlot !== availableSlot.startTime) {
+                return null;
+              }
 
               return (
                 <div
                   key={day.toISOString()}
                   className={cn(
                     'p-2 border-r min-h-[4rem] relative group transition-colors',
-                    !isPast && availableSlot && !lesson && 'cursor-pointer hover:bg-primary/5',
+                    !isPast && !lesson && 'cursor-pointer hover:bg-primary/5',
                     lesson && 'bg-primary/10 hover:bg-primary/15',
                     isPast && 'bg-muted/5',
-                    availableSlot && !lesson && 'bg-blue-50/50'
+                    availableSlot && !lesson && 'bg-indigo-50/80'
                   )}
+                  style={{
+                    gridRow: `span ${slotSpan}`
+                  }}
                   onClick={() => {
-                    if (!isPast && availableSlot && !lesson && onSlotSelect) {
+                    if (!isPast && !lesson && onSlotSelect) {
                       const [hours, minutes] = timeSlot.split(':').map(Number);
                       const selectedDate = new Date(day);
                       selectedDate.setHours(hours, minutes, 0, 0);
@@ -155,7 +167,7 @@ export function CalendarView({
                         <Clock className="h-3 w-3" />
                         <span>
                           {format(parse(availableSlot.startTime, 'HH:mm', new Date()), 'h:mm a')} -
-                          {format(parse(getSlotEndTime(availableSlot.startTime, 60), 'HH:mm', new Date()), 'h:mm a')}
+                          {format(parse(getEndTime(availableSlot.startTime), 'HH:mm', new Date()), 'h:mm a')}
                         </span>
                       </div>
                     </div>
