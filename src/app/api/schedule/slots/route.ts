@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { parse, format, addMinutes } from 'date-fns';
+import { parse, format, addMinutes, addDays, parseISO, eachDayOfInterval } from 'date-fns';
 import { DEFAULT_RINKS } from '@/config/rinks';
 
 async function ensureRinkExists(rinkName: string) {
@@ -51,29 +51,23 @@ export async function POST(req: Request) {
 async function handleSingleSlot(data: any) {
   try {
     const { rinkId: rinkName, date, startTime, duration, maxStudents } = data;
-    console.log('Processing single slot:', { date, startTime });
-
+    
     const rinkId = await ensureRinkExists(rinkName);
-
     const dateTimeString = `${date} ${startTime}`;
-    console.log('Date time string:', dateTimeString);
-
     const parsedDateTime = parse(dateTimeString, 'yyyy-MM-dd HH:mm', new Date());
-    console.log('Parsed datetime:', parsedDateTime);
-
+    
     if (isNaN(parsedDateTime.getTime())) {
       throw new Error('Invalid date/time format');
     }
 
     const endDateTime = addMinutes(parsedDateTime, parseInt(duration));
 
-    // Store actual dates instead of just time
+    // Create single time slot
     const timeSlot = await prisma.rinkTimeSlot.create({
       data: {
         rinkId,
-        startTime: format(parsedDateTime, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-        endTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
-        daysOfWeek: [parsedDateTime.getDay()],
+        startTime: parsedDateTime,
+        endTime: endDateTime,
         maxStudents: parseInt(maxStudents),
         isActive: true,
       },
@@ -91,22 +85,66 @@ async function handleSingleSlot(data: any) {
 
 async function handleRecurringSlots(data: any) {
   try {
-    const { rinkId: rinkName, startTime, endTime, daysString, maxStudents } = data;
-    const rinkId = await ensureRinkExists(rinkName);
-    const daysOfWeek = daysString.split(',').map((day: string) => parseInt(day, 10));
+    const { 
+      rinkId: rinkName, 
+      startDate, 
+      endDate, 
+      startTime, 
+      duration, 
+      daysString, 
+      maxStudents 
+    } = data;
 
-    const timeSlot = await prisma.rinkTimeSlot.create({
+    const rinkId = await ensureRinkExists(rinkName);
+    const selectedDays = daysString.split(',').map((day: string) => parseInt(day, 10));
+
+    // Create recurring pattern
+    const pattern = await prisma.recurringPattern.create({
       data: {
         rinkId,
+        startDate: parseISO(startDate),
+        endDate: parseISO(endDate),
         startTime,
-        endTime,
-        daysOfWeek,
+        duration: parseInt(duration),
+        daysOfWeek: selectedDays,
         maxStudents: parseInt(maxStudents),
         isActive: true,
       },
     });
 
-    return NextResponse.json(timeSlot);
+    // Generate individual slot instances
+    const dateRange = eachDayOfInterval({
+      start: parseISO(startDate),
+      end: parseISO(endDate),
+    });
+
+    const slotInstances = [];
+
+    for (const date of dateRange) {
+      if (selectedDays.includes(date.getDay())) {
+        const slotStartTime = parse(startTime, 'HH:mm', date);
+        const slotEndTime = addMinutes(slotStartTime, parseInt(duration));
+
+        slotInstances.push({
+          rinkId,
+          startTime: slotStartTime,
+          endTime: slotEndTime,
+          maxStudents: parseInt(maxStudents),
+          isActive: true,
+          recurringId: pattern.id,
+        });
+      }
+    }
+
+    // Create all slot instances
+    const createdSlots = await prisma.rinkTimeSlot.createMany({
+      data: slotInstances,
+    });
+
+    return NextResponse.json({
+      pattern,
+      slotsCreated: createdSlots.count,
+    });
   } catch (error) {
     console.error('[RECURRING_SLOTS_ERROR]', error);
     return new NextResponse(
