@@ -1,7 +1,7 @@
 'use client';
 
-import { Card, CardContent, CardHeader } from '@/components/ui/card';
-import { format, addDays, endOfWeek, isSameDay, parseISO, isToday, parse } from 'date-fns';
+import { Card, CardHeader } from '@/components/ui/card';
+import { format, addDays, isSameDay, isToday, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { UserCircle2, Clock, Calendar } from 'lucide-react';
 import { Lesson } from '@prisma/client';
@@ -66,7 +66,7 @@ export function CalendarView({
       </CardHeader>
 
       {/* Calendar Header */}
-      <div className="grid grid-cols-8 bg-muted/50 border-b">
+      <div className="grid grid-cols-[100px_repeat(7,1fr)] bg-muted/50 border-b">
         <div className="p-3 font-medium text-muted-foreground border-r text-sm">
           Time
         </div>
@@ -92,7 +92,7 @@ export function CalendarView({
           <div 
             key={timeSlot} 
             className={cn(
-              "grid grid-cols-8 border-b hover:bg-muted/5 transition-colors",
+              "grid grid-cols-[100px_repeat(7,1fr)] border-b hover:bg-muted/5 transition-colors",
               timeSlot.endsWith('00') && 'bg-muted/5'
             )}
           >
