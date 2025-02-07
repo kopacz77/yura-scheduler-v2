@@ -110,6 +110,7 @@ model RinkTimeSlot {
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
 
+  @@unique([rinkId, startTime, daysOfWeek])
   @@index([rinkId])
 }
 
