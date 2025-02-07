@@ -13,8 +13,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Card, CardContent } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, Repeat } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Calendar, Clock, MapPin, Repeat, Users } from 'lucide-react';
 import { format } from 'date-fns';
 import { DEFAULT_RINKS } from '@/config/rinks';
 
@@ -48,7 +48,7 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl">
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Manage Time Slots</DialogTitle>
           <DialogDescription>
@@ -57,21 +57,33 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
         </DialogHeader>
 
         <Tabs defaultValue="single" className="w-full">
-          <TabsList className="grid w-full grid-cols-2">
-            <TabsTrigger value="single">Single Slot</TabsTrigger>
-            <TabsTrigger value="recurring">Recurring Slots</TabsTrigger>
+          <TabsList className="grid w-full grid-cols-2 mb-6">
+            <TabsTrigger value="single" className="text-base py-2">
+              <Clock className="mr-2 h-4 w-4" />
+              Single Slot
+            </TabsTrigger>
+            <TabsTrigger value="recurring" className="text-base py-2">
+              <Repeat className="mr-2 h-4 w-4" />
+              Recurring Slots
+            </TabsTrigger>
           </TabsList>
 
-          <TabsContent value="single" className="space-y-4 mt-4">
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Rink Selection */}
+          <TabsContent value="single">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Location Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Location Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Location</Label>
+                    <Label>Select Rink</Label>
                     <Select>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a rink" />
+                        <SelectValue placeholder="Choose a location" />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(DEFAULT_RINKS).map(([name, details]) => (
@@ -85,8 +97,6 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       </SelectContent>
                     </Select>
                   </div>
-
-                  {/* Date Selection */}
                   <div className="space-y-2">
                     <Label>Date</Label>
                     <Input 
@@ -94,10 +104,18 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       defaultValue={initialDate ? format(initialDate, 'yyyy-MM-dd') : undefined}
                     />
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Time Selection */}
+              {/* Time Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Clock className="mr-2 h-4 w-4" />
+                    Time Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Start Time</Label>
                     <Input type="time" step="1800" />
@@ -114,40 +132,57 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="space-y-2">
-                  <Label>Maximum Students</Label>
-                  <Select defaultValue="1">
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select capacity" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="1">1 student (Private)</SelectItem>
-                      <SelectItem value="2">2 students</SelectItem>
-                      <SelectItem value="3">3 students</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </CardContent>
-            </Card>
+              {/* Capacity Details */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Users className="mr-2 h-4 w-4" />
+                    Capacity Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <Label>Maximum Students</Label>
+                    <Select defaultValue="1">
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select capacity" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="1">1 student (Private)</SelectItem>
+                        <SelectItem value="2">2 students</SelectItem>
+                        <SelectItem value="3">3 students</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 mt-6">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button onClick={() => onSave({})}>Create Slot</Button>
             </div>
           </TabsContent>
 
-          <TabsContent value="recurring" className="space-y-4 mt-4">
-            <Card>
-              <CardContent className="pt-6 space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  {/* Rink Selection */}
+          <TabsContent value="recurring">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Location Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <MapPin className="mr-2 h-4 w-4" />
+                    Location Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Location</Label>
+                    <Label>Select Rink</Label>
                     <Select>
                       <SelectTrigger>
-                        <SelectValue placeholder="Select a rink" />
+                        <SelectValue placeholder="Choose a location" />
                       </SelectTrigger>
                       <SelectContent>
                         {Object.entries(DEFAULT_RINKS).map(([name, details]) => (
@@ -161,8 +196,18 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       </SelectContent>
                     </Select>
                   </div>
+                </CardContent>
+              </Card>
 
-                  {/* Days Selection */}
+              {/* Schedule Pattern */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Schedule Pattern
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Days of Week</Label>
                     <div className="flex flex-wrap gap-2">
@@ -179,9 +224,18 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       ))}
                     </div>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="grid grid-cols-2 gap-4">
+              {/* Time Details */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Clock className="mr-2 h-4 w-4" />
+                    Time Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Time Range</Label>
                     <div className="flex items-center space-x-2">
@@ -202,17 +256,38 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
+                </CardContent>
+              </Card>
 
-                <div className="grid grid-cols-2 gap-4">
+              {/* Date Range */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Calendar className="mr-2 h-4 w-4" />
+                    Date Range
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
                   <div className="space-y-2">
-                    <Label>Date Range</Label>
+                    <Label>Select Range</Label>
                     <div className="flex items-center space-x-2">
                       <Input type="date" className="w-full" />
                       <span>to</span>
                       <Input type="date" className="w-full" />
                     </div>
                   </div>
+                </CardContent>
+              </Card>
+
+              {/* Capacity Details */}
+              <Card className="md:col-span-2">
+                <CardHeader>
+                  <CardTitle className="text-lg font-medium flex items-center">
+                    <Users className="mr-2 h-4 w-4" />
+                    Capacity Details
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
                   <div className="space-y-2">
                     <Label>Maximum Students per Slot</Label>
                     <Select defaultValue="1">
@@ -226,11 +301,11 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       </SelectContent>
                     </Select>
                   </div>
-                </div>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
 
-            <div className="flex justify-end space-x-2">
+            <div className="flex justify-end space-x-2 mt-6">
               <Button variant="outline" onClick={onClose}>Cancel</Button>
               <Button onClick={() => onSave({ selectedDays })}>Create Recurring Slots</Button>
             </div>
