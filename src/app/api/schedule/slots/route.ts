@@ -3,6 +3,29 @@ import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
 import { parse, format, addMinutes } from 'date-fns';
+import { DEFAULT_RINKS } from '@/config/rinks';
+
+async function ensureRinkExists(rinkName: string) {
+  const rinkDetails = DEFAULT_RINKS[rinkName];
+  if (!rinkDetails) throw new Error('Invalid rink name');
+
+  let rink = await prisma.rink.findUnique({
+    where: { name: rinkName },
+  });
+
+  if (!rink) {
+    rink = await prisma.rink.create({
+      data: {
+        name: rinkName,
+        timezone: rinkDetails.timezone,
+        address: rinkDetails.address,
+        maxCapacity: rinkDetails.maxCapacity,
+      },
+    });
+  }
+
+  return rink.id;
+}
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +35,7 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    console.log('Received data:', data); // Debug log
+    console.log('Received data:', data);
 
     if (data.type === 'recurring') {
       return await handleRecurringSlots(data);
@@ -27,37 +50,28 @@ export async function POST(req: Request) {
 
 async function handleSingleSlot(data: any) {
   try {
-    const { rinkId, date, startTime, duration, maxStudents } = data;
-    console.log('Processing single slot:', { date, startTime }); // Debug log
+    const { rinkId: rinkName, date, startTime, duration, maxStudents } = data;
+    console.log('Processing single slot:', { date, startTime });
 
-    // Ensure date is in correct format
-    if (!date || !startTime) {
-      throw new Error('Missing date or startTime');
-    }
+    const rinkId = await ensureRinkExists(rinkName);
 
-    // Parse the combined date and time
     const dateTimeString = `${date} ${startTime}`;
-    console.log('Date time string:', dateTimeString); // Debug log
+    console.log('Date time string:', dateTimeString);
 
     const parsedDateTime = parse(dateTimeString, 'yyyy-MM-dd HH:mm', new Date());
-    console.log('Parsed datetime:', parsedDateTime); // Debug log
+    console.log('Parsed datetime:', parsedDateTime);
 
     if (isNaN(parsedDateTime.getTime())) {
       throw new Error('Invalid date/time format');
     }
 
-    // Calculate end time
     const endDateTime = addMinutes(parsedDateTime, parseInt(duration));
-
-    // Format times for database
-    const formattedStartTime = format(parsedDateTime, 'HH:mm');
-    const formattedEndTime = format(endDateTime, 'HH:mm');
 
     const timeSlot = await prisma.rinkTimeSlot.create({
       data: {
         rinkId,
-        startTime: formattedStartTime,
-        endTime: formattedEndTime,
+        startTime: format(parsedDateTime, 'HH:mm'),
+        endTime: format(endDateTime, 'HH:mm'),
         daysOfWeek: [parsedDateTime.getDay()],
         maxStudents: parseInt(maxStudents),
         isActive: true,
@@ -67,13 +81,17 @@ async function handleSingleSlot(data: any) {
     return NextResponse.json(timeSlot);
   } catch (error) {
     console.error('[SINGLE_SLOT_ERROR]', error);
-    return new NextResponse(`Failed to create single slot: ${error.message}`, { status: 500 });
+    return new NextResponse(
+      `Failed to create single slot: ${error.message}`, 
+      { status: 500 }
+    );
   }
 }
 
 async function handleRecurringSlots(data: any) {
   try {
-    const { rinkId, startTime, endTime, daysString, maxStudents } = data;
+    const { rinkId: rinkName, startTime, endTime, daysString, maxStudents } = data;
+    const rinkId = await ensureRinkExists(rinkName);
     const daysOfWeek = daysString.split(',').map((day: string) => parseInt(day, 10));
 
     const timeSlot = await prisma.rinkTimeSlot.create({
@@ -90,6 +108,9 @@ async function handleRecurringSlots(data: any) {
     return NextResponse.json(timeSlot);
   } catch (error) {
     console.error('[RECURRING_SLOTS_ERROR]', error);
-    return new NextResponse(`Failed to create recurring slots: ${error.message}`, { status: 500 });
+    return new NextResponse(
+      `Failed to create recurring slots: ${error.message}`, 
+      { status: 500 }
+    );
   }
 }
