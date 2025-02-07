@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { addDays, setHours, setMinutes, parse, addMinutes } from 'date-fns';
+import { addDays, setHours, setMinutes, parse, format, addMinutes } from 'date-fns';
 
 export async function POST(req: Request) {
   try {
@@ -26,62 +26,70 @@ export async function POST(req: Request) {
 }
 
 async function handleSingleSlot(data: any) {
-  const { rinkId, date, startTime, duration, maxStudents } = data;
+  try {
+    const { rinkId, date, startTime, duration, maxStudents } = data;
 
-  // Parse the start time into a Date object
-  const startDate = parse(
-    `${date} ${startTime}`,
-    'yyyy-MM-dd HH:mm',
-    new Date()
-  );
+    // Parse the date and time into a Date object
+    const parsedStartTime = parse(
+      `${date} ${startTime}`,
+      'yyyy-MM-dd HH:mm',
+      new Date()
+    );
 
-  // Calculate end time by adding duration minutes
-  const endDate = addMinutes(startDate, parseInt(duration));
+    // Calculate end time
+    const parsedEndTime = addMinutes(parsedStartTime, parseInt(duration));
 
-  // Format times for database
-  const formattedStartTime = format(startDate, 'HH:mm');
-  const formattedEndTime = format(endDate, 'HH:mm');
+    // Format times for database
+    const formattedStartTime = format(parsedStartTime, 'HH:mm');
+    const formattedEndTime = format(parsedEndTime, 'HH:mm');
 
-  const timeSlot = await prisma.rinkTimeSlot.create({
-    data: {
-      rinkId,
-      startTime: formattedStartTime,
-      endTime: formattedEndTime,
-      daysOfWeek: [startDate.getDay()],
-      maxStudents: parseInt(maxStudents),
-      isActive: true,
-    },
-  });
+    const timeSlot = await prisma.rinkTimeSlot.create({
+      data: {
+        rinkId,
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        daysOfWeek: [parsedStartTime.getDay()],
+        maxStudents: parseInt(maxStudents),
+        isActive: true,
+      },
+    });
 
-  return NextResponse.json(timeSlot);
+    return NextResponse.json(timeSlot);
+  } catch (error) {
+    console.error('[SINGLE_SLOT_ERROR]', error);
+    return new NextResponse('Failed to create single slot', { status: 500 });
+  }
 }
 
 async function handleRecurringSlots(data: any) {
-  const {
-    rinkId,
-    daysString,
-    startTime,
-    endTime,
-    maxStudents
-  } = data;
-
-  // Parse days string into array of numbers
-  const daysOfWeek = daysString.split(',').map((day: string) => parseInt(day, 10));
-
-  const timeSlot = await prisma.rinkTimeSlot.create({
-    data: {
+  try {
+    const {
       rinkId,
+      startDate,
+      endDate,
       startTime,
       endTime,
-      daysOfWeek,
-      maxStudents: parseInt(maxStudents),
-      isActive: true,
-    },
-  });
+      daysString,
+      maxStudents
+    } = data;
 
-  return NextResponse.json(timeSlot);
+    // Parse days string into array of numbers
+    const daysOfWeek = daysString.split(',').map((day: string) => parseInt(day, 10));
+
+    const timeSlot = await prisma.rinkTimeSlot.create({
+      data: {
+        rinkId,
+        startTime,
+        endTime,
+        daysOfWeek,
+        maxStudents: parseInt(maxStudents),
+        isActive: true,
+      },
+    });
+
+    return NextResponse.json(timeSlot);
+  } catch (error) {
+    console.error('[RECURRING_SLOTS_ERROR]', error);
+    return new NextResponse('Failed to create recurring slots', { status: 500 });
+  }
 }
-
-// Create the schedule API route to handle the 404 error
-const scheduleApiRoute = `${process.env.NEXTAUTH_URL}/api/schedule`;
-export { scheduleApiRoute };
