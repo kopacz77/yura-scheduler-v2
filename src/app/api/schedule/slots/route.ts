@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { addDays, setHours, setMinutes, parse, format, addMinutes } from 'date-fns';
+import { parse, format, addMinutes } from 'date-fns';
 
 export async function POST(req: Request) {
   try {
@@ -12,9 +12,9 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    const { type } = data;
+    console.log('Received data:', data); // Debug log
 
-    if (type === 'recurring') {
+    if (data.type === 'recurring') {
       return await handleRecurringSlots(data);
     } else {
       return await handleSingleSlot(data);
@@ -28,24 +28,37 @@ export async function POST(req: Request) {
 async function handleSingleSlot(data: any) {
   try {
     const { rinkId, date, startTime, duration, maxStudents } = data;
+    console.log('Processing single slot:', { date, startTime }); // Debug log
 
-    // Parse the date and time into a Date object
-    const parsedStartTime = parse(
-      `${date} ${startTime}`,
-      'yyyy-MM-dd HH:mm',
-      new Date()
-    );
+    // Ensure date is in correct format
+    if (!date || !startTime) {
+      throw new Error('Missing date or startTime');
+    }
+
+    // Parse the combined date and time
+    const dateTimeString = `${date} ${startTime}`;
+    console.log('Date time string:', dateTimeString); // Debug log
+
+    const parsedDateTime = parse(dateTimeString, 'yyyy-MM-dd HH:mm', new Date());
+    console.log('Parsed datetime:', parsedDateTime); // Debug log
+
+    if (isNaN(parsedDateTime.getTime())) {
+      throw new Error('Invalid date/time format');
+    }
 
     // Calculate end time
-    const parsedEndTime = addMinutes(parsedStartTime, parseInt(duration));
+    const endDateTime = addMinutes(parsedDateTime, parseInt(duration));
 
-    // Create time slot with parsed times
+    // Format times for database
+    const formattedStartTime = format(parsedDateTime, 'HH:mm');
+    const formattedEndTime = format(endDateTime, 'HH:mm');
+
     const timeSlot = await prisma.rinkTimeSlot.create({
       data: {
         rinkId,
-        startTime: format(parsedStartTime, 'HH:mm'),
-        endTime: format(parsedEndTime, 'HH:mm'),
-        daysOfWeek: [parsedStartTime.getDay()],
+        startTime: formattedStartTime,
+        endTime: formattedEndTime,
+        daysOfWeek: [parsedDateTime.getDay()],
         maxStudents: parseInt(maxStudents),
         isActive: true,
       },
@@ -54,23 +67,13 @@ async function handleSingleSlot(data: any) {
     return NextResponse.json(timeSlot);
   } catch (error) {
     console.error('[SINGLE_SLOT_ERROR]', error);
-    return new NextResponse('Failed to create single slot', { status: 500 });
+    return new NextResponse(`Failed to create single slot: ${error.message}`, { status: 500 });
   }
 }
 
 async function handleRecurringSlots(data: any) {
   try {
-    const {
-      rinkId,
-      startDate,
-      endDate,
-      startTime,
-      endTime,
-      daysString,
-      maxStudents
-    } = data;
-
-    // Parse days string into array of numbers
+    const { rinkId, startTime, endTime, daysString, maxStudents } = data;
     const daysOfWeek = daysString.split(',').map((day: string) => parseInt(day, 10));
 
     const timeSlot = await prisma.rinkTimeSlot.create({
@@ -87,6 +90,6 @@ async function handleRecurringSlots(data: any) {
     return NextResponse.json(timeSlot);
   } catch (error) {
     console.error('[RECURRING_SLOTS_ERROR]', error);
-    return new NextResponse('Failed to create recurring slots', { status: 500 });
+    return new NextResponse(`Failed to create recurring slots: ${error.message}`, { status: 500 });
   }
 }
