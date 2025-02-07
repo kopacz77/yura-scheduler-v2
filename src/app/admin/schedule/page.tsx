@@ -5,7 +5,7 @@ import { CalendarView } from '@/components/schedule/CalendarView';
 import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { LessonDetails } from '@/components/schedule/LessonDetails';
 import { RinkSelector } from '@/components/schedule/RinkSelector';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
@@ -23,7 +23,7 @@ export default function AdminSchedulePage() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<LessonWithRelations | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedRink, setSelectedRink] = useState('');
+  const [selectedRink, setSelectedRink] = useState('all');
   const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
   const [lessons, setLessons] = useState<Array<Lesson & { 
     student: { 
@@ -38,12 +38,16 @@ export default function AdminSchedulePage() {
   const fetchLessons = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/lessons?${new URLSearchParams({
+      const params = new URLSearchParams({
         startDate: currentWeek.toISOString(),
         endDate: endOfWeek(currentWeek).toISOString(),
-        ...(selectedRink ? { rinkId: selectedRink } : {})
-      })}`);
+      });
       
+      if (selectedRink !== 'all') {
+        params.append('rinkId', selectedRink);
+      }
+      
+      const response = await fetch(`/api/lessons?${params}`);
       if (!response.ok) throw new Error('Failed to fetch lessons');
       
       const data = await response.json();
@@ -161,6 +165,9 @@ export default function AdminSchedulePage() {
         <DialogContent className="max-w-2xl">
           <DialogHeader>
             <DialogTitle>Schedule New Lesson</DialogTitle>
+            <DialogDescription>
+              Fill in the lesson details to schedule a new lesson.
+            </DialogDescription>
           </DialogHeader>
           <ScheduleForm
             initialDate={selectedDate}
