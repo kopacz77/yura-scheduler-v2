@@ -6,32 +6,30 @@ import { SlotManagement } from '@/components/schedule/SlotManagement';
 import { LessonDetails } from '@/components/schedule/LessonDetails';
 import { RinkSelector } from '@/components/schedule/RinkSelector';
 import { Button } from '@/components/ui/button';
-import { Plus, CalendarDays, AlertCircle, Loader2 } from 'lucide-react';
+import { CalendarDays, AlertCircle, Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
-import { Lesson, Rink, Student, User } from '@prisma/client';
+import { Lesson, Rink, Student, User, RinkTimeSlot } from '@prisma/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toast } from '@/components/ui/use-toast';
 
-type LessonWithRelations = Lesson & {
-  student: Student & {
-    user: User;
-  };
-  rink: Rink;
+type ScheduleData = {
+  lessons: Array<Lesson & {
+    student: Student & {
+      user: User;
+    };
+  }>;
+  timeSlots: Array<RinkTimeSlot & {
+    rink: Rink;
+  }>;
 };
 
 export default function AdminSchedulePage() {
   const [isSlotManagementOpen, setIsSlotManagementOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<LessonWithRelations | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRink, setSelectedRink] = useState('all');
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
-  const [lessons, setLessons] = useState<Array<Lesson & { 
-    student: { 
-      user: { 
-        name: string | null 
-      } 
-    } 
-  }>>([]);
+  const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
+  const [scheduleData, setScheduleData] = useState<ScheduleData>({ lessons: [], timeSlots: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -51,8 +49,10 @@ export default function AdminSchedulePage() {
       if (!response.ok) throw new Error('Failed to fetch schedule');
       
       const data = await response.json();
-      setLessons(data.lessons);
+      console.log('Fetched schedule data:', data);
+      setScheduleData(data);
     } catch (err) {
+      console.error('Schedule fetch error:', err);
       setError(err instanceof Error ? err.message : 'Failed to load schedule');
       toast({
         title: 'Error',
@@ -90,17 +90,18 @@ export default function AdminSchedulePage() {
       });
 
       if (!response.ok) {
-        throw new Error('Failed to create slot');
+        const errorMessage = await response.text();
+        throw new Error(errorMessage);
       }
 
+      await fetchSchedule();
       toast({
         title: 'Success',
-        description: 'Time slot(s) created successfully',
+        description: 'Time slot created successfully',
       });
-
       setIsSlotManagementOpen(false);
-      await fetchSchedule();
     } catch (error) {
+      console.error('Slot creation error:', error);
       toast({
         title: 'Error',
         description: error instanceof Error ? error.message : 'Failed to create slot',
@@ -117,7 +118,6 @@ export default function AdminSchedulePage() {
       />
       
       <div className="space-y-6">
-        {/* Control Bar */}
         <div className="flex justify-between items-center">
           <RinkSelector
             selectedRink={selectedRink}
@@ -146,7 +146,6 @@ export default function AdminSchedulePage() {
           </div>
         </div>
 
-        {/* Error State */}
         {error && (
           <div className="rounded-md bg-destructive/10 p-4">
             <div className="flex">
@@ -161,7 +160,6 @@ export default function AdminSchedulePage() {
           </div>
         )}
 
-        {/* Calendar View */}
         {isLoading ? (
           <div className="flex justify-center items-center h-[600px] bg-background/50 backdrop-blur-sm rounded-lg border">
             <div className="text-center space-y-4">
@@ -172,13 +170,14 @@ export default function AdminSchedulePage() {
         ) : (
           <CalendarView
             currentWeek={currentWeek}
-            lessons={lessons}
+            lessons={scheduleData.lessons}
+            timeSlots={scheduleData.timeSlots}
             onSlotSelect={handleSlotSelect}
+            onLessonSelect={setSelectedLesson}
           />
         )}
       </div>
 
-      {/* Slot Management Modal */}
       <SlotManagement
         isOpen={isSlotManagementOpen}
         onClose={() => setIsSlotManagementOpen(false)}
@@ -186,7 +185,6 @@ export default function AdminSchedulePage() {
         initialDate={selectedDate}
       />
 
-      {/* Lesson Details Modal */}
       {selectedLesson && (
         <LessonDetails
           lesson={selectedLesson}
