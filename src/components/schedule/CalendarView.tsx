@@ -48,23 +48,6 @@ export function CalendarView({
     });
   };
 
-  const getSlotSpan = (startTime: string, duration: number = 60) => {
-    return Math.ceil(duration / 30);
-  };
-
-  const getLessonForSlot = (day: Date, timeSlot: string) => {
-    const [hours, minutes] = timeSlot.split(':').map(Number);
-    const slotTime = new Date(day);
-    slotTime.setHours(hours, minutes, 0, 0);
-
-    return lessons.find(lesson => {
-      const startTime = new Date(lesson.startTime);
-      return isSameDay(startTime, day) && 
-             startTime.getHours() === hours && 
-             startTime.getMinutes() === minutes;
-    });
-  };
-
   const isSlotPast = (day: Date, timeSlot: string) => {
     const [hours, minutes] = timeSlot.split(':').map(Number);
     const slotTime = new Date(day);
@@ -88,118 +71,89 @@ export function CalendarView({
         </div>
       </CardHeader>
 
-      {/* Calendar Header */}
-      <div className="grid grid-cols-[6rem_repeat(7,1fr)] bg-muted/50 border-b">
-        <div className="p-3 font-medium text-muted-foreground border-r text-sm">
-          Time
+      <div className="grid" style={{ gridTemplateColumns: '6rem repeat(7, minmax(150px, 1fr))' }}>
+        {/* Calendar Header */}
+        <div className="sticky top-0 z-10 grid" style={{ gridTemplateColumns: 'inherit' }}>
+          <div className="p-3 font-medium text-muted-foreground border-r text-sm bg-muted/50">
+            Time
+          </div>
+          {weekDays.map(day => (
+            <div
+              key={day.toISOString()}
+              className={cn(
+                'p-3 text-center border-r bg-muted/50',
+                isToday(day) && 'bg-primary/10'
+              )}
+            >
+              <div className="font-medium text-base">{format(day, 'EEE')}</div>
+              <div className="text-sm text-muted-foreground font-medium">
+                {format(day, 'MMM d')}
+              </div>
+            </div>
+          ))}
         </div>
-        {weekDays.map(day => (
-          <div
-            key={day.toISOString()}
-            className={cn(
-              'p-3 text-center border-r',
-              isToday(day) && 'bg-primary/10'
-            )}
-          >
-            <div className="font-medium text-base">{format(day, 'EEE')}</div>
-            <div className="text-sm text-muted-foreground font-medium">
-              {format(day, 'MMM d')}
-            </div>
-          </div>
-        ))}
-      </div>
 
-      {/* Time Slots Grid */}
-      <div className="overflow-auto max-h-[600px] bg-background/50">
-        {TIME_SLOTS.map((timeSlot, index) => (
-          <div 
-            key={timeSlot} 
-            className={cn(
-              "grid grid-cols-[6rem_repeat(7,1fr)] border-b hover:bg-muted/5 transition-colors",
-              timeSlot.endsWith('00') && 'bg-muted/5'
-            )}
-          >
-            <div className="p-2 border-r text-sm font-medium text-muted-foreground flex items-center justify-end pr-4">
-              {format(parse(timeSlot, 'HH:mm', new Date()), 'h:mm a')}
-            </div>
-            {weekDays.map(day => {
-              const lesson = getLessonForSlot(day, timeSlot);
-              const availableSlot = getTimeSlotForCell(day, timeSlot);
-              const isPast = isSlotPast(day, timeSlot);
-              const slotSpan = availableSlot ? getSlotSpan(availableSlot.startTime) : 1;
-              
-              // Skip cells that are part of a spanning slot
-              if (availableSlot && timeSlot !== availableSlot.startTime) {
-                return null;
-              }
+        {/* Time Slots */}
+        <div className="col-span-full">
+          {TIME_SLOTS.map(timeSlot => (
+            <div 
+              key={timeSlot} 
+              className="grid"
+              style={{ gridTemplateColumns: 'inherit' }}
+            >
+              <div className="p-2 border-r border-b text-sm font-medium text-muted-foreground flex items-center justify-end pr-4">
+                {format(parse(timeSlot, 'HH:mm', new Date()), 'h:mm a')}
+              </div>
+              {weekDays.map(day => {
+                const availableSlot = getTimeSlotForCell(day, timeSlot);
+                const isPast = isSlotPast(day, timeSlot);
 
-              return (
-                <div
-                  key={day.toISOString()}
-                  className={cn(
-                    'p-2 border-r min-h-[4rem] relative group transition-colors',
-                    !isPast && !lesson && 'cursor-pointer hover:bg-primary/5',
-                    lesson && 'bg-primary/10 hover:bg-primary/15',
-                    isPast && 'bg-muted/5',
-                    availableSlot && !lesson && 'bg-indigo-50/80'
-                  )}
-                  style={{
-                    gridRow: `span ${slotSpan}`
-                  }}
-                  onClick={() => {
-                    if (!isPast && !lesson && onSlotSelect) {
-                      const [hours, minutes] = timeSlot.split(':').map(Number);
-                      const selectedDate = new Date(day);
-                      selectedDate.setHours(hours, minutes, 0, 0);
-                      onSlotSelect(selectedDate);
-                    } else if (lesson && onLessonSelect) {
-                      onLessonSelect(lesson);
-                    }
-                  }}
-                >
-                  {availableSlot && !lesson && (
-                    <div className="text-xs text-muted-foreground p-1">
-                      <div className="flex items-center gap-1">
-                        <MapPin className="h-3 w-3" />
-                        <span>{availableSlot.rink.name}</span>
-                      </div>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {format(parse(availableSlot.startTime, 'HH:mm', new Date()), 'h:mm a')} -
-                          {format(parse(getEndTime(availableSlot.startTime), 'HH:mm', new Date()), 'h:mm a')}
-                        </span>
-                      </div>
-                    </div>
-                  )}
-                  {lesson && (
-                    <div 
+                if (availableSlot && availableSlot.startTime === timeSlot) {
+                  return (
+                    <div
+                      key={`${day.toISOString()}-${timeSlot}`}
                       className={cn(
-                        'p-2 rounded-md bg-primary/20 text-xs space-y-1 shadow-sm transition-all',
-                        'hover:scale-[1.02] hover:shadow-md cursor-pointer',
-                        lesson.status === 'CANCELLED' && 'line-through opacity-50'
+                        'p-2 border-r border-b relative transition-colors',
+                        !isPast && 'cursor-pointer hover:bg-primary/5',
+                        'bg-blue-100/90 dark:bg-blue-900/20'
                       )}
+                      style={{ gridRow: 'span 2' }}
+                      onClick={() => {
+                        if (!isPast && onSlotSelect) {
+                          const [hours, minutes] = timeSlot.split(':').map(Number);
+                          const selectedDate = new Date(day);
+                          selectedDate.setHours(hours, minutes, 0, 0);
+                          onSlotSelect(selectedDate);
+                        }
+                      }}
                     >
-                      <div className="flex items-center space-x-1">
-                        <UserCircle2 className="h-3 w-3 text-primary" />
-                        <span className="font-medium truncate">
-                          {lesson.student?.user?.name || 'Unnamed Student'}
-                        </span>
-                      </div>
-                      <div className="flex items-center space-x-1 text-muted-foreground">
-                        <Clock className="h-3 w-3" />
-                        <span>
-                          {format(new Date(lesson.startTime), 'h:mm a')} -
-                          {format(new Date(lesson.endTime), 'h:mm a')}
-                        </span>
+                      <div className="text-xs text-muted-foreground p-1">
+                        <div className="flex items-center gap-1">
+                          <MapPin className="h-3 w-3" />
+                          <span>{availableSlot.rink.name}</span>
+                        </div>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Clock className="h-3 w-3" />
+                          <span>
+                            {format(parse(availableSlot.startTime, 'HH:mm', new Date()), 'h:mm a')} -
+                            {format(parse(getEndTime(availableSlot.startTime), 'HH:mm', new Date()), 'h:mm a')}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        ))}
+                  );
+                }
+
+                return (
+                  <div
+                    key={`${day.toISOString()}-${timeSlot}`}
+                    className="border-r border-b p-2"
+                  />
+                );
+              })}
+            </div>
+          ))}
+        </div>
       </div>
     </Card>
   );
