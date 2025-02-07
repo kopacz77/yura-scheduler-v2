@@ -1,9 +1,9 @@
 'use client';
 
 import { Card, CardHeader } from '@/components/ui/card';
-import { format, addDays, isSameDay, isToday, parse } from 'date-fns';
+import { format, addDays, isSameDay, isToday, parse, addMinutes } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { UserCircle2, Clock, Calendar } from 'lucide-react';
+import { UserCircle2, Clock, Calendar, MapPin } from 'lucide-react';
 import { Lesson, RinkTimeSlot, Rink } from '@prisma/client';
 import { useMemo } from 'react';
 
@@ -46,6 +46,14 @@ export function CalendarView({
       return ts.daysOfWeek.includes(dayOfWeek) && 
              ts.startTime === timeSlot;
     });
+  };
+
+  const getSlotEndTime = (startTimeStr: string, minutes: number) => {
+    const [hours, mins] = startTimeStr.split(':').map(Number);
+    const startTime = new Date();
+    startTime.setHours(hours, mins, 0, 0);
+    const endTime = addMinutes(startTime, minutes);
+    return format(endTime, 'HH:mm');
   };
 
   const getLessonForSlot = (day: Date, timeSlot: string) => {
@@ -137,6 +145,21 @@ export function CalendarView({
                     }
                   }}
                 >
+                  {availableSlot && !lesson && (
+                    <div className="text-xs text-muted-foreground p-1">
+                      <div className="flex items-center gap-1">
+                        <MapPin className="h-3 w-3" />
+                        <span>{availableSlot.rink.name}</span>
+                      </div>
+                      <div className="flex items-center gap-1 mt-1">
+                        <Clock className="h-3 w-3" />
+                        <span>
+                          {format(parse(availableSlot.startTime, 'HH:mm', new Date()), 'h:mm a')} -
+                          {format(parse(getSlotEndTime(availableSlot.startTime, 60), 'HH:mm', new Date()), 'h:mm a')}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                   {lesson && (
                     <div 
                       className={cn(
@@ -157,13 +180,6 @@ export function CalendarView({
                           {format(new Date(lesson.startTime), 'h:mm a')} -
                           {format(new Date(lesson.endTime), 'h:mm a')}
                         </span>
-                      </div>
-                    </div>
-                  )}
-                  {!isPast && availableSlot && !lesson && (
-                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
-                      <div className="text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded-md">
-                        Click to schedule
                       </div>
                     </div>
                   )}
