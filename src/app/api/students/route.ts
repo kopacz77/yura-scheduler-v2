@@ -3,28 +3,34 @@ import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
+    // Only fetch active students with role STUDENT
     const students = await prisma.student.findMany({
+      where: {
+        user: {
+          role: 'STUDENT',
+        },
+      },
       include: {
         user: {
           select: {
             id: true,
             name: true,
             email: true,
-          }
-        }
+          },
+        },
       },
       orderBy: {
         user: {
-          name: 'asc'
-        }
-      }
+          name: 'asc',
+        },
+      },
     });
 
     return NextResponse.json(students);
@@ -71,8 +77,8 @@ export async function POST(req: Request) {
             id: true,
             name: true,
             email: true,
-          }
-        }
+          },
+        },
       },
     });
 
