@@ -1,8 +1,9 @@
 {
   "scripts": {
-    "prisma:update": "pnpm dlx prisma generate && pnpm dlx prisma db push",
-    "dev": "pnpm prisma:update && next dev",
-    "build": "pnpm prisma:update && next build",
+    "prisma-generate": "prisma generate",
+    "prisma-push": "prisma db push",
+    "dev": "prisma generate && prisma db push && next dev",
+    "build": "prisma generate && prisma db push && next build",
     "start": "next start"
   }
 }
