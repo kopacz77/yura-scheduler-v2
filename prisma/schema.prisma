@@ -101,16 +101,34 @@ model RinkTimeSlot {
   id          String    @id @default(cuid())
   rinkId      String
   rink        Rink      @relation(fields: [rinkId], references: [id], onDelete: Cascade)
-  startTime   String
-  endTime     String
-  daysOfWeek  Int[]
+  startTime   DateTime
+  endTime     DateTime
   maxStudents Int       @default(1)
   lessons     Lesson[]
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  recurringId String?   // Link to recurring pattern if this is part of a series
 
-  @@unique([rinkId, startTime, daysOfWeek])
+  @@index([rinkId])
+  @@index([startTime])
+  @@index([recurringId])
+}
+
+model RecurringPattern {
+  id          String    @id @default(cuid())
+  rinkId      String
+  rink        Rink      @relation(fields: [rinkId], references: [id], onDelete: Cascade)
+  daysOfWeek  Int[]     // Store days when this pattern repeats
+  startDate   DateTime  // Pattern start date
+  endDate     DateTime  // Pattern end date
+  startTime   String    // Time in HH:mm format
+  duration    Int       // Duration in minutes
+  maxStudents Int       @default(1)
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   @@index([rinkId])
 }
 
