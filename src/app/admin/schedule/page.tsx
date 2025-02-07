@@ -2,15 +2,15 @@
 
 import { useState, useEffect } from 'react';
 import { CalendarView } from '@/components/schedule/CalendarView';
-import { ScheduleForm } from '@/components/schedule/ScheduleForm';
+import { SlotManagement } from '@/components/schedule/SlotManagement';
 import { LessonDetails } from '@/components/schedule/LessonDetails';
 import { RinkSelector } from '@/components/schedule/RinkSelector';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
+import { Plus, CalendarDays, AlertCircle, Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
 import { Lesson, Rink, Student, User } from '@prisma/client';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { toast } from '@/components/ui/use-toast';
 
 type LessonWithRelations = Lesson & {
   student: Student & {
@@ -20,7 +20,7 @@ type LessonWithRelations = Lesson & {
 };
 
 export default function AdminSchedulePage() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [isSlotManagementOpen, setIsSlotManagementOpen] = useState(false);
   const [selectedLesson, setSelectedLesson] = useState<LessonWithRelations | null>(null);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [selectedRink, setSelectedRink] = useState('all');
@@ -35,7 +35,7 @@ export default function AdminSchedulePage() {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchLessons = async () => {
+  const fetchSchedule = async () => {
     try {
       setIsLoading(true);
       const params = new URLSearchParams({
@@ -47,44 +47,30 @@ export default function AdminSchedulePage() {
         params.append('rinkId', selectedRink);
       }
       
-      const response = await fetch(`/api/lessons?${params}`);
-      if (!response.ok) throw new Error('Failed to fetch lessons');
+      const response = await fetch(`/api/schedule?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch schedule');
       
       const data = await response.json();
-      setLessons(data);
+      setLessons(data.lessons);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load lessons');
+      setError(err instanceof Error ? err.message : 'Failed to load schedule');
+      toast({
+        title: 'Error',
+        description: 'Failed to load schedule',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const fetchLessonDetails = async (lessonId: string) => {
-    try {
-      const response = await fetch(`/api/lessons/${lessonId}`);
-      if (!response.ok) throw new Error('Failed to fetch lesson details');
-      const data = await response.json();
-      return data;
-    } catch (error) {
-      console.error('Error fetching lesson details:', error);
-      return null;
-    }
-  };
-
   useEffect(() => {
-    fetchLessons();
+    fetchSchedule();
   }, [currentWeek, selectedRink]);
 
   const handleSlotSelect = (date: Date) => {
     setSelectedDate(date);
-    setIsFormOpen(true);
-  };
-
-  const handleLessonSelect = async (lesson: Lesson) => {
-    const details = await fetchLessonDetails(lesson.id);
-    if (details) {
-      setSelectedLesson(details);
-    }
+    setIsSlotManagementOpen(true);
   };
 
   const handleWeekChange = (direction: 'prev' | 'next') => {
@@ -93,11 +79,41 @@ export default function AdminSchedulePage() {
     );
   };
 
+  const handleSaveSlot = async (data: any) => {
+    try {
+      const response = await fetch('/api/schedule/slots', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create slot');
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Time slot(s) created successfully',
+      });
+
+      setIsSlotManagementOpen(false);
+      await fetchSchedule();
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Failed to create slot',
+        variant: 'destructive',
+      });
+    }
+  };
+
   return (
     <div className="space-y-8 p-8">
       <PageHeader 
         title="Schedule Management"
-        description="View and manage lesson schedules"
+        description="Manage time slots and lesson schedules"
       />
       
       <div className="space-y-6">
@@ -120,9 +136,12 @@ export default function AdminSchedulePage() {
             >
               Next Week
             </Button>
-            <Button onClick={() => setIsFormOpen(true)}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Lesson
+            <Button 
+              onClick={() => setIsSlotManagementOpen(true)}
+              className="bg-primary text-primary-foreground hover:bg-primary/90"
+            >
+              <CalendarDays className="h-4 w-4 mr-2" />
+              Manage Slots
             </Button>
           </div>
         </div>
@@ -155,39 +174,24 @@ export default function AdminSchedulePage() {
             currentWeek={currentWeek}
             lessons={lessons}
             onSlotSelect={handleSlotSelect}
-            onLessonSelect={handleLessonSelect}
           />
         )}
       </div>
 
-      {/* Modals */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl">
-          <DialogHeader>
-            <DialogTitle>Schedule New Lesson</DialogTitle>
-            <DialogDescription>
-              Fill in the lesson details to schedule a new lesson.
-            </DialogDescription>
-          </DialogHeader>
-          <ScheduleForm
-            initialDate={selectedDate}
-            onSchedule={() => {
-              setIsFormOpen(false);
-              setSelectedDate(null);
-              fetchLessons();
-            }}
-          />
-        </DialogContent>
-      </Dialog>
+      {/* Slot Management Modal */}
+      <SlotManagement
+        isOpen={isSlotManagementOpen}
+        onClose={() => setIsSlotManagementOpen(false)}
+        onSave={handleSaveSlot}
+        initialDate={selectedDate}
+      />
 
+      {/* Lesson Details Modal */}
       {selectedLesson && (
         <LessonDetails
           lesson={selectedLesson}
           isOpen={!!selectedLesson}
-          onClose={() => {
-            setSelectedLesson(null);
-            fetchLessons();
-          }}
+          onClose={() => setSelectedLesson(null)}
         />
       )}
     </div>
