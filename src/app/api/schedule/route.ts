@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { startOfDay, endOfDay } from 'date-fns';
+import { startOfWeek, endOfWeek, parseISO } from 'date-fns';
 
 export async function GET(req: Request) {
   try {
@@ -20,11 +20,11 @@ export async function GET(req: Request) {
       return new NextResponse('Start and end dates are required', { status: 400 });
     }
 
-    // Parse date strings to Date objects
-    const start = startOfDay(new Date(startDate));
-    const end = endOfDay(new Date(endDate));
+    // Parse the date range
+    const start = startOfWeek(parseISO(startDate));
+    const end = endOfWeek(parseISO(endDate));
 
-    // Get available time slots
+    // Get available time slots for the specific date range
     const timeSlots = await prisma.rinkTimeSlot.findMany({
       where: {
         rinkId: rinkId || undefined,
@@ -35,32 +35,14 @@ export async function GET(req: Request) {
       },
     });
 
-    // Get booked lessons
-    const lessons = await prisma.lesson.findMany({
-      where: {
-        rinkId: rinkId || undefined,
-        startTime: {
-          gte: start,
-          lte: end,
-        },
-      },
-      include: {
-        student: {
-          include: {
-            user: true,
-          },
-        },
-        rink: true,
-        timeSlot: true,
-      },
-      orderBy: {
-        startTime: 'asc',
-      },
+    // Filter time slots based on the current week's dates
+    const filteredTimeSlots = timeSlots.filter(slot => {
+      const slotDay = parseInt(slot.startTime.split(':')[0]);
+      return slotDay >= start.getHours() && slotDay <= end.getHours();
     });
 
     return NextResponse.json({
-      timeSlots,
-      lessons,
+      timeSlots: filteredTimeSlots,
     });
   } catch (error) {
     console.error('[SCHEDULE_GET]', error);
