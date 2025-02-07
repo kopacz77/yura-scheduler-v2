@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { addDays, setHours, setMinutes, parse } from 'date-fns';
+import { addDays, setHours, setMinutes, parse, addMinutes } from 'date-fns';
 
 export async function POST(req: Request) {
   try {
@@ -12,7 +12,7 @@ export async function POST(req: Request) {
     }
 
     const data = await req.json();
-    const { rinkId, type } = data;
+    const { type } = data;
 
     if (type === 'recurring') {
       return await handleRecurringSlots(data);
@@ -28,18 +28,26 @@ export async function POST(req: Request) {
 async function handleSingleSlot(data: any) {
   const { rinkId, date, startTime, duration, maxStudents } = data;
 
-  const startDateTime = parse(
+  // Parse the start time into a Date object
+  const startDate = parse(
     `${date} ${startTime}`,
     'yyyy-MM-dd HH:mm',
     new Date()
   );
 
+  // Calculate end time by adding duration minutes
+  const endDate = addMinutes(startDate, parseInt(duration));
+
+  // Format times for database
+  const formattedStartTime = format(startDate, 'HH:mm');
+  const formattedEndTime = format(endDate, 'HH:mm');
+
   const timeSlot = await prisma.rinkTimeSlot.create({
     data: {
       rinkId,
-      startTime: startTime,
-      endTime: addMinutes(startTime, parseInt(duration)).toISOString(),
-      daysOfWeek: [startDateTime.getDay()],
+      startTime: formattedStartTime,
+      endTime: formattedEndTime,
+      daysOfWeek: [startDate.getDay()],
       maxStudents: parseInt(maxStudents),
       isActive: true,
     },
@@ -51,22 +59,21 @@ async function handleSingleSlot(data: any) {
 async function handleRecurringSlots(data: any) {
   const {
     rinkId,
-    startDate,
-    endDate,
-    daysOfWeek,
-    timeRange,
-    duration,
-    maxStudents,
+    daysString,
+    startTime,
+    endTime,
+    maxStudents
   } = data;
 
-  const slots = daysOfWeek.split(',').map(Number);
-  
+  // Parse days string into array of numbers
+  const daysOfWeek = daysString.split(',').map((day: string) => parseInt(day, 10));
+
   const timeSlot = await prisma.rinkTimeSlot.create({
     data: {
       rinkId,
-      startTime: timeRange.start,
-      endTime: timeRange.end,
-      daysOfWeek: slots,
+      startTime,
+      endTime,
+      daysOfWeek,
       maxStudents: parseInt(maxStudents),
       isActive: true,
     },
@@ -75,11 +82,6 @@ async function handleRecurringSlots(data: any) {
   return NextResponse.json(timeSlot);
 }
 
-// Helper function to add minutes to a time string
-function addMinutes(time: string, minutes: number): Date {
-  const [hours, mins] = time.split(':').map(Number);
-  const date = new Date();
-  date.setHours(hours);
-  date.setMinutes(mins + minutes);
-  return date;
-}
+// Create the schedule API route to handle the 404 error
+const scheduleApiRoute = `${process.env.NEXTAUTH_URL}/api/schedule`;
+export { scheduleApiRoute };
