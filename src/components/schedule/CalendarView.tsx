@@ -4,7 +4,7 @@ import { Card, CardHeader } from '@/components/ui/card';
 import { format, addDays, isSameDay, isToday, parse } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { UserCircle2, Clock, Calendar } from 'lucide-react';
-import { Lesson } from '@prisma/client';
+import { Lesson, RinkTimeSlot, Rink } from '@prisma/client';
 import { useMemo } from 'react';
 
 interface CalendarViewProps {
@@ -15,6 +15,9 @@ interface CalendarViewProps {
         name: string | null;
       };
     };
+  }>;
+  timeSlots: Array<RinkTimeSlot & {
+    rink: Rink;
   }>;
   onSlotSelect?: (date: Date) => void;
   onLessonSelect?: (lesson: Lesson) => void;
@@ -29,12 +32,21 @@ const TIME_SLOTS = Array.from({ length: 32 }, (_, i) => {
 export function CalendarView({ 
   currentWeek,
   lessons,
+  timeSlots,
   onSlotSelect,
   onLessonSelect
 }: CalendarViewProps) {
   const weekDays = useMemo(() => (
     Array.from({ length: 7 }, (_, i) => addDays(currentWeek, i))
   ), [currentWeek]);
+
+  const getTimeSlotForCell = (day: Date, timeSlot: string) => {
+    const dayOfWeek = day.getDay();
+    return timeSlots.find(ts => {
+      return ts.daysOfWeek.includes(dayOfWeek) && 
+             ts.startTime === timeSlot;
+    });
+  };
 
   const getLessonForSlot = (day: Date, timeSlot: string) => {
     const [hours, minutes] = timeSlot.split(':').map(Number);
@@ -66,7 +78,7 @@ export function CalendarView({
       </CardHeader>
 
       {/* Calendar Header */}
-      <div className="grid grid-cols-[100px_repeat(7,1fr)] bg-muted/50 border-b">
+      <div className="grid grid-cols-[6rem_repeat(7,1fr)] bg-muted/50 border-b">
         <div className="p-3 font-medium text-muted-foreground border-r text-sm">
           Time
         </div>
@@ -86,13 +98,13 @@ export function CalendarView({
         ))}
       </div>
 
-      {/* Time Slots */}
+      {/* Time Slots Grid */}
       <div className="overflow-auto max-h-[600px] bg-background/50">
         {TIME_SLOTS.map(timeSlot => (
           <div 
             key={timeSlot} 
             className={cn(
-              "grid grid-cols-[100px_repeat(7,1fr)] border-b hover:bg-muted/5 transition-colors",
+              "grid grid-cols-[6rem_repeat(7,1fr)] border-b hover:bg-muted/5 transition-colors",
               timeSlot.endsWith('00') && 'bg-muted/5'
             )}
           >
@@ -101,19 +113,21 @@ export function CalendarView({
             </div>
             {weekDays.map(day => {
               const lesson = getLessonForSlot(day, timeSlot);
+              const availableSlot = getTimeSlotForCell(day, timeSlot);
               const isPast = isSlotPast(day, timeSlot);
 
               return (
                 <div
                   key={day.toISOString()}
                   className={cn(
-                    'p-2 border-r min-h-[70px] relative group transition-colors',
-                    !isPast && !lesson && 'cursor-pointer hover:bg-primary/5',
+                    'p-2 border-r min-h-[4rem] relative group transition-colors',
+                    !isPast && availableSlot && !lesson && 'cursor-pointer hover:bg-primary/5',
                     lesson && 'bg-primary/10 hover:bg-primary/15',
-                    isPast && 'bg-muted/5'
+                    isPast && 'bg-muted/5',
+                    availableSlot && !lesson && 'bg-blue-50/50'
                   )}
                   onClick={() => {
-                    if (!isPast && !lesson && onSlotSelect) {
+                    if (!isPast && availableSlot && !lesson && onSlotSelect) {
                       const [hours, minutes] = timeSlot.split(':').map(Number);
                       const selectedDate = new Date(day);
                       selectedDate.setHours(hours, minutes, 0, 0);
@@ -146,7 +160,7 @@ export function CalendarView({
                       </div>
                     </div>
                   )}
-                  {!isPast && !lesson && (
+                  {!isPast && availableSlot && !lesson && (
                     <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-all duration-200">
                       <div className="text-xs text-primary font-medium bg-primary/10 px-2 py-1 rounded-md">
                         Click to schedule
