@@ -67,11 +67,12 @@ async function handleSingleSlot(data: any) {
 
     const endDateTime = addMinutes(parsedDateTime, parseInt(duration));
 
+    // Store actual dates instead of just time
     const timeSlot = await prisma.rinkTimeSlot.create({
       data: {
         rinkId,
-        startTime: format(parsedDateTime, 'HH:mm'),
-        endTime: format(endDateTime, 'HH:mm'),
+        startTime: format(parsedDateTime, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
+        endTime: format(endDateTime, "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'"),
         daysOfWeek: [parsedDateTime.getDay()],
         maxStudents: parseInt(maxStudents),
         isActive: true,
