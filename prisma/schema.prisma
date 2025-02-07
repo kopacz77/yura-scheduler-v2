@@ -86,15 +86,16 @@ model Payment {
 }
 
 model Rink {
-  id          String        @id @default(cuid())
-  name        String        @unique
-  timezone    String
-  address     String
-  lessons     Lesson[]
-  timeSlots   RinkTimeSlot[]
-  maxCapacity Int?
-  createdAt   DateTime      @default(now())
-  updatedAt   DateTime      @updatedAt
+  id              String        @id @default(cuid())
+  name            String        @unique
+  timezone        String
+  address         String
+  lessons         Lesson[]
+  timeSlots       RinkTimeSlot[]
+  recurringPatterns RecurringPattern[]
+  maxCapacity     Int?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
 }
 
 model RinkTimeSlot {
