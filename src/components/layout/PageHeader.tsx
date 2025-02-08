@@ -1,21 +1,33 @@
-import React from 'react';
+'use client';
+
+import { Button } from '@/components/ui/button';
+import { ReactNode } from 'react';
 
 interface PageHeaderProps {
   title: string;
   description?: string;
-  children?: React.ReactNode;
+  action?: {
+    label: string;
+    onClick: () => void;
+    icon?: ReactNode;
+  };
 }
 
-export function PageHeader({ title, description, children }: PageHeaderProps) {
+export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
-    <div className="flex items-center justify-between border-b pb-4 mb-4">
+    <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0 pb-4 mb-4 border-b">
       <div>
-        <h1 className="text-2xl font-bold">{title}</h1>
+        <h1 className="text-2xl font-bold tracking-tight">{title}</h1>
         {description && (
-          <p className="text-sm text-muted-foreground">{description}</p>
+          <p className="text-sm text-muted-foreground mt-1">{description}</p>
         )}
       </div>
-      {children && <div className="flex items-center space-x-2">{children}</div>}
+      {action && (
+        <Button onClick={action.onClick} className="shrink-0">
+          {action.icon && <span className="mr-2">{action.icon}</span>}
+          {action.label}
+        </Button>
+      )}
     </div>
   );
 }
