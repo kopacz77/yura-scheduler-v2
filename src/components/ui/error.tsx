@@ -1,3 +1,5 @@
+'use client';
+
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
@@ -6,7 +8,7 @@ interface ErrorMessageProps {
   message: string;
 }
 
-export function ErrorMessage({ title = 'Error', message }: ErrorMessageProps) {
+export default function ErrorMessage({ title = 'Error', message }: ErrorMessageProps) {
   return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
