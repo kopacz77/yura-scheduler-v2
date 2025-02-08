@@ -57,7 +57,7 @@ export function PaymentHistory({
                       {formatCurrency(payment.amount)}
                     </div>
                     <div className="text-sm text-muted-foreground">
-                      {format(payment.paidAt, 'PPP')}
+                      {format(payment.createdAt, 'PPP')}
                     </div>
                     {payment.notes && (
                       <div className="text-sm text-muted-foreground">
