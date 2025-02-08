@@ -1,94 +1,141 @@
-import React from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+'use client';
+
+import { useState } from 'react';
+import { z } from 'zod';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { PaymentMethod, PaymentStatus } from '@prisma/client';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { formatCurrency } from '@/lib/utils';
+
+const paymentSchema = z.object({
+  amount: z.number().min(0, 'Amount must be greater than 0'),
+  method: z.enum(['CASH', 'CARD', 'VENMO', 'OTHER']),
+  notes: z.string().optional(),
+});
+
+type PaymentFormData = z.infer<typeof paymentSchema>;
 
 interface PaymentDialogProps {
   appointmentId: string;
   studentName: string;
   amount: number;
-  onPaymentUpdate: (data: {
-    method: PaymentMethod;
-    status: PaymentStatus;
-    confirmationId?: string;
-    notes?: string;
-  }) => void;
+  onPaymentUpdate: (data: PaymentFormData) => Promise<void>;
 }
 
-export function PaymentDialog({ 
-  appointmentId, 
-  studentName, 
-  amount, 
-  onPaymentUpdate 
+export function PaymentDialog({
+  appointmentId,
+  studentName,
+  amount,
+  onPaymentUpdate,
 }: PaymentDialogProps) {
-  const [method, setMethod] = React.useState<PaymentMethod>('VENMO');
-  const [confirmationId, setConfirmationId] = React.useState('');
-  const [notes, setNotes] = React.useState('');
+  const [isOpen, setIsOpen] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    onPaymentUpdate({
-      method,
-      status: 'PENDING',
-      confirmationId,
-      notes
-    });
+  const form = useForm<PaymentFormData>({
+    resolver: zodResolver(paymentSchema),
+    defaultValues: {
+      amount: amount,
+      method: 'CASH',
+      notes: '',
+    },
+  });
+
+  const onSubmit = async (data: PaymentFormData) => {
+    try {
+      setIsSubmitting(true);
+      await onPaymentUpdate(data);
+      setIsOpen(false);
+      form.reset();
+    } catch (error) {
+      console.error('Payment submission error:', error);
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
-    <Dialog>
+    <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
         <Button variant="outline">Record Payment</Button>
       </DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Record Payment for {studentName}</DialogTitle>
+          <DialogTitle>Record Payment</DialogTitle>
+          <DialogDescription>
+            Record payment for {studentName}'s lesson
+          </DialogDescription>
         </DialogHeader>
-        <form onSubmit={handleSubmit} className="space-y-4">
-          <div className="space-y-2">
-            <Label>Amount</Label>
-            <div className="text-2xl font-bold">${amount}</div>
-          </div>
 
-          <div className="space-y-2">
-            <Label>Payment Method</Label>
-            <Select value={method} onValueChange={(value) => setMethod(value as PaymentMethod)}>
-              <SelectTrigger>
-                <SelectValue placeholder="Select payment method" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="VENMO">Venmo</SelectItem>
-                <SelectItem value="ZELLE">Zelle</SelectItem>
-                <SelectItem value="CASH">Cash</SelectItem>
-                <SelectItem value="OTHER">Other</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-
-          {(method === 'VENMO' || method === 'ZELLE') && (
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+          <div className="space-y-4">
             <div className="space-y-2">
-              <Label>Transaction ID</Label>
+              <Label>Amount</Label>
               <Input
-                value={confirmationId}
-                onChange={(e) => setConfirmationId(e.target.value)}
-                placeholder={`Enter ${method.toLowerCase()} transaction ID`}
+                type="number"
+                step="0.01"
+                {...form.register('amount', { valueAsNumber: true })}
               />
+              {form.formState.errors.amount && (
+                <p className="text-sm text-red-500">
+                  {form.formState.errors.amount.message}
+                </p>
+              )}
             </div>
-          )}
 
-          <div className="space-y-2">
-            <Label>Notes</Label>
-            <Input
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Add any payment notes"
-            />
+            <div className="space-y-2">
+              <Label>Payment Method</Label>
+              <RadioGroup
+                defaultValue="CASH"
+                onValueChange={(value) => form.setValue('method', value as any)}
+              >
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="CASH" id="cash" />
+                  <Label htmlFor="cash">Cash</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="CARD" id="card" />
+                  <Label htmlFor="card">Card</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="VENMO" id="venmo" />
+                  <Label htmlFor="venmo">Venmo</Label>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="OTHER" id="other" />
+                  <Label htmlFor="other">Other</Label>
+                </div>
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-2">
+              <Label>Notes (Optional)</Label>
+              <Input {...form.register('notes')} />
+            </div>
           </div>
 
-          <Button type="submit" className="w-full">Record Payment</Button>
+          <div className="flex justify-end space-x-2">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setIsOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button type="submit" disabled={isSubmitting}>
+              {isSubmitting ? 'Recording...' : 'Record Payment'}
+            </Button>
+          </div>
         </form>
       </DialogContent>
     </Dialog>
