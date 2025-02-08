@@ -13,6 +13,7 @@ interface PageHeaderProps {
   };
 }
 
+// Export both named and default export for compatibility
 export function PageHeader({ title, description, action }: PageHeaderProps) {
   return (
     <div className="flex flex-col md:flex-row justify-between items-start md:items-center space-y-2 md:space-y-0 pb-4 mb-4 border-b">
@@ -31,3 +32,6 @@ export function PageHeader({ title, description, action }: PageHeaderProps) {
     </div>
   );
 }
+
+// Also export as default for pages that use default import
+export default PageHeader;
