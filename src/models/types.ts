@@ -1,4 +1,4 @@
-import { LessonType, PaymentStatus } from '@prisma/client';
+import { LessonType, PaymentStatus, RinkArea } from '@prisma/client';
 
 export interface PaymentDetails {
   status: PaymentStatus;
@@ -29,7 +29,7 @@ export interface Appointment {
 export interface Resource {
   id: string;
   name: string;
-  type: 'rink' | 'area';
+  type: RinkArea;  // Use the Prisma enum
   capacity?: number;
   availability?: {
     start: string;  // Time in HH:mm format
