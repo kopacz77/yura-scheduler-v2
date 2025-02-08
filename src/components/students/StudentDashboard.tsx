@@ -10,28 +10,33 @@ import { ProgressChart } from '@/components/students/ProgressChart';
 import { Button } from '@/components/ui/button';
 import { CalendarClock, DollarSign, LineChart } from 'lucide-react';
 import { toast } from 'sonner';
+import { Payment } from '@prisma/client';
 
 async function fetchPayments(studentId: string) {
   const response = await fetch(`/api/payments?studentId=${studentId}`);
   if (!response.ok) {
     throw new Error('Failed to fetch payments');
   }
-  return response.json();
+  return response.json() as Promise<Payment[]>;
 }
 
 export function StudentDashboard() {
   const { data: session } = useSession();
   const [isPaymentHistoryOpen, setIsPaymentHistoryOpen] = useState(false);
 
-  const { data: payments, isLoading: isLoadingPayments } = useQuery({
+  const { data: payments, isLoading: isLoadingPayments, error } = useQuery({
     queryKey: ['payments', session?.user?.id],
     queryFn: () => fetchPayments(session?.user?.id as string),
     enabled: !!session?.user?.id,
-    onError: (error) => {
-      toast.error('Failed to load payment history');
-      console.error('Payment fetch error:', error);
-    }
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Handle errors outside the query config
+  if (error) {
+    toast.error('Failed to load payment history');
+    console.error('Payment fetch error:', error);
+  }
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
