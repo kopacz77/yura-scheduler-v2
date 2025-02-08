@@ -1,3 +1,5 @@
+'use client';
+
 import * as React from "react";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
@@ -6,7 +8,7 @@ import { useDndMonitor } from "@dnd-kit/core";
 import { Table, TableBody, TableRow } from "@/components/ui/table";
 import { ResourceTableCell } from "./ResourceTableCell";
 import { calculateNewDates, filterAppointments } from "@/lib/utils";
-import { DropTableCell, type DropTableCellProps } from "./DropTableCell";
+import { DropTableCell } from "./DropTableCell";
 
 export interface PlannerProps extends React.HTMLAttributes<HTMLDivElement> {
   resources: Resource[];
@@ -34,17 +36,22 @@ export function Planner({
   const handleDrop = () => {
     if (!currentAppointment || !dropData?.time || !dropData?.resourceId) return;
 
+    // Calculate new start and end times
     const { start, end } = calculateNewDates(
       currentAppointment.start,
       dropData.time,
-      currentAppointment.duration
+      currentAppointment.duration // Now properly typed
     );
 
-    onAppointmentMove?.({
+    // Create updated appointment with new resource and times
+    const updatedAppointment: Appointment = {
       ...currentAppointment,
+      resourceId: dropData.resourceId,
       start,
       end,
-    }, dropData.resourceId, start);
+    };
+
+    onAppointmentMove?.(updatedAppointment, dropData.resourceId, start);
   };
 
   useDndMonitor({
