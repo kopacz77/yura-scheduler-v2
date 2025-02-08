@@ -9,6 +9,28 @@ type SlotCreationError = {
   message: string;
 };
 
+interface SingleSlotData {
+  type: 'single';
+  rinkId: string;
+  date: string;
+  startTime: string;
+  duration: string;
+  maxStudents: string;
+}
+
+interface RecurringSlotData {
+  type: 'recurring';
+  rinkId: string;
+  startDate: string;
+  endDate: string;
+  startTime: string;
+  duration: string;
+  daysString: string;
+  maxStudents: string;
+}
+
+type SlotData = SingleSlotData | RecurringSlotData;
+
 async function ensureRinkExists(rinkName: string) {
   const rinkDetails = DEFAULT_RINKS[rinkName];
   if (!rinkDetails) throw new Error('Invalid rink name');
@@ -66,9 +88,9 @@ export async function POST(req: Request) {
     console.log('Received data:', data);
 
     if (data.type === 'recurring') {
-      return await handleRecurringSlots(data);
+      return await handleRecurringSlots(data as RecurringSlotData);
     } else {
-      return await handleSingleSlot(data);
+      return await handleSingleSlot(data as SingleSlotData);
     }
   } catch (error) {
     console.error('[SLOTS_POST]', error);
@@ -77,7 +99,7 @@ export async function POST(req: Request) {
   }
 }
 
-async function handleSingleSlot(data: any) {
+async function handleSingleSlot(data: SingleSlotData) {
   try {
     const { rinkId: rinkName, date, startTime, duration, maxStudents } = data;
     
@@ -120,7 +142,7 @@ async function handleSingleSlot(data: any) {
   }
 }
 
-async function handleRecurringSlots(data: any) {
+async function handleRecurringSlots(data: RecurringSlotData) {
   try {
     const { 
       rinkId: rinkName, 
