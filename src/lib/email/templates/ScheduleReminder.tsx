@@ -16,7 +16,7 @@ interface ScheduleReminderProps {
   location: string;
 }
 
-export default function ScheduleReminder({
+export function ScheduleReminder({
   studentName,
   lessonDate,
   lessonTime,

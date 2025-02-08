@@ -16,7 +16,7 @@ interface PaymentReceiptProps {
   lessonType: string;
 }
 
-export default function PaymentReceipt({
+export function PaymentReceipt({
   studentName,
   amount,
   date,
