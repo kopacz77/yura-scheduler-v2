@@ -49,14 +49,9 @@ export async function getRink(id: string) {
         where: {
           isActive: true,
         },
-        orderBy: [
-          {
-            startTime: 'asc',
-          },
-          {
-            daysOfWeek: 'asc',
-          },
-        ],
+        orderBy: {
+          startTime: 'asc',
+        },
       },
     },
   });
@@ -117,7 +112,6 @@ export interface TimeSlot {
   startTime: string;
   endTime: string;
   maxStudents: number;
-  daysOfWeek: number[];
 }
 
 export async function getRinkSchedule(rinkId: string): Promise<TimeSlot[]> {
@@ -128,14 +122,9 @@ export async function getRinkSchedule(rinkId: string): Promise<TimeSlot[]> {
       rinkId,
       isActive: true,
     },
-    orderBy: [
-      {
-        startTime: 'asc',
-      },
-      {
-        daysOfWeek: 'asc',
-      },
-    ],
+    orderBy: {
+      startTime: 'asc',
+    },
   });
 
   return timeSlots;
@@ -147,7 +136,7 @@ export async function addTimeSlot(
 ) {
   'use server';
 
-  // Check for overlapping time slots on the same days
+  // Check for overlapping time slots
   const overlappingSlots = await prisma.rinkTimeSlot.findMany({
     where: {
       rinkId,
@@ -157,9 +146,6 @@ export async function addTimeSlot(
       },
       endTime: {
         gte: data.startTime,
-      },
-      daysOfWeek: {
-        hasSome: data.daysOfWeek,
       },
     },
   });
@@ -174,7 +160,6 @@ export async function addTimeSlot(
       startTime: data.startTime,
       endTime: data.endTime,
       maxStudents: data.maxStudents,
-      daysOfWeek: data.daysOfWeek,
     },
   });
 
@@ -209,7 +194,6 @@ export async function deleteTimeSlot(id: string) {
 export async function checkRinkAvailability(rinkId: string, date: Date) {
   'use server';
 
-  const dayOfWeek = date.getDay();
   const timeStr = date.toLocaleTimeString('en-US', {
     hour12: false,
     hour: '2-digit',
@@ -220,9 +204,6 @@ export async function checkRinkAvailability(rinkId: string, date: Date) {
     where: {
       rinkId,
       isActive: true,
-      daysOfWeek: {
-        has: dayOfWeek,
-      },
       startTime: {
         lte: timeStr,
       },
