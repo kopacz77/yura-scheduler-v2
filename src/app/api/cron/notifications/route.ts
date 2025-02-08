@@ -1,14 +1,18 @@
 import { NextResponse } from 'next/server';
-import { scheduleNotifications } from '@/lib/notifications/scheduler';
+import { processNotifications } from '@/lib/notifications/scheduler';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
-    await scheduleNotifications();
-    return NextResponse.json({ success: true });
+    const result = await processNotifications();
+    
+    return NextResponse.json({
+      success: true,
+      ...result
+    });
   } catch (error) {
-    console.error('Failed to process notifications:', error);
+    console.error('Notifications processing error:', error);
     return NextResponse.json(
       { 
         success: false, 
