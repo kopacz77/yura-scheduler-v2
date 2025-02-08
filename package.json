@@ -5,5 +5,11 @@
     "dev": "prisma generate && prisma db push && next dev",
     "build": "prisma generate && prisma db push && next build",
     "start": "next start"
+  },
+  "dependencies": {
+    "@radix-ui/react-toggle": "^1.0.3",
+    "class-variance-authority": "^0.7.0",
+    "clsx": "^2.1.0",
+    "tailwind-merge": "^2.2.1"
   }
 }
