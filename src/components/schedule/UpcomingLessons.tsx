@@ -24,21 +24,25 @@ async function fetchUpcomingLessons(studentId: string) {
   if (!response.ok) {
     throw new Error('Failed to fetch upcoming lessons');
   }
-  return response.json();
+  return response.json() as Promise<Lesson[]>;
 }
 
 export function UpcomingLessons() {
   const { data: session } = useSession();
 
-  const { data: lessons, isLoading } = useQuery<Lesson[]>({
+  const { data: lessons, isLoading, error } = useQuery({
     queryKey: ['upcomingLessons', session?.user?.id],
     queryFn: () => fetchUpcomingLessons(session?.user?.id as string),
     enabled: !!session?.user?.id,
-    onError: (error) => {
-      toast.error('Failed to load upcoming lessons');
-      console.error('Lessons fetch error:', error);
-    }
+    retry: 1,
+    staleTime: 1000 * 60, // 1 minute
   });
+
+  // Handle errors outside the query config
+  if (error) {
+    toast.error('Failed to load upcoming lessons');
+    console.error('Lessons fetch error:', error);
+  }
 
   if (isLoading) {
     return <Skeleton className="h-[300px] w-full" />;
