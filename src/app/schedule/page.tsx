@@ -7,17 +7,18 @@ import { RinkSelector } from '@/components/schedule/RinkSelector';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
-import { Lesson, Student, User } from '@prisma/client';
+import { Lesson, Student, User, Rink, Level } from '@prisma/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
 
 type LessonWithRelations = Lesson & {
-  student: {
+  student: Student & {
     user: {
       name: string | null;
     };
   };
+  rink: Rink;
 };
 
 type ScheduleData = {
@@ -76,7 +77,7 @@ export default function SchedulePage() {
       const response = await fetch(`/api/lessons/${lesson.id}`);
       if (!response.ok) throw new Error('Failed to fetch lesson details');
       
-      const lessonDetails = await response.json();
+      const lessonDetails: LessonWithRelations = await response.json();
       setSelectedLesson(lessonDetails);
     } catch (error) {
       toast({
@@ -150,7 +151,7 @@ export default function SchedulePage() {
 
       {selectedLesson && (
         <LessonDetails
-          lesson={selectedLesson}
+          lesson={selectedLesson as any} // Temporary type cast while we update LessonDetails component
           isOpen={!!selectedLesson}
           onClose={() => setSelectedLesson(null)}
         />
