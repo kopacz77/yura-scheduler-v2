@@ -3,12 +3,12 @@
 import { AlertCircle } from 'lucide-react';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-interface ErrorMessageProps {
+interface ErrorProps {
   title?: string;
   message: string;
 }
 
-export default function ErrorMessage({ title = 'Error', message }: ErrorMessageProps) {
+export function Error({ title = 'Error', message }: ErrorProps) {
   return (
     <Alert variant="destructive">
       <AlertCircle className="h-4 w-4" />
