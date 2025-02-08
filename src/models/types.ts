@@ -19,6 +19,8 @@ export interface Appointment {
   title: string;
   start: Date;
   end: Date;
+  duration: number;      // Duration in minutes
+  resourceId: string;    // ID of the resource (rink/area)
   details: AppointmentDetails;
   payment?: PaymentDetails;
 }
