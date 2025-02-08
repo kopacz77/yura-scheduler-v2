@@ -7,19 +7,32 @@ import { RinkSelector } from '@/components/schedule/RinkSelector';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
-import { Lesson } from '@prisma/client';
+import { Lesson, Student, User } from '@prisma/client';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { toast } from '@/components/ui/use-toast';
 import { useRouter } from 'next/navigation';
+
+type LessonWithRelations = Lesson & {
+  student: {
+    user: {
+      name: string | null;
+    };
+  };
+};
+
+type ScheduleData = {
+  lessons: LessonWithRelations[];
+  timeSlots: any[];
+};
 
 export default function SchedulePage() {
   const router = useRouter();
   const [selectedRink, setSelectedRink] = useState('all');
   const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
-  const [lessons, setLessons] = useState<Lesson[]>([]);
+  const [scheduleData, setScheduleData] = useState<ScheduleData>({ lessons: [], timeSlots: [] });
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<LessonWithRelations | null>(null);
 
   const fetchSchedule = async () => {
     try {
@@ -39,7 +52,7 @@ export default function SchedulePage() {
       if (!response.ok) throw new Error('Failed to fetch schedule');
       
       const data = await response.json();
-      setLessons(data.lessons);
+      setScheduleData(data);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to load schedule');
       toast({
@@ -58,7 +71,7 @@ export default function SchedulePage() {
     );
   };
 
-  const handleLessonSelect = async (lesson: Lesson) => {
+  const handleLessonSelect = async (lesson: LessonWithRelations) => {
     try {
       const response = await fetch(`/api/lessons/${lesson.id}`);
       if (!response.ok) throw new Error('Failed to fetch lesson details');
@@ -127,8 +140,8 @@ export default function SchedulePage() {
         ) : (
           <CalendarView
             currentWeek={currentWeek}
-            lessons={lessons}
-            timeSlots={[]}
+            lessons={scheduleData.lessons}
+            timeSlots={scheduleData.timeSlots}
             onEditSlot={() => {}}
             onRefresh={fetchSchedule}
           />
