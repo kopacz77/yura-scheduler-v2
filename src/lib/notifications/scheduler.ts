@@ -2,7 +2,12 @@ import { prisma } from '@/lib/prisma';
 import { sendLessonReminder, sendPaymentReminder } from '@/lib/email';
 import { addHours, format, isBefore, isAfter, addDays } from 'date-fns';
 
-export async function processNotifications() {
+interface NotificationResult {
+  lessonsProcessed: number;
+  paymentsProcessed: number;
+}
+
+export async function processNotifications(): Promise<NotificationResult> {
   const now = new Date();
   const tomorrow = addDays(now, 1);
 
