@@ -1,102 +1,80 @@
 import { useState } from 'react';
-import { Appointment, Resource } from '@/models/types';
+import { useQuery } from '@tanstack/react-query';
+import { type Resource, type Appointment } from '@/models/types';
 import { RinkArea } from '@prisma/client';
 
-const mockResources: Resource[] = [
+// Initial data for development and testing
+const INITIAL_RESOURCES: Resource[] = [
   {
     id: 'rink1',
     name: 'Main Rink',
     type: RinkArea.MAIN_RINK,
-    details: {
-      maxCapacity: 20,
-      description: 'Olympic-sized ice rink',
-      available: true,
+    capacity: 20,
+    location: {
+      address: '123 Ice Way',
+      timezone: 'America/New_York'
     },
+    properties: {
+      description: 'Olympic-sized ice rink',
+      hasLockers: true,
+      hasCafe: true
+    }
   },
   {
     id: 'rink2',
     name: 'Practice Rink',
     type: RinkArea.PRACTICE_RINK,
-    details: {
-      maxCapacity: 15,
-      description: 'Smaller rink for practice sessions',
-      available: true,
+    capacity: 15,
+    location: {
+      address: '123 Ice Way',
+      timezone: 'America/New_York'
     },
+    properties: {
+      description: 'Practice rink with specialized training areas',
+      hasLockers: true,
+      hasVideoSystem: true
+    }
   },
   {
     id: 'studio1',
     name: 'Dance Studio',
     type: RinkArea.DANCE_STUDIO,
-    details: {
-      maxCapacity: 10,
-      description: 'Off-ice training space',
-      available: true,
+    capacity: 10,
+    location: {
+      address: '123 Ice Way',
+      timezone: 'America/New_York'
     },
-  },
+    properties: {
+      description: 'Professional dance studio with mirrors and bars',
+      hasAudioSystem: true,
+      hasSpringFloor: true
+    }
+  }
 ];
 
-export function usePlanner() {
-  const [resources] = useState<Resource[]>(mockResources);
-  const [appointments, setAppointments] = useState<Appointment[]>([]);
-  const [isLoading, setIsLoading] = useState(false);
+async function fetchResources() {
+  // In production, this would fetch from an API
+  return Promise.resolve(INITIAL_RESOURCES);
+}
 
-  const addAppointment = async (appointmentData: Omit<Appointment, 'id'>) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      const newAppointment: Appointment = {
-        ...appointmentData,
-        id: Math.random().toString(36).substring(7),
-      };
-      setAppointments(prev => [...prev, newAppointment]);
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export interface UsePlannerOptions {
+  initialDate?: Date;
+  onAppointmentMove?: (appointment: Appointment, resourceId: string, time: Date) => void;
+}
 
-  const updateAppointment = async (id: string, data: Partial<Appointment>) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      setAppointments(prev =>
-        prev.map(appointment =>
-          appointment.id === id 
-            ? { ...appointment, ...data } 
-            : appointment
-        )
-      );
-    } finally {
-      setIsLoading(false);
-    }
-  };
+export function usePlanner(options: UsePlannerOptions = {}) {
+  const [currentDate, setCurrentDate] = useState(options.initialDate || new Date());
 
-  const deleteAppointment = async (id: string) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      setAppointments(prev => prev.filter(appointment => appointment.id !== id));
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  const moveAppointment = (id: string, resourceId: string) => {
-    setAppointments(prev =>
-      prev.map(appointment =>
-        appointment.id === id
-          ? { ...appointment, resourceId }
-          : appointment
-      )
-    );
-  };
+  const { data: resources = [], isLoading: isLoadingResources } = useQuery({
+    queryKey: ['resources'],
+    queryFn: fetchResources,
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
   return {
     resources,
-    appointments,
-    isLoading,
-    addAppointment,
-    updateAppointment,
-    deleteAppointment,
-    moveAppointment,
+    isLoadingResources,
+    currentDate,
+    setCurrentDate,
   };
 }
