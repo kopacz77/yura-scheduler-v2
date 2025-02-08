@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
-import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { isSameDay } from 'date-fns';
 
 export async function GET(req: Request) {
   try {
@@ -13,76 +14,67 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url);
     const rinkId = searchParams.get('rinkId');
     const date = searchParams.get('date');
-    const startTime = searchParams.get('startTime');
-    const endTime = searchParams.get('endTime');
 
-    if (!date) {
-      return new NextResponse('Date is required', { status: 400 });
+    if (!rinkId || !date) {
+      return new NextResponse('Missing required parameters', { status: 400 });
     }
 
-    // If looking for specific rink availability
-    if (rinkId) {
-      const rink = await prisma.rink.findUnique({
-        where: { id: rinkId },
-        include: { timeSlots: true }
-      });
-
-      if (!rink) {
-        return new NextResponse('Rink not found', { status: 404 });
-      }
-
-      const lessons = await prisma.lesson.findMany({
-        where: {
-          rinkId,
-          startTime: {
-            gte: new Date(date)
+    // Get rink with its time slots
+    const rink = await prisma.rink.findUnique({
+      where: { id: rinkId },
+      include: {
+        timeSlots: {
+          where: {
+            isActive: true,
           },
-          endTime: {
-            lt: new Date(new Date(date).setDate(new Date(date).getDate() + 1))
-          }
-        }
-      });
+        },
+      },
+    });
 
-      // Find available time slots for the day
-      const dayOfWeek = new Date(date).getDay();
-      const availableTimeSlots = rink.timeSlots.filter(slot => 
-        slot.isActive && slot.daysOfWeek.includes(dayOfWeek)
+    if (!rink) {
+      return new NextResponse('Rink not found', { status: 404 });
+    }
+
+    // Get booked lessons for the date
+    const requestedDate = new Date(date);
+    const lessons = await prisma.lesson.findMany({
+      where: {
+        rinkId,
+        startTime: {
+          gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
+          lt: new Date(requestedDate.setHours(23, 59, 59, 999)),
+        },
+      },
+    });
+
+    // Filter time slots for the specific date
+    const availableTimeSlots = rink.timeSlots.filter(slot => {
+      const slotDate = new Date(slot.startTime);
+      return slot.isActive && isSameDay(slotDate, new Date(date));
+    });
+
+    // Map slots with their booking status
+    const slotsWithAvailability = availableTimeSlots.map(slot => {
+      const matchingLesson = lessons.find(lesson =>
+        isSameDay(new Date(lesson.startTime), new Date(slot.startTime)) &&
+        new Date(lesson.startTime).getHours() === new Date(slot.startTime).getHours() &&
+        new Date(lesson.startTime).getMinutes() === new Date(slot.startTime).getMinutes()
       );
 
-      return NextResponse.json({
-        rink,
-        timeSlots: availableTimeSlots,
-        lessons
-      });
-    }
+      return {
+        ...slot,
+        isBooked: !!matchingLesson,
+        lesson: matchingLesson || null,
+      };
+    });
 
-    // If looking for all available rinks for a time slot
-    if (startTime && endTime) {
-      const rinks = await prisma.rink.findMany({
-        include: { 
-          timeSlots: true,
-          lessons: {
-            where: {
-              startTime: { lte: new Date(endTime) },
-              endTime: { gte: new Date(startTime) }
-            }
-          }
-        }
-      });
+    return NextResponse.json({
+      rink,
+      slots: slotsWithAvailability,
+    });
 
-      const availableRinks = rinks.filter(rink => {
-        if (rink.maxCapacity) {
-          return rink.lessons.length < rink.maxCapacity;
-        }
-        return true;
-      });
-
-      return NextResponse.json(availableRinks);
-    }
-
-    return new NextResponse('Invalid request parameters', { status: 400 });
   } catch (error) {
-    console.error('Error checking rink availability:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('[AVAILABILITY_GET]', error);
+    return new NextResponse('Internal error', { status: 500 });
   }
 }
