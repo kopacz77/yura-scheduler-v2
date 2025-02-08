@@ -1,12 +1,20 @@
 'use client';
 
-import { Error } from '@/components/ui/error';
+import ErrorMessage from '@/components/ui/error';
 
-export default function AnalyticsError() {
+export default function ErrorPage({
+  error,
+  reset,
+}: {
+  error: Error;
+  reset: () => void;
+}) {
   return (
-    <Error
-      title="Failed to load analytics"
-      message="There was an error loading the analytics data. Please try again later."
-    />
+    <div className="p-4">
+      <ErrorMessage
+        title="Error Loading Analytics"
+        message={error.message}
+      />
+    </div>
   );
 }
