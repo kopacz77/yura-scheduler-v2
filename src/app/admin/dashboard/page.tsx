@@ -1,7 +1,7 @@
 'use client';
 
-import { AdminDashboard } from '@/components/admin/AdminDashboard';
-import { PageHeader } from '@/components/layout/PageHeader';
+import AdminDashboard from '@/components/admin/AdminDashboard';
+import PageHeader from '@/components/layout/PageHeader';
 
 export default function AdminDashboardPage() {
   return (
