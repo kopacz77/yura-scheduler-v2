@@ -1,84 +1,54 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback } from 'react';
 import { CalendarView } from '@/components/schedule/CalendarView';
-import { ScheduleForm } from '@/components/schedule/ScheduleForm';
 import { LessonDetails } from '@/components/schedule/LessonDetails';
 import { RinkSelector } from '@/components/schedule/RinkSelector';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { Plus, AlertCircle, Loader2, Calendar } from 'lucide-react';
+import { AlertCircle, Loader2 } from 'lucide-react';
 import { startOfWeek, endOfWeek, addWeeks, subWeeks } from 'date-fns';
-import { Lesson, Rink, Student, User } from '@prisma/client';
-
-type LessonWithRelations = Lesson & {
-  student: Student & {
-    user: User;
-  };
-  rink: Rink;
-};
+import { Lesson } from '@prisma/client';
+import { PageHeader } from '@/components/layout/PageHeader';
+import { toast } from '@/components/ui/use-toast';
+import { useRouter } from 'next/navigation';
 
 export default function SchedulePage() {
-  const [isFormOpen, setIsFormOpen] = useState(false);
-  const [selectedLesson, setSelectedLesson] = useState<LessonWithRelations | null>(null);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [selectedRink, setSelectedRink] = useState('');
-  const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date()));
-  const [lessons, setLessons] = useState<Array<Lesson & { 
-    student: { 
-      user: { 
-        name: string | null 
-      } 
-    } 
-  }>>([]);
+  const router = useRouter();
+  const [selectedRink, setSelectedRink] = useState('all');
+  const [currentWeek, setCurrentWeek] = useState(() => startOfWeek(new Date()));
+  const [lessons, setLessons] = useState<Lesson[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<Lesson | null>(null);
 
-  const fetchLessons = async () => {
+  const fetchSchedule = async () => {
     try {
       setIsLoading(true);
-      const response = await fetch(`/api/lessons?${new URLSearchParams({
+      setError(null);
+
+      const params = new URLSearchParams({
         startDate: currentWeek.toISOString(),
         endDate: endOfWeek(currentWeek).toISOString(),
-        ...(selectedRink ? { rinkId: selectedRink } : {})
-      })}`);
+      });
       
-      if (!response.ok) throw new Error('Failed to fetch lessons');
+      if (selectedRink !== 'all') {
+        params.append('rinkId', selectedRink);
+      }
+      
+      const response = await fetch(`/api/schedule?${params}`);
+      if (!response.ok) throw new Error('Failed to fetch schedule');
       
       const data = await response.json();
       setLessons(data.lessons);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load lessons');
+      setError(err instanceof Error ? err.message : 'Failed to load schedule');
+      toast({
+        title: 'Error',
+        description: 'Failed to load schedule',
+        variant: 'destructive',
+      });
     } finally {
       setIsLoading(false);
-    }
-  };
-
-  const fetchLessonDetails = async (lessonId: string) => {
-    try {
-      const response = await fetch(`/api/lessons/${lessonId}`);
-      if (!response.ok) throw new Error('Failed to fetch lesson details');
-      const data = await response.json();
-      return data.lesson;
-    } catch (error) {
-      console.error('Error fetching lesson details:', error);
-      return null;
-    }
-  };
-
-  useEffect(() => {
-    fetchLessons();
-  }, [currentWeek, selectedRink]);
-
-  const handleSlotSelect = (date: Date) => {
-    setSelectedDate(date);
-    setIsFormOpen(true);
-  };
-
-  const handleLessonSelect = async (lesson: Lesson) => {
-    const details = await fetchLessonDetails(lesson.id);
-    if (details) {
-      setSelectedLesson(details);
     }
   };
 
@@ -88,98 +58,88 @@ export default function SchedulePage() {
     );
   };
 
-  return (
-    <div className="container mx-auto py-8 space-y-6">
-      {/* Header Section */}
-      <div className="flex justify-between items-center">
-        <div className="flex items-center space-x-2">
-          <Calendar className="h-8 w-8 text-primary" />
-          <h1 className="text-4xl font-bold">Lesson Schedule</h1>
-        </div>
-        <Button onClick={() => setIsFormOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Lesson
-        </Button>
-      </div>
-
-      {/* Filters Section */}
-      <div className="grid gap-4 md:grid-cols-2">
-        <RinkSelector
-          selectedRink={selectedRink}
-          onRinkChange={setSelectedRink}
-        />
-        <div className="flex justify-end items-center space-x-4">
-          <Button
-            variant="outline"
-            onClick={() => handleWeekChange('prev')}
-          >
-            Previous Week
-          </Button>
-          <Button
-            variant="outline"
-            onClick={() => handleWeekChange('next')}
-          >
-            Next Week
-          </Button>
-        </div>
-      </div>
+  const handleLessonSelect = async (lesson: Lesson) => {
+    try {
+      const response = await fetch(`/api/lessons/${lesson.id}`);
+      if (!response.ok) throw new Error('Failed to fetch lesson details');
       
-      {/* Modals */}
-      <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-        <DialogContent className="max-w-2xl">
-          <ScheduleForm
-            initialDate={selectedDate}
-            onSchedule={() => {
-              setIsFormOpen(false);
-              setSelectedDate(null);
-              fetchLessons();
-            }}
+      const lessonDetails = await response.json();
+      setSelectedLesson(lessonDetails);
+    } catch (error) {
+      toast({
+        title: 'Error',
+        description: 'Failed to load lesson details',
+        variant: 'destructive',
+      });
+    }
+  };
+
+  return (
+    <div className="space-y-8 p-8">
+      <PageHeader 
+        title="Schedule"
+        description="View and manage your lesson schedule"
+      />
+      
+      <div className="space-y-6">
+        <div className="flex justify-between items-center">
+          <RinkSelector
+            selectedRink={selectedRink}
+            onRinkChange={setSelectedRink}
           />
-        </DialogContent>
-      </Dialog>
+          <div className="flex items-center space-x-4">
+            <Button
+              variant="outline"
+              onClick={() => handleWeekChange('prev')}
+            >
+              Previous Week
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() => handleWeekChange('next')}
+            >
+              Next Week
+            </Button>
+          </div>
+        </div>
+
+        {error && (
+          <div className="rounded-md bg-destructive/10 p-4">
+            <div className="flex">
+              <AlertCircle className="h-5 w-5 text-destructive" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-destructive">Error loading schedule</h3>
+                <div className="mt-2 text-sm text-destructive/90">
+                  <p>{error}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {isLoading ? (
+          <div className="flex justify-center items-center h-[600px] bg-background/50 backdrop-blur-sm rounded-lg border">
+            <div className="text-center space-y-4">
+              <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
+              <p className="text-muted-foreground">Loading schedule...</p>
+            </div>
+          </div>
+        ) : (
+          <CalendarView
+            currentWeek={currentWeek}
+            lessons={lessons}
+            timeSlots={[]}
+            onEditSlot={() => {}}
+            onRefresh={fetchSchedule}
+          />
+        )}
+      </div>
 
       {selectedLesson && (
         <LessonDetails
           lesson={selectedLesson}
           isOpen={!!selectedLesson}
-          onClose={() => {
-            setSelectedLesson(null);
-            fetchLessons();
-          }}
-        />
-      )}
-
-      {/* Error State */}
-      {error && (
-        <div className="rounded-md bg-destructive/10 p-4">
-          <div className="flex">
-            <div className="flex-shrink-0">
-              <AlertCircle className="h-5 w-5 text-destructive" />
-            </div>
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-destructive">Error loading schedule</h3>
-              <div className="mt-2 text-sm text-destructive/90">
-                <p>{error}</p>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Loading State */}
-      {isLoading ? (
-        <div className="flex justify-center items-center h-[600px] bg-background/50 backdrop-blur-sm rounded-lg border">
-          <div className="text-center space-y-4">
-            <Loader2 className="h-8 w-8 animate-spin mx-auto text-primary" />
-            <p className="text-muted-foreground">Loading schedule...</p>
-          </div>
-        </div>
-      ) : (
-        <CalendarView
-          currentWeek={currentWeek}
-          lessons={lessons}
-          onSlotSelect={handleSlotSelect}
-          onLessonSelect={handleLessonSelect}
+          onClose={() => setSelectedLesson(null)}
         />
       )}
     </div>
