@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { parse, format, addMinutes, addDays, parseISO, eachDayOfInterval } from 'date-fns';
+import { parseISO, addMinutes, eachDayOfInterval, isSameDay, startOfDay, endOfDay, set } from 'date-fns';
 import { DEFAULT_RINKS } from '@/config/rinks';
 
 async function ensureRinkExists(rinkName: string) {
@@ -25,6 +25,30 @@ async function ensureRinkExists(rinkName: string) {
   }
 
   return rink.id;
+}
+
+async function checkOverlappingSlots(rinkId: string, startTime: Date, endTime: Date) {
+  const overlapping = await prisma.rinkTimeSlot.findFirst({
+    where: {
+      rinkId,
+      OR: [
+        {
+          AND: [
+            { startTime: { lte: startTime } },
+            { endTime: { gt: startTime } }
+          ]
+        },
+        {
+          AND: [
+            { startTime: { lt: endTime } },
+            { endTime: { gte: endTime } }
+          ]
+        }
+      ]
+    }
+  });
+
+  return overlapping !== null;
 }
 
 export async function POST(req: Request) {
@@ -52,22 +76,32 @@ async function handleSingleSlot(data: any) {
   try {
     const { rinkId: rinkName, date, startTime, duration, maxStudents } = data;
     
-    const rinkId = await ensureRinkExists(rinkName);
-    const dateTimeString = `${date} ${startTime}`;
-    const parsedDateTime = parse(dateTimeString, 'yyyy-MM-dd HH:mm', new Date());
-    
-    if (isNaN(parsedDateTime.getTime())) {
-      throw new Error('Invalid date/time format');
+    if (!date || !startTime || !duration) {
+      throw new Error('Missing required fields');
     }
 
-    const endDateTime = addMinutes(parsedDateTime, parseInt(duration));
+    const rinkId = await ensureRinkExists(rinkName);
 
-    // Create single time slot
+    // Parse the date and time
+    const baseDate = parseISO(date);
+    const [hours, minutes] = startTime.split(':').map(Number);
+    
+    // Create the full start time
+    const slotStartTime = set(baseDate, { hours, minutes, seconds: 0, milliseconds: 0 });
+    const slotEndTime = addMinutes(slotStartTime, parseInt(duration));
+
+    // Check for overlapping slots
+    const hasOverlap = await checkOverlappingSlots(rinkId, slotStartTime, slotEndTime);
+    if (hasOverlap) {
+      throw new Error('Time slot overlaps with an existing slot');
+    }
+
+    // Create the slot
     const timeSlot = await prisma.rinkTimeSlot.create({
       data: {
         rinkId,
-        startTime: parsedDateTime,
-        endTime: endDateTime,
+        startTime: slotStartTime,
+        endTime: slotEndTime,
         maxStudents: parseInt(maxStudents),
         isActive: true,
       },
@@ -95,6 +129,10 @@ async function handleRecurringSlots(data: any) {
       maxStudents 
     } = data;
 
+    if (!startDate || !endDate || !startTime || !duration || !daysString) {
+      throw new Error('Missing required fields');
+    }
+
     const rinkId = await ensureRinkExists(rinkName);
     const selectedDays = daysString.split(',').map((day: string) => parseInt(day, 10));
 
@@ -118,25 +156,30 @@ async function handleRecurringSlots(data: any) {
       end: parseISO(endDate),
     });
 
+    const [hours, minutes] = startTime.split(':').map(Number);
     const slotInstances = [];
 
     for (const date of dateRange) {
       if (selectedDays.includes(date.getDay())) {
-        const slotStartTime = parse(startTime, 'HH:mm', date);
+        const slotStartTime = set(date, { hours, minutes, seconds: 0, milliseconds: 0 });
         const slotEndTime = addMinutes(slotStartTime, parseInt(duration));
 
-        slotInstances.push({
-          rinkId,
-          startTime: slotStartTime,
-          endTime: slotEndTime,
-          maxStudents: parseInt(maxStudents),
-          isActive: true,
-          recurringId: pattern.id,
-        });
+        // Check for overlaps
+        const hasOverlap = await checkOverlappingSlots(rinkId, slotStartTime, slotEndTime);
+        if (!hasOverlap) {
+          slotInstances.push({
+            rinkId,
+            startTime: slotStartTime,
+            endTime: slotEndTime,
+            maxStudents: parseInt(maxStudents),
+            isActive: true,
+            recurringId: pattern.id,
+          });
+        }
       }
     }
 
-    // Create all slot instances
+    // Create all valid slot instances
     const createdSlots = await prisma.rinkTimeSlot.createMany({
       data: slotInstances,
     });
