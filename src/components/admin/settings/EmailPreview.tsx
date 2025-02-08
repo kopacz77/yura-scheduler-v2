@@ -8,7 +8,7 @@ interface EmailPreviewProps {
   variables: Record<string, string>;
 }
 
-export default function EmailPreview({ template, variables }: EmailPreviewProps) {
+export function EmailPreview({ template, variables }: EmailPreviewProps) {
   const processTemplate = (template: string) => {
     let processed = template;
     Object.entries(variables).forEach(([key, value]) => {
