@@ -1,19 +1,18 @@
 'use client';
 
-import { cn } from '@/lib/utils';
-
 interface HeadingProps {
   title: string;
   description?: string;
-  className?: string;
 }
 
-export function Heading({ title, description, className }: HeadingProps) {
+export function Heading({ title, description }: HeadingProps) {
   return (
-    <div className={cn('space-y-1', className)}>
-      <h2 className="text-2xl font-semibold tracking-tight">{title}</h2>
+    <div>
+      <h2 className="text-3xl font-bold tracking-tight">{title}</h2>
       {description && (
-        <p className="text-sm text-muted-foreground">{description}</p>
+        <p className="text-sm text-muted-foreground mt-1">
+          {description}
+        </p>
       )}
     </div>
   );
