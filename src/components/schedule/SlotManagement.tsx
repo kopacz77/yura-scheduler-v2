@@ -15,7 +15,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Calendar, Clock, MapPin, Repeat, Users } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, addMinutes } from 'date-fns';
 import { DEFAULT_RINKS } from '@/config/rinks';
 
 interface SlotManagementProps {
@@ -23,6 +23,14 @@ interface SlotManagementProps {
   onClose: () => void;
   onSave: (data: any) => void;
   initialDate?: Date;
+}
+
+interface FormData {
+  rinkId: string;
+  date: string;
+  startTime: string;
+  duration: string;
+  maxStudents: string;
 }
 
 const DAYS_OF_WEEK = [
@@ -37,7 +45,7 @@ const DAYS_OF_WEEK = [
 
 export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotManagementProps) {
   const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
+  const [formData, setFormData] = useState<FormData>({
     rinkId: '',
     date: initialDate ? format(initialDate, 'yyyy-MM-dd') : '',
     startTime: '',
@@ -65,11 +73,18 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
   };
 
   const handleRecurringSlotSave = () => {
+    // Calculate end time based on start time and duration
+    const [hours, minutes] = formData.startTime.split(':').map(Number);
+    const startDate = new Date();
+    startDate.setHours(hours, minutes, 0, 0);
+    const endDate = addMinutes(startDate, parseInt(formData.duration));
+    const endTime = format(endDate, 'HH:mm');
+
     onSave({
       type: 'recurring',
       rinkId: formData.rinkId,
       startTime: formData.startTime,
-      endTime: formData.endTime,
+      duration: formData.duration,
       daysString: selectedDays.join(','),
       maxStudents: formData.maxStudents
     });
