@@ -8,6 +8,7 @@ interface EmailPreviewProps {
   variables: Record<string, string>;
 }
 
+// Export both named and default export for compatibility
 export function EmailPreview({ template, variables }: EmailPreviewProps) {
   const processTemplate = (template: string) => {
     let processed = template;
@@ -45,3 +46,6 @@ export function EmailPreview({ template, variables }: EmailPreviewProps) {
     </Card>
   );
 }
+
+// Also export as default for pages that use default import
+export default EmailPreview;
