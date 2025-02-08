@@ -1,17 +1,15 @@
-'use client';
+import { AlertCircle } from 'lucide-react';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
-import { AlertTriangle } from 'lucide-react';
-import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
-
-interface ErrorProps {
+interface ErrorMessageProps {
   title?: string;
-  message?: string;
+  message: string;
 }
 
-export function Error({ title = 'Error', message = 'Something went wrong' }: ErrorProps) {
+export function ErrorMessage({ title = 'Error', message }: ErrorMessageProps) {
   return (
     <Alert variant="destructive">
-      <AlertTriangle className="h-4 w-4" />
+      <AlertCircle className="h-4 w-4" />
       <AlertTitle>{title}</AlertTitle>
       <AlertDescription>{message}</AlertDescription>
     </Alert>
