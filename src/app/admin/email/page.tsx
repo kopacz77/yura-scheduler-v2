@@ -1,12 +1,27 @@
 'use client';
 
-import { EmailPreview } from '@/components/admin/settings/EmailPreview';
+import EmailPreview from '@/components/admin/settings/EmailPreview';
+import PageHeader from '@/components/layout/PageHeader';
 
-export default function EmailTestPage() {
+export default function EmailSettingsPage() {
+  const sampleTemplate = 'Hello {name},\n\nYour lesson is scheduled for {time} at {location}.\n\nBest regards,\nYura';
+  
+  const sampleVariables = {
+    name: 'John Smith',
+    time: '3:00 PM',
+    location: 'World Ice Arena'
+  };
+
   return (
-    <div className="container mx-auto py-8">
-      <h1 className="mb-8 text-3xl font-bold">Email Templates</h1>
-      <EmailPreview />
+    <div className="space-y-6 p-6">
+      <PageHeader
+        title="Email Settings"
+        description="Manage email templates and notifications"
+      />
+      <EmailPreview 
+        template={sampleTemplate}
+        variables={sampleVariables}
+      />
     </div>
   );
 }
