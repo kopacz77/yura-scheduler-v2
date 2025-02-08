@@ -1,5 +1,12 @@
 import { prisma } from '@/lib/prisma';
-import { startOfWeek, endOfWeek } from 'date-fns';
+import { startOfWeek, endOfWeek, format } from 'date-fns';
+
+export interface TimeSlot {
+  id: string;
+  startTime: string;  // Time in HH:mm format
+  endTime: string;    // Time in HH:mm format
+  maxStudents: number;
+}
 
 export async function getRinks() {
   'use server';
@@ -107,13 +114,6 @@ export async function deleteRink(id: string) {
   });
 }
 
-export interface TimeSlot {
-  id: string;
-  startTime: string;
-  endTime: string;
-  maxStudents: number;
-}
-
 export async function getRinkSchedule(rinkId: string): Promise<TimeSlot[]> {
   'use server';
 
@@ -127,7 +127,13 @@ export async function getRinkSchedule(rinkId: string): Promise<TimeSlot[]> {
     },
   });
 
-  return timeSlots;
+  // Transform the data to match the TimeSlot interface
+  return timeSlots.map(slot => ({
+    id: slot.id,
+    startTime: format(slot.startTime, 'HH:mm'),
+    endTime: format(slot.endTime, 'HH:mm'),
+    maxStudents: slot.maxStudents
+  }));
 }
 
 export async function addTimeSlot(
@@ -136,16 +142,20 @@ export async function addTimeSlot(
 ) {
   'use server';
 
+  // Convert time strings to full Date objects
+  const startDate = new Date(`2000-01-01T${data.startTime}:00`);
+  const endDate = new Date(`2000-01-01T${data.endTime}:00`);
+
   // Check for overlapping time slots
   const overlappingSlots = await prisma.rinkTimeSlot.findMany({
     where: {
       rinkId,
       isActive: true,
       startTime: {
-        lte: data.endTime,
+        lte: endDate,
       },
       endTime: {
-        gte: data.startTime,
+        gte: startDate,
       },
     },
   });
@@ -157,13 +167,19 @@ export async function addTimeSlot(
   const timeSlot = await prisma.rinkTimeSlot.create({
     data: {
       rinkId,
-      startTime: data.startTime,
-      endTime: data.endTime,
+      startTime: startDate,
+      endTime: endDate,
       maxStudents: data.maxStudents,
     },
   });
 
-  return timeSlot;
+  // Transform to match TimeSlot interface
+  return {
+    id: timeSlot.id,
+    startTime: format(timeSlot.startTime, 'HH:mm'),
+    endTime: format(timeSlot.endTime, 'HH:mm'),
+    maxStudents: timeSlot.maxStudents
+  };
 }
 
 export async function updateTimeSlot(
@@ -172,12 +188,30 @@ export async function updateTimeSlot(
 ) {
   'use server';
 
+  const updates: any = {};
+  
+  if (data.startTime) {
+    updates.startTime = new Date(`2000-01-01T${data.startTime}:00`);
+  }
+  if (data.endTime) {
+    updates.endTime = new Date(`2000-01-01T${data.endTime}:00`);
+  }
+  if (data.maxStudents) {
+    updates.maxStudents = data.maxStudents;
+  }
+
   const timeSlot = await prisma.rinkTimeSlot.update({
     where: { id },
-    data,
+    data: updates,
   });
 
-  return timeSlot;
+  // Transform to match TimeSlot interface
+  return {
+    id: timeSlot.id,
+    startTime: format(timeSlot.startTime, 'HH:mm'),
+    endTime: format(timeSlot.endTime, 'HH:mm'),
+    maxStudents: timeSlot.maxStudents
+  };
 }
 
 export async function deleteTimeSlot(id: string) {
@@ -194,21 +228,17 @@ export async function deleteTimeSlot(id: string) {
 export async function checkRinkAvailability(rinkId: string, date: Date) {
   'use server';
 
-  const timeStr = date.toLocaleTimeString('en-US', {
-    hour12: false,
-    hour: '2-digit',
-    minute: '2-digit',
-  });
+  const timeStr = format(date, 'HH:mm');
 
   const availableSlots = await prisma.rinkTimeSlot.findMany({
     where: {
       rinkId,
       isActive: true,
       startTime: {
-        lte: timeStr,
+        lte: date,
       },
       endTime: {
-        gte: timeStr,
+        gte: date,
       },
     },
     include: {
@@ -224,8 +254,8 @@ export async function checkRinkAvailability(rinkId: string, date: Date) {
 
   return availableSlots.map(slot => ({
     id: slot.id,
-    startTime: slot.startTime,
-    endTime: slot.endTime,
+    startTime: format(slot.startTime, 'HH:mm'),
+    endTime: format(slot.endTime, 'HH:mm'),
     maxStudents: slot.maxStudents,
     currentStudents: slot.lessons.length,
     available: slot.lessons.length < slot.maxStudents,
