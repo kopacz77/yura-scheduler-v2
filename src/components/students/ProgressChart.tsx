@@ -25,27 +25,31 @@ async function fetchProgress(studentId: string) {
   if (!response.ok) {
     throw new Error('Failed to fetch progress data');
   }
-  return response.json();
+  return response.json() as Promise<ProgressData[]>;
 }
 
 export function ProgressChart() {
   const { data: session } = useSession();
 
-  const { data, isLoading, error } = useQuery<ProgressData[]>({
+  const { data, isLoading, error } = useQuery({
     queryKey: ['progress', session?.user?.id],
     queryFn: () => fetchProgress(session?.user?.id as string),
     enabled: !!session?.user?.id,
-    onError: (error) => {
-      toast.error('Failed to load progress data');
-      console.error('Progress fetch error:', error);
-    }
+    retry: 1,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
+
+  // Handle errors outside the query config
+  if (error) {
+    toast.error('Failed to load progress data');
+    console.error('Progress fetch error:', error);
+  }
 
   if (isLoading) {
     return <Skeleton className="h-[300px] w-full" />;
   }
 
-  if (error || !data) {
+  if (!data?.length) {
     return (
       <div className="flex h-[300px] items-center justify-center text-muted-foreground">
         No progress data available
