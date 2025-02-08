@@ -14,9 +14,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calendar, Clock, MapPin, Repeat, Users } from 'lucide-react';
-import { format, addMinutes } from 'date-fns';
+import { Clock, MapPin, Repeat, Users } from 'lucide-react';
+import { format } from 'date-fns';
 import { DEFAULT_RINKS } from '@/config/rinks';
+import { RecurringSlotForm } from './RecurringSlotForm';
 
 interface SlotManagementProps {
   isOpen: boolean;
@@ -33,18 +34,7 @@ interface FormData {
   maxStudents: string;
 }
 
-const DAYS_OF_WEEK = [
-  { name: 'Mon', value: '1' },
-  { name: 'Tue', value: '2' },
-  { name: 'Wed', value: '3' },
-  { name: 'Thu', value: '4' },
-  { name: 'Fri', value: '5' },
-  { name: 'Sat', value: '6' },
-  { name: 'Sun', value: '0' },
-];
-
 export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotManagementProps) {
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
   const [formData, setFormData] = useState<FormData>({
     rinkId: '',
     date: initialDate ? format(initialDate, 'yyyy-MM-dd') : '',
@@ -53,41 +43,38 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
     maxStudents: '1'
   });
 
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
   const handleInputChange = (field: string, value: string) => {
     setFormData(prev => ({ ...prev, [field]: value }));
+    // Clear error when field is modified
+    if (errors[field]) {
+      setErrors(prev => {
+        const newErrors = { ...prev };
+        delete newErrors[field];
+        return newErrors;
+      });
+    }
   };
 
-  const toggleDay = (dayValue: string) => {
-    setSelectedDays(current =>
-      current.includes(dayValue)
-        ? current.filter(d => d !== dayValue)
-        : [...current, dayValue]
-    );
+  const validateSingleSlotForm = (): boolean => {
+    const newErrors: Record<string, string> = {};
+
+    if (!formData.rinkId) newErrors.rinkId = 'Please select a rink';
+    if (!formData.date) newErrors.date = 'Date is required';
+    if (!formData.startTime) newErrors.startTime = 'Start time is required';
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   const handleSingleSlotSave = () => {
-    onSave({
-      type: 'single',
-      ...formData
-    });
-  };
-
-  const handleRecurringSlotSave = () => {
-    // Calculate end time based on start time and duration
-    const [hours, minutes] = formData.startTime.split(':').map(Number);
-    const startDate = new Date();
-    startDate.setHours(hours, minutes, 0, 0);
-    const endDate = addMinutes(startDate, parseInt(formData.duration));
-    const endTime = format(endDate, 'HH:mm');
-
-    onSave({
-      type: 'recurring',
-      rinkId: formData.rinkId,
-      startTime: formData.startTime,
-      duration: formData.duration,
-      daysString: selectedDays.join(','),
-      maxStudents: formData.maxStudents
-    });
+    if (validateSingleSlotForm()) {
+      onSave({
+        type: 'single',
+        ...formData
+      });
+    }
   };
 
   return (
@@ -125,8 +112,11 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                 <CardContent className="space-y-4">
                   <div className="space-y-2">
                     <Label>Select Rink</Label>
-                    <Select onValueChange={(value) => handleInputChange('rinkId', value)}>
-                      <SelectTrigger>
+                    <Select 
+                      onValueChange={(value) => handleInputChange('rinkId', value)}
+                      value={formData.rinkId}
+                    >
+                      <SelectTrigger className={errors.rinkId ? 'border-red-500' : ''}>
                         <SelectValue placeholder="Choose a location" />
                       </SelectTrigger>
                       <SelectContent>
@@ -140,6 +130,7 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                         ))}
                       </SelectContent>
                     </Select>
+                    {errors.rinkId && <span className="text-sm text-red-500">{errors.rinkId}</span>}
                   </div>
                   <div className="space-y-2">
                     <Label>Date</Label>
@@ -147,7 +138,9 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       type="date" 
                       value={formData.date}
                       onChange={(e) => handleInputChange('date', e.target.value)}
+                      className={errors.date ? 'border-red-500' : ''}
                     />
+                    {errors.date && <span className="text-sm text-red-500">{errors.date}</span>}
                   </div>
                 </CardContent>
               </Card>
@@ -168,7 +161,9 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
                       step="1800"
                       value={formData.startTime}
                       onChange={(e) => handleInputChange('startTime', e.target.value)}
+                      className={errors.startTime ? 'border-red-500' : ''}
                     />
+                    {errors.startTime && <span className="text-sm text-red-500">{errors.startTime}</span>}
                   </div>
                   <div className="space-y-2">
                     <Label>Duration</Label>
@@ -224,7 +219,10 @@ export function SlotManagement({ isOpen, onClose, onSave, initialDate }: SlotMan
           </TabsContent>
 
           <TabsContent value="recurring">
-            {/* Recurring slot content remains the same */}
+            <RecurringSlotForm 
+              onSubmit={onSave}
+              onCancel={onClose}
+            />
           </TabsContent>
         </Tabs>
       </DialogContent>
