@@ -3,7 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { CalendarDays, DollarSign, Users, Clock } from 'lucide-react';
 
-export function AdminDashboard() {
+export default function AdminDashboard() {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
       <Card>
