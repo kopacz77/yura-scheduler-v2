@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { startOfWeek, endOfWeek, parseISO } from 'date-fns';
+import { startOfWeek, endOfWeek, isSameDay, parseISO, isWithinInterval } from 'date-fns';
 
 export async function GET(req: Request) {
   try {
@@ -24,25 +24,47 @@ export async function GET(req: Request) {
     const start = startOfWeek(parseISO(startDate));
     const end = endOfWeek(parseISO(endDate));
 
-    // Get available time slots for the specific date range
+    // Get available time slots
     const timeSlots = await prisma.rinkTimeSlot.findMany({
       where: {
         rinkId: rinkId || undefined,
         isActive: true,
+        startTime: {
+          gte: start,
+          lte: end
+        }
       },
       include: {
         rink: true,
       },
     });
 
-    // Filter time slots based on the current week's dates
-    const filteredTimeSlots = timeSlots.filter(slot => {
-      const slotDay = parseInt(slot.startTime.split(':')[0]);
-      return slotDay >= start.getHours() && slotDay <= end.getHours();
+    // Get booked lessons
+    const lessons = await prisma.lesson.findMany({
+      where: {
+        rinkId: rinkId || undefined,
+        startTime: {
+          gte: start,
+          lte: end,
+        },
+      },
+      include: {
+        student: {
+          include: {
+            user: true,
+          },
+        },
+        rink: true,
+        timeSlot: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
     });
 
     return NextResponse.json({
-      timeSlots: filteredTimeSlots,
+      timeSlots,
+      lessons,
     });
   } catch (error) {
     console.error('[SCHEDULE_GET]', error);
