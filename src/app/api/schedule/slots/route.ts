@@ -5,6 +5,10 @@ import { prisma } from '@/lib/prisma';
 import { parseISO, addMinutes, eachDayOfInterval, isSameDay, startOfDay, endOfDay, set } from 'date-fns';
 import { DEFAULT_RINKS } from '@/config/rinks';
 
+type SlotCreationError = {
+  message: string;
+};
+
 async function ensureRinkExists(rinkName: string) {
   const rinkDetails = DEFAULT_RINKS[rinkName];
   if (!rinkDetails) throw new Error('Invalid rink name');
@@ -68,7 +72,8 @@ export async function POST(req: Request) {
     }
   } catch (error) {
     console.error('[SLOTS_POST]', error);
-    return new NextResponse('Internal error', { status: 500 });
+    const message = error instanceof Error ? error.message : 'Internal error';
+    return new NextResponse(message, { status: 500 });
   }
 }
 
@@ -110,10 +115,8 @@ async function handleSingleSlot(data: any) {
     return NextResponse.json(timeSlot);
   } catch (error) {
     console.error('[SINGLE_SLOT_ERROR]', error);
-    return new NextResponse(
-      `Failed to create single slot: ${error.message}`, 
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Failed to create single slot';
+    return new NextResponse(message, { status: 500 });
   }
 }
 
@@ -190,9 +193,7 @@ async function handleRecurringSlots(data: any) {
     });
   } catch (error) {
     console.error('[RECURRING_SLOTS_ERROR]', error);
-    return new NextResponse(
-      `Failed to create recurring slots: ${error.message}`, 
-      { status: 500 }
-    );
+    const message = error instanceof Error ? error.message : 'Failed to create recurring slots';
+    return new NextResponse(message, { status: 500 });
   }
 }
