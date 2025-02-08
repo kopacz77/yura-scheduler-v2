@@ -1,4 +1,11 @@
-import { LessonType } from '@prisma/client';
+import { LessonType, PaymentStatus } from '@prisma/client';
+
+export interface PaymentDetails {
+  status: PaymentStatus;
+  amount: number;
+  dueDate?: Date;
+  paidAt?: Date;
+}
 
 export interface AppointmentDetails {
   lessonType: LessonType;
@@ -13,4 +20,5 @@ export interface Appointment {
   start: Date;
   end: Date;
   details: AppointmentDetails;
+  payment?: PaymentDetails;
 }
