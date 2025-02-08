@@ -8,6 +8,7 @@ interface ErrorProps {
   message: string;
 }
 
+// Export both named and default export for compatibility
 export function Error({ title = 'Error', message }: ErrorProps) {
   return (
     <Alert variant="destructive">
@@ -17,3 +18,6 @@ export function Error({ title = 'Error', message }: ErrorProps) {
     </Alert>
   );
 }
+
+// Also export as default for pages that use default import
+export default Error;
