@@ -1,12 +1,11 @@
 import React from 'react';
 import { RinkSchedule } from '@/components/admin/rinks/RinkSchedule';
-import { getRink, getRinkSchedule, addTimeSlot, deleteTimeSlot } from '@/lib/actions/rinks';
+import { getRink, getRinkSchedule, addTimeSlot, deleteTimeSlot, type TimeSlot } from '@/lib/actions/rinks';
 import { Heading } from '@/components/ui/heading';
 import { notFound } from 'next/navigation';
-import { toast } from '@/components/ui/use-toast';
-import { type TimeSlot } from '@/types';
+import { toast } from 'sonner';
 
-type TimeSlotInput = Pick<TimeSlot, 'startTime' | 'endTime' | 'daysOfWeek' | 'maxStudents'>;
+type TimeSlotInput = Pick<TimeSlot, 'startTime' | 'endTime' | 'maxStudents'>;
 
 export default async function RinkSchedulePage({
   params,
@@ -25,34 +24,20 @@ export default async function RinkSchedulePage({
   const handleAddTimeSlot = async (timeSlot: TimeSlotInput) => {
     try {
       await addTimeSlot(rink.id, timeSlot);
-      toast({
-        title: 'Success',
-        description: 'Time slot added successfully',
-      });
+      toast.success('Time slot added successfully');
     } catch (error) {
       console.error('Error adding time slot:', error);
-      toast({
-        title: 'Error',
-        description: error instanceof Error ? error.message : 'Failed to add time slot',
-        variant: 'destructive',
-      });
+      toast.error(error instanceof Error ? error.message : 'Failed to add time slot');
     }
   };
 
   const handleDeleteTimeSlot = async (timeSlotId: string) => {
     try {
       await deleteTimeSlot(timeSlotId);
-      toast({
-        title: 'Success',
-        description: 'Time slot deleted successfully',
-      });
+      toast.success('Time slot deleted successfully');
     } catch (error) {
       console.error('Error deleting time slot:', error);
-      toast({
-        title: 'Error',
-        description: 'Failed to delete time slot',
-        variant: 'destructive',
-      });
+      toast.error('Failed to delete time slot');
     }
   };
 
