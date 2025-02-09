@@ -1,9 +1,10 @@
 import { google } from 'googleapis';
+import { JWT } from 'google-auth-library';
 import { format, parseISO } from 'date-fns';
 
 const SCOPES = ['https://www.googleapis.com/auth/calendar'];
 
-const auth = new google.auth.JWT({
+const auth = new JWT({
   email: process.env.GOOGLE_CLIENT_EMAIL,
   key: process.env.GOOGLE_PRIVATE_KEY?.replace(/\\n/g, '\n'),
   scopes: SCOPES
