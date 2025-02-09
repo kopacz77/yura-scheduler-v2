@@ -14,21 +14,30 @@ export function QueryProvider({ children }: { children: ReactNode }) {
             staleTime: 30 * 1000, // 30 seconds
             retry: 2,
             refetchOnWindowFocus: true,
-            onError: (error: Error) => {
-              console.error('Query error:', error);
-              toast.error('Error loading data');
-            },
+            gcTime: 1000 * 60 * 60 * 24, // 24 hours
           },
           mutations: {
             retry: 1,
-            onError: (error: Error) => {
-              console.error('Mutation error:', error);
-              toast.error('Error updating data');
-            },
           },
         },
       })
   );
+
+  // Add global error handler
+  queryClient.setDefaultOptions({
+    queries: {
+      onError: (error) => {
+        console.error('Query error:', error);
+        toast.error('Error loading data');
+      },
+    },
+    mutations: {
+      onError: (error) => {
+        console.error('Mutation error:', error);
+        toast.error('Error updating data');
+      },
+    },
+  });
 
   return (
     <QueryClientProvider client={queryClient}>
