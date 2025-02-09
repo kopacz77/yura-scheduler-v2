@@ -6,46 +6,50 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Force all API routes to be dynamic
-    if (path.startsWith('/api/')) {
-      const response = NextResponse.next();
-      response.headers.set('Cache-Control', 'no-store');
-      return response;
+    // Public paths
+    if (path === '/' || path.startsWith('/auth/')) {
+      return NextResponse.next();
     }
 
-    // Already authenticated users trying to access auth pages
-    if (path.startsWith('/auth') && token) {
-      const destination = token.role === 'ADMIN' ? '/admin/dashboard' : '/dashboard';
-      return NextResponse.redirect(new URL(destination, req.url));
+    // Must be authenticated from this point
+    if (!token) {
+      return NextResponse.redirect(new URL('/auth/signin', req.url));
     }
 
     // Admin trying to access student pages
-    if (token?.role === 'ADMIN' && path === '/dashboard') {
+    if (token.role === 'ADMIN' && path.startsWith('/student/')) {
       return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
 
     // Student trying to access admin pages
-    if (token?.role === 'STUDENT' && path.startsWith('/admin')) {
-      return NextResponse.redirect(new URL('/dashboard', req.url));
+    if (token.role === 'STUDENT' && path.startsWith('/admin/')) {
+      return NextResponse.redirect(new URL('/student/dashboard', req.url));
     }
+
+    return NextResponse.next();
   },
   {
     callbacks: {
       authorized: ({ token, req }) => {
+        // Always allow auth pages
         if (req.nextUrl.pathname.startsWith('/auth/')) {
-          return true; // Always allow auth pages
+          return true;
         }
-        return !!token; // Require auth for all other pages
-      }
-    }
+        return !!token;
+      },
+    },
   }
 );
 
 export const config = {
   matcher: [
-    '/auth/:path*',
-    '/dashboard/:path*',
-    '/admin/:path*',
-    '/api/:path*'
-  ]
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api (API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
+  ],
 };
