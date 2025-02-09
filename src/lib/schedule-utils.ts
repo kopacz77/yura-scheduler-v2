@@ -1,5 +1,5 @@
 import { addHours, parse, format } from 'date-fns';
-import { zonedTimeToUtc, utcToZonedTime } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export function calculateCancellationFee(lessonPrice: number, hoursUntilLesson: number) {
   if (hoursUntilLesson >= 48) return 0;
@@ -8,8 +8,9 @@ export function calculateCancellationFee(lessonPrice: number, hoursUntilLesson: 
 }
 
 export function formatTimeSlot(start: string, end: string, timezone = 'UTC') {
-  const startTime = utcToZonedTime(parse(start, 'HH:mm', new Date()), timezone);
-  const endTime = utcToZonedTime(parse(end, 'HH:mm', new Date()), timezone);
+  const baseDate = new Date();
+  const startTime = parse(start, 'HH:mm', baseDate);
+  const endTime = parse(end, 'HH:mm', baseDate);
   
-  return `${format(startTime, 'h:mm a')} - ${format(endTime, 'h:mm a')}`;
+  return `${formatInTimeZone(startTime, timezone, 'h:mm a')} - ${formatInTimeZone(endTime, timezone, 'h:mm a')}`;
 }
