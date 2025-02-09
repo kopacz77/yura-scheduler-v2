@@ -1,8 +1,10 @@
 import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { prisma } from '@/lib/prisma';
-import { isSameDay } from 'date-fns';
+import { getResourceAvailability } from '@/lib/scheduling/resources';
+
+export { dynamic, revalidate } from '../../config';
 
 export async function GET(req: Request) {
   try {
@@ -12,69 +14,23 @@ export async function GET(req: Request) {
     }
 
     const { searchParams } = new URL(req.url);
-    const rinkId = searchParams.get('rinkId');
-    const date = searchParams.get('date');
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    const duration = searchParams.get('duration');
 
-    if (!rinkId || !date) {
+    if (!startDate || !endDate) {
       return new NextResponse('Missing required parameters', { status: 400 });
     }
 
-    // Get rink with its time slots
-    const rink = await prisma.rink.findUnique({
-      where: { id: rinkId },
-      include: {
-        timeSlots: {
-          where: {
-            isActive: true,
-          },
-        },
-      },
-    });
+    const availability = await getResourceAvailability(
+      new Date(startDate),
+      new Date(endDate),
+      duration ? parseInt(duration) : undefined
+    );
 
-    if (!rink) {
-      return new NextResponse('Rink not found', { status: 404 });
-    }
-
-    // Get booked lessons for the date
-    const requestedDate = new Date(date);
-    const lessons = await prisma.lesson.findMany({
-      where: {
-        rinkId,
-        startTime: {
-          gte: new Date(requestedDate.setHours(0, 0, 0, 0)),
-          lt: new Date(requestedDate.setHours(23, 59, 59, 999)),
-        },
-      },
-    });
-
-    // Filter time slots for the specific date
-    const availableTimeSlots = rink.timeSlots.filter(slot => {
-      const slotDate = new Date(slot.startTime);
-      return slot.isActive && isSameDay(slotDate, new Date(date));
-    });
-
-    // Map slots with their booking status
-    const slotsWithAvailability = availableTimeSlots.map(slot => {
-      const matchingLesson = lessons.find(lesson =>
-        isSameDay(new Date(lesson.startTime), new Date(slot.startTime)) &&
-        new Date(lesson.startTime).getHours() === new Date(slot.startTime).getHours() &&
-        new Date(lesson.startTime).getMinutes() === new Date(slot.startTime).getMinutes()
-      );
-
-      return {
-        ...slot,
-        isBooked: !!matchingLesson,
-        lesson: matchingLesson || null,
-      };
-    });
-
-    return NextResponse.json({
-      rink,
-      slots: slotsWithAvailability,
-    });
-
+    return NextResponse.json(availability);
   } catch (error) {
-    console.error('[AVAILABILITY_GET]', error);
-    return new NextResponse('Internal error', { status: 500 });
+    console.error('Error fetching resource availability:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
