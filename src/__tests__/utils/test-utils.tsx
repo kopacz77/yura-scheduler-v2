@@ -1,101 +1,64 @@
+import { render } from '@testing-library/react';
 import React from 'react';
-import { render as rtlRender } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
-// Mock providers
-function Providers({ children }: { children: React.ReactNode }) {
-  return (
-    <div>
-      {/* Add providers here as needed */}
-      {children}
-    </div>
+// Create a wrapper with providers for testing
+export function createWrapper() {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: {
+        retry: false,
+      },
+    },
+  });
+
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
   );
 }
 
-function render(ui: React.ReactElement, options = {}) {
+// Mock Response helper
+export function createMockResponse<T>(data: T, ok = true, status = 200) {
   return {
-    ...rtlRender(ui, { wrapper: Providers, ...options }),
-    user: userEvent.setup(),
-  };
+    ok,
+    status,
+    json: async () => data,
+    headers: new Headers(),
+    redirected: false,
+    statusText: ok ? 'OK' : 'Error',
+    type: 'default' as ResponseType,
+    url: '',
+    clone: function() { return this; },
+    body: null,
+    bodyUsed: false,
+    arrayBuffer: async () => new ArrayBuffer(0),
+    blob: async () => new Blob(),
+    formData: async () => new FormData(),
+    text: async () => JSON.stringify(data),
+  } as Response;
 }
 
 // Common test data
-export const testData = {
-  appointments: [
-    {
-      id: '1',
-      title: 'Test Lesson',
-      start: new Date('2025-01-29T10:00:00'),
-      end: new Date('2025-01-29T11:00:00'),
-      studentId: '1',
-      resourceId: '1',
-      lessonType: 'PRIVATE'
-    }
-  ],
-  resources: [
-    {
-      id: '1',
-      name: 'Main Rink',
-      type: 'MAIN_RINK',
-      available: true,
-      maxCapacity: 20
-    }
-  ],
-  students: [
-    {
-      id: '1',
-      name: 'John Doe',
-      email: 'john@example.com',
-      level: 'INTERMEDIATE',
-      preferredPayment: 'VENMO'
-    }
-  ],
-  payments: [
-    {
-      id: '1',
-      amount: 100.00,
-      method: 'VENMO',
-      status: 'PENDING',
-      appointmentId: '1',
-      studentId: '1'
-    }
-  ]
+export const mockUser = {
+  id: '1',
+  name: 'Test User',
+  email: 'test@example.com',
 };
 
-// Common test utilities
-export function mockFetch(data: any) {
-  return vi.fn().mockImplementation(() =>
-    Promise.resolve({
-      ok: true,
-      json: () => Promise.resolve(data)
-    })
-  );
+// Type for mock functions
+type MockFn = jest.Mock;
+
+// Mock fetch for appointments
+export function mockAppointmentsFetch(data: any[]): MockFn {
+  return jest.fn((url: string) => {
+    return Promise.resolve(createMockResponse(data));
+  });
 }
 
-export function mockFetchError(status = 500, message = 'Internal Server Error') {
-  return vi.fn().mockImplementation(() =>
-    Promise.resolve({
-      ok: false,
-      status,
-      json: () => Promise.resolve({ error: message })
-    })
-  );
+// Mock fetch for payments
+export function mockPaymentsFetch(data: any[]): MockFn {
+  return jest.fn((url: string) => {
+    return Promise.resolve(createMockResponse(data));
+  });
 }
-
-// Common assertions
-export function expectLoading(container: HTMLElement) {
-  expect(container.querySelector('[role="status"]')).toBeInTheDocument();
-}
-
-export function expectNotLoading(container: HTMLElement) {
-  expect(container.querySelector('[role="status"]')).not.toBeInTheDocument();
-}
-
-export function expectErrorMessage(container: HTMLElement, message: string) {
-  expect(container.querySelector('.error-message')).toHaveTextContent(message);
-}
-
-export {
-  render,
-  userEvent,
-};
