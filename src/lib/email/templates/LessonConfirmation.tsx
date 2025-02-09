@@ -58,7 +58,11 @@ export function LessonConfirmation({
                   <br />
                 </>
               )}
-              <strong>Focus:</strong> {appointment.details.focus || 'General practice'}
+              {appointment.details.focus && (
+                <>
+                  <strong>Focus:</strong> {appointment.details.focus}
+                </>
+              )}
             </Text>
           </Section>
 

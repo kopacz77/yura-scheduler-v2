@@ -12,6 +12,7 @@ export interface AppointmentDetails {
   studentId?: string;
   studentName?: string;
   notes?: string;
+  focus?: string;
 }
 
 export interface Appointment {
