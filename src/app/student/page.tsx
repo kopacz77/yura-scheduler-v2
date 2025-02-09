@@ -1,16 +1,28 @@
 'use client';
 
-import { Suspense } from 'react';
-import { StudentDashboard } from '@/components/students/StudentDashboard';
-import { LoadingSpinner } from '@/components/ui/loading-spinner';
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 
-export default function StudentPortalPage() {
-  return (
-    <div className="container mx-auto px-4 py-8">
-      <h1 className="text-3xl font-bold mb-8">Student Portal</h1>
-      <Suspense fallback={<LoadingSpinner />}>
-        <StudentDashboard />
-      </Suspense>
-    </div>
-  );
+export const dynamic = 'force-dynamic';
+
+export default function StudentPage() {
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  // Redirect to appropriate dashboard based on user role
+  if (session?.user?.role === 'ADMIN') {
+    redirect('/admin/dashboard');
+  } else {
+    redirect('/student/dashboard');
+  }
+
+  return null;
 }
