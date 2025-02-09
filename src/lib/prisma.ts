@@ -1,4 +1,4 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Prisma } from '@prisma/client';
 import { env, logger } from './env';
 
 declare global {
@@ -7,27 +7,27 @@ declare global {
 
 const logOptions = env.isDev ? {
   log: [
-    { emit: 'event', level: 'query' },
-    { emit: 'event', level: 'error' },
-    { emit: 'event', level: 'warn' },
-  ],
+    { level: 'query', emit: 'event' },
+    { level: 'error', emit: 'event' },
+    { level: 'warn', emit: 'event' },
+  ] as Prisma.LogDefinition[],
 } : {};
 
 const prismaClient = global.prisma || new PrismaClient(logOptions);
 
-// Debug logging in development
+// Add event listeners in development
 if (env.isDev && prismaClient.$on) {
-  prismaClient.$on('query', (e: any) => {
+  prismaClient.$on('query' as never, (e: Prisma.QueryEvent) => {
     logger.debug('Query:', e.query);
     logger.debug('Params:', e.params);
     logger.debug('Duration:', `${e.duration}ms`);
   });
 
-  prismaClient.$on('error', (e: any) => {
+  prismaClient.$on('error' as never, (e: Prisma.LogEvent) => {
     logger.error('Prisma Error:', e.message);
   });
 
-  prismaClient.$on('warn', (e: any) => {
+  prismaClient.$on('warn' as never, (e: Prisma.LogEvent) => {
     logger.warn('Prisma Warning:', e.message);
   });
 }
