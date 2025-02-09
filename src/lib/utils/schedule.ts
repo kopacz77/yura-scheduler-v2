@@ -1,64 +1,33 @@
-import { TimeSlot } from './date';
+import { utcToZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { format, addMinutes, isWithinInterval } from 'date-fns';
 
-export type ScheduleConflict = {
-  type: 'overlap' | 'capacity' | 'availability';
-  message: string;
-  conflictingSlot?: TimeSlot;
-};
+export interface TimeSlot {
+  start: Date;
+  end: Date;
+  available: boolean;
+}
 
-export function validateSchedule(
-  slots: TimeSlot[],
-  existingSlots: TimeSlot[],
-  maxCapacity: number
-): ScheduleConflict[] {
-  const conflicts: ScheduleConflict[] = [];
-
-  slots.forEach(slot => {
-    // Check for overlaps
-    const overlappingSlots = existingSlots.filter(existing =>
-      isOverlapping(slot, existing)
-    );
-
-    if (overlappingSlots.length >= maxCapacity) {
-      conflicts.push({
-        type: 'capacity',
-        message: 'Maximum capacity reached for this time slot',
-        conflictingSlot: slot,
-      });
-    }
-
-    overlappingSlots.forEach(conflicting => {
-      conflicts.push({
-        type: 'overlap',
-        message: `Time slot overlaps with existing booking at ${conflicting.startTime}`,
-        conflictingSlot: conflicting,
-      });
+export function createTimeSlots(date: Date, rinkTimeZone: string): TimeSlot[] {
+  const slots: TimeSlot[] = [];
+  const startTime = utcToZonedTime(date, rinkTimeZone);
+  startTime.setHours(6, 0, 0, 0); // Start at 6 AM
+  
+  for (let i = 0; i < 32; i++) { // End at 10 PM (32 half-hour slots)
+    const start = new Date(startTime);
+    const end = addMinutes(start, 30);
+    
+    slots.push({
+      start,
+      end,
+      available: true
     });
-  });
-
-  return conflicts;
+    
+    startTime.setMinutes(startTime.getMinutes() + 30);
+  }
+  
+  return slots;
 }
 
-function isOverlapping(slot1: TimeSlot, slot2: TimeSlot): boolean {
-  const start1 = new Date(`1970-01-01T${slot1.startTime}:00`);
-  const end1 = new Date(`1970-01-01T${slot1.endTime}:00`);
-  const start2 = new Date(`1970-01-01T${slot2.startTime}:00`);
-  const end2 = new Date(`1970-01-01T${slot2.endTime}:00`);
-
-  return (
-    (start1 >= start2 && start1 < end2) ||
-    (end1 > start2 && end1 <= end2) ||
-    (start1 <= start2 && end1 >= end2)
-  );
-}
-
-export function groupSlotsByDay(slots: TimeSlot[]): Record<string, TimeSlot[]> {
-  return slots.reduce((acc, slot) => {
-    const day = slot.startTime.split(' ')[0]; // Assuming date is part of startTime
-    if (!acc[day]) {
-      acc[day] = [];
-    }
-    acc[day].push(slot);
-    return acc;
-  }, {} as Record<string, TimeSlot[]>);
+export function formatTimeSlot(slot: TimeSlot, timeZone: string): string {
+  return `${formatInTimeZone(slot.start, timeZone, 'h:mm a')} - ${formatInTimeZone(slot.end, timeZone, 'h:mm a')}`;
 }
