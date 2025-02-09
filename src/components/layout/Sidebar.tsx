@@ -12,7 +12,8 @@ import {
   Settings,
   CreditCard,
   Building2,
-  Menu,
+  BarChart,
+  Clock,
   X,
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -31,6 +32,7 @@ interface NavItem {
 }
 
 const navItems: NavItem[] = [
+  // Admin Routes
   {
     title: 'Dashboard',
     href: '/admin/dashboard',
@@ -38,15 +40,10 @@ const navItems: NavItem[] = [
     roles: ['ADMIN'],
   },
   {
-    title: 'Student Dashboard',
-    href: '/student/dashboard',
-    icon: LayoutDashboard,
-    roles: ['STUDENT'],
-  },
-  {
     title: 'Schedule',
-    href: '/schedule',
+    href: '/admin/schedule',
     icon: Calendar,
+    roles: ['ADMIN'],
   },
   {
     title: 'Students',
@@ -67,9 +64,48 @@ const navItems: NavItem[] = [
     roles: ['ADMIN'],
   },
   {
+    title: 'Analytics',
+    href: '/admin/analytics',
+    icon: BarChart,
+    roles: ['ADMIN'],
+  },
+  {
     title: 'Settings',
-    href: '/settings',
+    href: '/admin/settings',
     icon: Settings,
+    roles: ['ADMIN'],
+  },
+
+  // Student Routes
+  {
+    title: 'Dashboard',
+    href: '/student/dashboard',
+    icon: LayoutDashboard,
+    roles: ['STUDENT'],
+  },
+  {
+    title: 'Schedule',
+    href: '/student/schedule',
+    icon: Calendar,
+    roles: ['STUDENT'],
+  },
+  {
+    title: 'My Lessons',
+    href: '/student/lessons',
+    icon: Clock,
+    roles: ['STUDENT'],
+  },
+  {
+    title: 'Payments',
+    href: '/student/payments',
+    icon: CreditCard,
+    roles: ['STUDENT'],
+  },
+  {
+    title: 'Settings',
+    href: '/student/settings',
+    icon: Settings,
+    roles: ['STUDENT'],
   },
 ];
 
@@ -85,7 +121,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   }, [pathname, isOpen, onClose]);
 
   const filteredNavItems = navItems.filter(
-    (item) => !item.roles || item.roles.includes(userRole)
+    (item) => item.roles?.includes(userRole)
   );
 
   return (
