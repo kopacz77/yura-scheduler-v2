@@ -5,11 +5,13 @@ declare global {
   var prisma: PrismaClient | undefined;
 }
 
-type PrismaOptions = {
-  log?: Array<Prisma.LogDefinition>;
-};
+interface ExtendedPrismaClient extends PrismaClient {
+  $on(event: 'query', callback: (event: Prisma.QueryEvent) => void): void;
+  $on(event: 'error', callback: (event: Prisma.LogEvent) => void): void;
+  $on(event: 'warn', callback: (event: Prisma.LogEvent) => void): void;
+}
 
-const logOptions: PrismaOptions = env.isDev
+const logOptions: Prisma.PrismaClientOptions = env.isDev
   ? {
       log: [
         { level: 'query', emit: 'event' },
@@ -19,25 +21,21 @@ const logOptions: PrismaOptions = env.isDev
     }
   : {};
 
-const prismaClient = global.prisma || new PrismaClient(logOptions);
+const prismaClient = (global.prisma || new PrismaClient(logOptions)) as ExtendedPrismaClient;
 
 // Add event listeners in development
-if (env.isDev && 'on' in prismaClient) {
-  const client = prismaClient as PrismaClient & {
-    $on: Function;
-  };
-
-  client.$on('query', (e: Prisma.QueryEvent) => {
+if (env.isDev) {
+  prismaClient.$on('query', (e: Prisma.QueryEvent) => {
     logger.debug('Query:', e.query);
     logger.debug('Params:', e.params);
     logger.debug('Duration:', `${e.duration}ms`);
   });
 
-  client.$on('error', (e: Prisma.LogEvent) => {
+  prismaClient.$on('error', (e: Prisma.LogEvent) => {
     logger.error('Prisma Error:', e.message);
   });
 
-  client.$on('warn', (e: Prisma.LogEvent) => {
+  prismaClient.$on('warn', (e: Prisma.LogEvent) => {
     logger.warn('Prisma Warning:', e.message);
   });
 }
