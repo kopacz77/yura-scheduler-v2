@@ -3,6 +3,9 @@ import { getServerSession } from 'next-auth';
 import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
@@ -14,6 +17,7 @@ export async function GET(req: Request) {
       where: { userId: session.user.id },
       include: {
         lessons: {
+          where: { status: 'COMPLETED' },
           orderBy: { startTime: 'desc' },
           take: 10
         }
@@ -24,27 +28,8 @@ export async function GET(req: Request) {
       return new NextResponse('Student not found', { status: 404 });
     }
 
-    const completedLessons = await prisma.lesson.count({
-      where: {
-        studentId: student.id,
-        status: 'COMPLETED'
-      }
-    });
-
-    const totalPayments = await prisma.payment.aggregate({
-      where: {
-        studentId: student.id,
-        status: 'COMPLETED'
-      },
-      _sum: {
-        amount: true
-      }
-    });
-
     return NextResponse.json({
-      level: student.level,
-      completedLessons,
-      totalSpent: totalPayments._sum.amount || 0,
+      currentLevel: student.level,
       recentLessons: student.lessons
     });
   } catch (error) {

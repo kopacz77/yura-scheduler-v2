@@ -1,60 +1,61 @@
 import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
+import prisma from '@/lib/prisma';
 import { authOptions } from '@/lib/auth';
+
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
 
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      return new NextResponse('Unauthorized', { status: 401 });
     }
 
     const { searchParams } = new URL(req.url);
-    const referenceCode = searchParams.get('referenceCode');
+    const query = searchParams.get('q');
+    const status = searchParams.get('status');
 
-    if (!referenceCode) {
-      return NextResponse.json(
-        { error: 'Reference code is required' },
-        { status: 400 }
-      );
-    }
-
-    const payment = await prisma.payment.findUnique({
-      where: { referenceCode },
+    const payments = await prisma.payment.findMany({
+      where: {
+        OR: [
+          {
+            student: {
+              user: {
+                name: {
+                  contains: query || '',
+                  mode: 'insensitive'
+                }
+              }
+            }
+          },
+          {
+            referenceCode: {
+              contains: query || '',
+              mode: 'insensitive'
+            }
+          }
+        ],
+        status: status as any || undefined
+      },
       include: {
         student: {
           include: {
-            user: {
-              select: {
-                name: true,
-                email: true,
-              },
-            },
-          },
+            user: true
+          }
         },
-        lesson: {
-          select: {
-            startTime: true,
-            duration: true,
-          },
-        },
+        lesson: true
       },
+      orderBy: {
+        createdAt: 'desc'
+      },
+      take: 20
     });
 
-    if (!payment) {
-      return NextResponse.json(
-        { error: 'Payment not found' },
-        { status: 404 }
-      );
-    }
-
-    return NextResponse.json({ payment });
+    return NextResponse.json(payments);
   } catch (error) {
-    console.error('Error searching payment:', error);
-    return NextResponse.json(
-      { error: 'Failed to search payment' },
-      { status: 500 }
-    );
+    console.error('Error searching payments:', error);
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
