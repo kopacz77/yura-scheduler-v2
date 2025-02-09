@@ -1,133 +1,127 @@
-import { useState } from 'react';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { toast } from 'sonner';
 import { Student, Level, User } from '@prisma/client';
 
 type StudentWithUser = Student & {
   user: Pick<User, 'name' | 'email'>;
 };
 
-const mockUsers: Record<string, Pick<User, 'name' | 'email'>> = {
-  'user1': {
-    name: 'Emily Wilson',
-    email: 'emily.w@example.com',
-  },
-  'user2': {
-    name: 'David Lee',
-    email: 'david.lee@example.com',
-  },
-  'user3': {
-    name: 'Sophie Brown',
-    email: 'sophie.b@example.com',
-  },
-};
-
-const mockStudents: StudentWithUser[] = [
-  {
-    id: '1',
-    userId: 'user1',
-    user: mockUsers['user1'],
-    phone: '+1 (555) 123-4567',
-    maxLessonsPerWeek: 3,
-    level: Level.JUNIOR,
-    emergencyContact: {
-      name: 'Michael Chen',
-      phone: '+1 (555) 123-4568',
-      relation: 'Father'
-    },
-    notes: 'Preparing for regional competition',
-    createdAt: new Date('2023-09-01'),
-    updatedAt: new Date('2023-09-01')
-  },
-  {
-    id: '2',
-    userId: 'user2',
-    user: mockUsers['user2'],
-    phone: '+1 (555) 234-5678',
-    maxLessonsPerWeek: 2,
-    level: Level.NOVICE,
-    emergencyContact: {
-      name: 'Sarah Kim',
-      phone: '+1 (555) 234-5679',
-      relation: 'Mother'
-    },
-    notes: 'Focus on technical skills',
-    createdAt: new Date('2023-10-15'),
-    updatedAt: new Date('2023-10-15')
-  },
-  {
-    id: '3',
-    userId: 'user3',
-    user: mockUsers['user3'],
-    phone: '+1 (555) 345-6789',
-    maxLessonsPerWeek: 1,
-    level: Level.PRELIMINARY,
-    emergencyContact: {
-      name: 'John Taylor',
-      phone: '+1 (555) 345-6780',
-      relation: 'Father'
-    },
-    notes: 'New student, starting basics',
-    createdAt: new Date('2024-01-05'),
-    updatedAt: new Date('2024-01-05')
-  }
-];
-
 export function useStudentManagement() {
-  const [students, setStudents] = useState<StudentWithUser[]>(mockStudents);
-  const [isLoading, setIsLoading] = useState(false);
+  const queryClient = useQueryClient();
 
-  const addStudent = async (studentData: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      const newStudent: StudentWithUser = {
-        ...studentData,
-        id: Math.random().toString(36).substring(7),
-        createdAt: new Date(),
-        updatedAt: new Date()
-      };
-      setStudents(prev => [...prev, newStudent]);
-    } finally {
-      setIsLoading(false);
+  // Fetch students
+  const { data: students, isLoading } = useQuery<StudentWithUser[]>(
+    ['students'],
+    async () => {
+      const response = await fetch('/api/students');
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to fetch students');
+      }
+      return response.json();
+    },
+    {
+      staleTime: 30 * 1000, // 30 seconds
     }
-  };
+  );
 
-  const updateStudent = async (id: string, data: Partial<StudentWithUser>) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      setStudents(prev =>
-        prev.map(student =>
-          student.id === id 
-            ? { ...student, ...data, updatedAt: new Date() } 
-            : student
-        )
-      );
-    } finally {
-      setIsLoading(false);
+  // Add student
+  const addStudent = useMutation<
+    StudentWithUser,
+    Error,
+    Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>
+  >(
+    async (studentData) => {
+      const response = await fetch('/api/students', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(studentData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to add student');
+      }
+
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['students']);
+        toast.success('Student added successfully');
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to add student');
+      },
     }
-  };
+  );
 
-  const deleteStudent = async (id: string) => {
-    setIsLoading(true);
-    try {
-      // TODO: Replace with actual API call
-      setStudents(prev => prev.filter(student => student.id !== id));
-    } finally {
-      setIsLoading(false);
+  // Update student
+  const updateStudent = useMutation<
+    StudentWithUser,
+    Error,
+    { id: string; data: Partial<StudentWithUser> }
+  >(
+    async ({ id, data }) => {
+      const response = await fetch(`/api/students/${id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to update student');
+      }
+
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['students']);
+        toast.success('Student updated successfully');
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to update student');
+      },
     }
-  };
+  );
 
-  const scheduleLesson = (student: StudentWithUser) => {
-    // TODO: Implement lesson scheduling logic
-    console.log('Scheduling lesson for student:', student.user.name);
-  };
+  // Schedule lesson
+  const scheduleLesson = useMutation(
+    async (data: { studentId: string; startTime: Date; duration: number }) => {
+      const response = await fetch('/api/lessons', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data),
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to schedule lesson');
+      }
+
+      return response.json();
+    },
+    {
+      onSuccess: () => {
+        queryClient.invalidateQueries(['lessons']);
+        toast.success('Lesson scheduled successfully');
+      },
+      onError: (error) => {
+        toast.error(error.message || 'Failed to schedule lesson');
+      },
+    }
+  );
 
   return {
-    students,
+    students: students || [],
     isLoading,
-    addStudent,
-    updateStudent,
-    deleteStudent,
-    scheduleLesson,
+    addStudent: addStudent.mutate,
+    updateStudent: updateStudent.mutate,
+    scheduleLesson: scheduleLesson.mutate,
+    isAddingStudent: addStudent.isLoading,
+    isUpdatingStudent: updateStudent.isLoading,
+    isSchedulingLesson: scheduleLesson.isLoading,
   };
 }
