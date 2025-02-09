@@ -2,12 +2,23 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { ApiResponse, CreateStudentRequest } from '@/types/api';
+import { Student } from '@prisma/client';
+import { revalidatePath } from 'next/cache';
 
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json(
+        { 
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'You must be logged in to view students'
+          }
+        } as ApiResponse<never>,
+        { status: 401 }
+      );
     }
 
     // Only fetch active students with role STUDENT
@@ -33,10 +44,19 @@ export async function GET(req: Request) {
       },
     });
 
-    return NextResponse.json(students);
+    return NextResponse.json({ data: students } as ApiResponse<Student[]>);
   } catch (error) {
     console.error('[STUDENTS_GET]', error);
-    return new NextResponse('Internal error', { status: 500 });
+    return NextResponse.json(
+      { 
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An error occurred while fetching students',
+          details: process.env.NODE_ENV === 'development' ? error : undefined
+        }
+      } as ApiResponse<never>,
+      { status: 500 }
+    );
   }
 }
 
@@ -44,14 +64,35 @@ export async function POST(req: Request) {
   try {
     const session = await getServerSession(authOptions);
     if (!session) {
-      return new NextResponse('Unauthorized', { status: 401 });
+      return NextResponse.json(
+        { 
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'You must be logged in to create students'
+          }
+        } as ApiResponse<never>,
+        { status: 401 }
+      );
     }
 
-    const body = await req.json();
+    const body = await req.json() as CreateStudentRequest;
     const { name, email, phone, emergencyContact } = body;
 
     if (!name || !email || !phone) {
-      return new NextResponse('Missing required fields', { status: 400 });
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Missing required fields',
+            details: {
+              name: !name ? 'Name is required' : undefined,
+              email: !email ? 'Email is required' : undefined,
+              phone: !phone ? 'Phone is required' : undefined,
+            }
+          }
+        } as ApiResponse<never>,
+        { status: 400 }
+      );
     }
 
     // First create the user
@@ -82,9 +123,79 @@ export async function POST(req: Request) {
       },
     });
 
-    return NextResponse.json(student);
+    revalidatePath('/students');
+    return NextResponse.json({ data: student } as ApiResponse<Student>);
   } catch (error) {
     console.error('[STUDENTS_POST]', error);
-    return new NextResponse('Internal error', { status: 500 });
+    return NextResponse.json(
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An error occurred while creating student',
+          details: process.env.NODE_ENV === 'development' ? error : undefined
+        }
+      } as ApiResponse<never>,
+      { status: 500 }
+    );
+  }
+}
+
+export async function PATCH(req: Request) {
+  try {
+    const session = await getServerSession(authOptions);
+    if (!session) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'UNAUTHORIZED',
+            message: 'You must be logged in to update students'
+          }
+        } as ApiResponse<never>,
+        { status: 401 }
+      );
+    }
+
+    const { id, ...data } = await req.json();
+    
+    if (!id) {
+      return NextResponse.json(
+        {
+          error: {
+            code: 'VALIDATION_ERROR',
+            message: 'Student ID is required'
+          }
+        } as ApiResponse<never>,
+        { status: 400 }
+      );
+    }
+
+    const student = await prisma.student.update({
+      where: { id },
+      data,
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+      },
+    });
+
+    revalidatePath('/students');
+    return NextResponse.json({ data: student } as ApiResponse<Student>);
+  } catch (error) {
+    console.error('[STUDENTS_PATCH]', error);
+    return NextResponse.json(
+      {
+        error: {
+          code: 'INTERNAL_ERROR',
+          message: 'An error occurred while updating student',
+          details: process.env.NODE_ENV === 'development' ? error : undefined
+        }
+      } as ApiResponse<never>,
+      { status: 500 }
+    );
   }
 }
