@@ -1,10 +1,17 @@
-import { withAuth } from 'next-auth/middleware';
 import { NextResponse } from 'next/server';
+import { withAuth } from 'next-auth/middleware';
 
 export default withAuth(
   function middleware(req) {
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
+
+    // Force all API routes to be dynamic
+    if (path.startsWith('/api/')) {
+      const response = NextResponse.next();
+      response.headers.set('Cache-Control', 'no-store');
+      return response;
+    }
 
     // Already authenticated users trying to access auth pages
     if (path.startsWith('/auth') && token) {
@@ -39,5 +46,6 @@ export const config = {
     '/auth/:path*',
     '/dashboard/:path*',
     '/admin/:path*',
+    '/api/:path*'
   ]
 };
