@@ -18,8 +18,8 @@ export async function processNotifications(): Promise<NotificationResult> {
         gte: now,
         lt: tomorrow
       },
-      // Only send for confirmed lessons
-      status: 'CONFIRMED',
+      // Only send for scheduled lessons (not cancelled)
+      status: 'SCHEDULED',
       // Only get lessons where reminder hasn't been sent
       reminderSent: false
     },
@@ -60,7 +60,9 @@ export async function processNotifications(): Promise<NotificationResult> {
   const unpaidLessons = await prisma.lesson.findMany({
     where: {
       status: 'COMPLETED',
-      paymentStatus: 'PENDING',
+      payment: {
+        status: 'PENDING'
+      },
       startTime: {
         lt: now,
         gte: addDays(now, -7)
@@ -81,7 +83,7 @@ export async function processNotifications(): Promise<NotificationResult> {
     try {
       await sendPaymentReminder({
         studentName: lesson.student.user.name || 'Student',
-        amount: lesson.cost,
+        amount: lesson.price,
         date: format(lesson.startTime, 'MMMM do, yyyy'),
         lessonType: lesson.type,
         email: lesson.student.user.email
