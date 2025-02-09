@@ -2,20 +2,20 @@
 export type ApiResponse<T> = {
   data?: T;
   error?: {
-    code: string;
+    code: ApiErrorCode;
     message: string;
     details?: unknown;
   };
 };
 
-// Auth Types
-export type SignUpRequest = {
-  email: string;
-  password: string;
-  name: string;
-  role?: 'STUDENT' | 'ADMIN' | 'COACH';
-};
+export type ApiErrorCode = 
+  | 'UNAUTHORIZED'
+  | 'VALIDATION_ERROR'
+  | 'NOT_FOUND'
+  | 'INTERNAL_ERROR'
+  | 'CONFLICT';
 
+// Auth Types
 export type SignInRequest = {
   email: string;
   password: string;
@@ -44,7 +44,10 @@ export type CreateStudentRequest = {
   };
 };
 
-export type UpdateStudentRequest = Partial<CreateStudentRequest>;
+export type UpdateStudentRequest = {
+  id: string;
+  data: Partial<CreateStudentRequest>;
+};
 
 // Lesson Types
 export type CreateLessonRequest = {
@@ -79,115 +82,37 @@ export type VerifyPaymentRequest = {
   verificationNotes?: string;
 };
 
-// Rink Types
-export type CreateRinkRequest = {
-  name: string;
-  address: string;
-  timezone: string;
-  maxCapacity?: number;
+// Stats Types
+export type StatsOverview = {
+  totalStudents: number;
+  activeStudents: number;
+  totalLessons: number;
+  upcomingLessons: number;
+  monthlyRevenue: number;
+  ytdRevenue: number;
 };
 
-export type UpdateRinkRequest = Partial<CreateRinkRequest>;
-
-export type CreateTimeSlotRequest = {
-  rinkId: string;
-  startTime: string;
-  endTime: string;
-  daysOfWeek: number[];
-  maxStudents: number;
-  isActive?: boolean;
+export type StatsDistribution = {
+  byLevel: Array<{
+    level: string;
+    count: number;
+  }>;
+  byType: Array<{
+    type: string;
+    count: number;
+  }>;
 };
 
-export type UpdateTimeSlotRequest = Partial<Omit<CreateTimeSlotRequest, 'rinkId'>>;
-
-// Analytics Types
-export type AnalyticsResponse = {
-  revenue: {
-    total: number;
-    byPeriod: Array<{
-      period: string;
-      amount: number;
-    }>;
-  };
-  lessons: {
-    total: number;
-    completed: number;
-    cancelled: number;
-    upcomingCount: number;
-    byPeriod: Array<{
-      period: string;
-      count: number;
-    }>;
-  };
-  students: {
-    totalCount: number;
-    activeCount: number;
-    newCount: number;
-    byLevel: Array<{
-      level: string;
-      count: number;
-    }>;
-  };
-};
-
-export type RetentionAnalyticsResponse = {
+export type StatsProgress = {
   periods: Array<{
-    startDate: string;
-    cohortSize: number;
-    retentionRates: Array<{
-      month: number;
-      rate: number;
-    }>;
+    label: string;
+    lessons: number;
+    revenue: number;
   }>;
 };
 
-export type RevenueProjectionResponse = {
-  projectedRevenue: Array<{
-    month: string;
-    amount: number;
-    confidence: number;
-  }>;
-  factors: Array<{
-    name: string;
-    impact: number;
-    trend: 'up' | 'down' | 'stable';
-  }>;
-};
-
-// Notification Types
-export type Notification = {
-  id: string;
-  type: 'LESSON_BOOKED' | 'LESSON_CANCELLED' | 'PAYMENT_REQUIRED' | 'PAYMENT_VERIFIED' | 'SYSTEM';
-  title: string;
-  message: string;
-  read: boolean;
-  createdAt: string;
-  data?: {
-    action?: {
-      label: string;
-      url: string;
-    };
-    [key: string]: any;
-  };
-};
-
-// Schedule Types
-export type AvailabilityRequest = {
-  rinkId: string;
-  startDate: string;
-  endDate: string;
-};
-
-export type AvailabilityResponse = {
-  availableSlots: Array<{
-    date: string;
-    timeSlots: Array<{
-      id: string;
-      startTime: string;
-      endTime: string;
-      available: boolean;
-      currentBookings: number;
-      maxStudents: number;
-    }>;
-  }>;
+export type StatsResponse = {
+  overview: StatsOverview;
+  distribution: StatsDistribution;
+  progress: StatsProgress;
 };
