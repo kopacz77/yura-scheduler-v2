@@ -1,12 +1,13 @@
-import { drizzle } from 'drizzle-orm/neon-serverless';
-import { neon, neonConfig } from '@neondatabase/serverless';
+import { PrismaClient } from '@prisma/client';
 
-neonConfig.fetchConnectionCache = true;
+declare global {
+  var prisma: PrismaClient | undefined;
+}
 
-const sql = neon(process.env.NEON_DATABASE_URL!);
+export const prisma = global.prisma || new PrismaClient();
 
-// Type assertion to resolve the Neon type mismatch
-export const db = drizzle(sql as any);
+if (process.env.NODE_ENV !== 'production') {
+  global.prisma = prisma;
+}
 
-// For type safety in queries, we can create a typed version
-export type Database = typeof db;
+export * from '@prisma/client';
