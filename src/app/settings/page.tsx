@@ -7,10 +7,23 @@ import { EmailPreview } from '@/components/admin/settings/EmailPreview';
 import { NotificationSettings } from '@/components/settings/NotificationSettings';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
+
+export const dynamic = 'force-dynamic';
 
 export default function SettingsPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
+
   const [activeTab, setActiveTab] = useState('profile');
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
+  }
 
   // Sample email template for preview
   const sampleTemplate = `Dear {name},
