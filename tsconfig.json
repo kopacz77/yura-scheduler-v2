@@ -29,7 +29,13 @@
     "**/*.ts",
     "**/*.tsx",
     ".next/types/**/*.ts",
-    "playwright.config.ts"
+    "playwright.config.ts",
+    "scripts/**/*.ts"
   ],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules"],
+  "ts-node": {
+    "compilerOptions": {
+      "module": "CommonJS"
+    }
+  }
 }
