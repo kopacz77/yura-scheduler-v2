@@ -1,4 +1,4 @@
-import { addMinutes, isWithinInterval } from 'date-fns';
+import { addMinutes, isWithinInterval, format } from 'date-fns';
 import prisma from '@/lib/prisma';
 import { Lesson, Rink, RinkTimeSlot } from '@prisma/client';
 
@@ -48,17 +48,30 @@ export function isSlotAvailable(
   lessons: Lesson[],
   duration: number = 60
 ): boolean {
-  const [startHour, startMinute] = slot.startTime.split(':').map(Number);
-  const [endHour, endMinute] = slot.endTime.split(':').map(Number);
+  const slotStartTime = new Date(slot.startTime);
+  const slotEndTime = new Date(slot.endTime);
 
+  // Create a new date object for the target date with the time from the slot
   const slotStart = new Date(date);
-  slotStart.setHours(startHour, startMinute, 0, 0);
+  slotStart.setHours(
+    slotStartTime.getHours(),
+    slotStartTime.getMinutes(),
+    0,
+    0
+  );
 
   const slotEnd = new Date(date);
-  slotEnd.setHours(endHour, endMinute, 0, 0);
+  slotEnd.setHours(
+    slotEndTime.getHours(),
+    slotEndTime.getMinutes(),
+    0,
+    0
+  );
 
   // Check if the day of week matches
-  if (!slot.daysOfWeek.includes(date.getDay())) {
+  const currentDayOfWeek = date.getDay();
+  const slotDayOfWeek = slotStartTime.getDay();
+  if (currentDayOfWeek !== slotDayOfWeek) {
     return false;
   }
 
