@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools';
 import { useState, type ReactNode } from 'react';
 import { toast } from 'sonner';
+import { env } from '@/lib/env';
 
 export function QueryProvider({ children }: { children: ReactNode }) {
   const [queryClient] = useState(
@@ -26,14 +27,18 @@ export function QueryProvider({ children }: { children: ReactNode }) {
   // Add global error handler
   queryClient.setDefaultOptions({
     queries: {
-      onError: (error) => {
-        console.error('Query error:', error);
+      onError: (error: Error) => {
+        if (env.isDev) {
+          console.error('Query error:', error);
+        }
         toast.error('Error loading data');
       },
     },
     mutations: {
-      onError: (error) => {
-        console.error('Mutation error:', error);
+      onError: (error: Error) => {
+        if (env.isDev) {
+          console.error('Mutation error:', error);
+        }
         toast.error('Error updating data');
       },
     },
@@ -42,7 +47,7 @@ export function QueryProvider({ children }: { children: ReactNode }) {
   return (
     <QueryClientProvider client={queryClient}>
       {children}
-      <ReactQueryDevtools initialIsOpen={false} />
+      {env.isDev && <ReactQueryDevtools initialIsOpen={false} />}
     </QueryClientProvider>
   );
 }
