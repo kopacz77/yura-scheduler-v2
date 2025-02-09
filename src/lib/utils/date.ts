@@ -1,5 +1,5 @@
 import { addMinutes, format, parse, startOfWeek, endOfWeek, eachDayOfInterval } from 'date-fns';
-import { utcToZonedTime, zonedTimeToUtc } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 export type TimeSlot = {
   startTime: string; // format: 'HH:mm'
@@ -30,17 +30,29 @@ export function generateTimeSlots(startTime: string, endTime: string, duration: 
 }
 
 export function getWeekDays(date: Date, timezone: string): Date[] {
-  const zonedDate = utcToZonedTime(date, timezone);
+  const zonedDate = toZonedTime(date, timezone);
   const start = startOfWeek(zonedDate, { weekStartsOn: 0 });
   const end = endOfWeek(zonedDate, { weekStartsOn: 0 });
 
-  return eachDayOfInterval({ start, end }).map(day =>
-    zonedTimeToUtc(day, timezone)
-  );
+  return eachDayOfInterval({ start, end }).map(day => {
+    // Convert each day to the target timezone
+    const zonedDay = toZonedTime(day, timezone);
+    // Reset the time to midnight in the target timezone
+    zonedDay.setHours(0, 0, 0, 0);
+    return zonedDay;
+  });
 }
 
-export function formatTimeSlot(slot: TimeSlot): string {
-  return `${slot.startTime} - ${slot.endTime}`;
+export function formatTimeSlot(slot: TimeSlot, timezone?: string): string {
+  if (!timezone) {
+    return `${slot.startTime} - ${slot.endTime}`;
+  }
+
+  const baseDate = new Date();
+  const start = parse(slot.startTime, 'HH:mm', baseDate);
+  const end = parse(slot.endTime, 'HH:mm', baseDate);
+
+  return `${formatInTimeZone(start, timezone, 'HH:mm')} - ${formatInTimeZone(end, timezone, 'HH:mm')}`;
 }
 
 export function parseTimeSlot(timeString: string): TimeSlot {
@@ -59,20 +71,30 @@ export function parseTimeSlot(timeString: string): TimeSlot {
 export function isTimeSlotAvailable(
   slot: TimeSlot,
   existingSlots: TimeSlot[],
-  buffer: number = 0 // buffer in minutes
+  buffer: number = 0, // buffer in minutes
+  timezone?: string
 ): boolean {
-  const slotStart = parse(slot.startTime, 'HH:mm', new Date());
-  const slotEnd = parse(slot.endTime, 'HH:mm', new Date());
+  const baseDate = new Date();
+  const slotStart = parse(slot.startTime, 'HH:mm', baseDate);
+  const slotEnd = parse(slot.endTime, 'HH:mm', baseDate);
+
+  // If timezone is provided, convert times to that timezone
+  const effectiveStart = timezone ? toZonedTime(slotStart, timezone) : slotStart;
+  const effectiveEnd = timezone ? toZonedTime(slotEnd, timezone) : slotEnd;
 
   return !existingSlots.some(existing => {
-    const existingStart = parse(existing.startTime, 'HH:mm', new Date());
-    const existingEnd = parse(existing.endTime, 'HH:mm', new Date());
+    const existingStart = parse(existing.startTime, 'HH:mm', baseDate);
+    const existingEnd = parse(existing.endTime, 'HH:mm', baseDate);
+
+    // Convert existing times to timezone if provided
+    const effectiveExistingStart = timezone ? toZonedTime(existingStart, timezone) : existingStart;
+    const effectiveExistingEnd = timezone ? toZonedTime(existingEnd, timezone) : existingEnd;
 
     // Add buffer to both start and end times
-    const bufferStart = addMinutes(slotStart, -buffer);
-    const bufferEnd = addMinutes(slotEnd, buffer);
-    const existingBufferStart = addMinutes(existingStart, -buffer);
-    const existingBufferEnd = addMinutes(existingEnd, buffer);
+    const bufferStart = addMinutes(effectiveStart, -buffer);
+    const bufferEnd = addMinutes(effectiveEnd, buffer);
+    const existingBufferStart = addMinutes(effectiveExistingStart, -buffer);
+    const existingBufferEnd = addMinutes(effectiveExistingEnd, buffer);
 
     return (
       (bufferStart >= existingBufferStart && bufferStart < existingBufferEnd) ||
