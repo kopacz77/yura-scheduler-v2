@@ -6,6 +6,7 @@ import { Plus, Search } from 'lucide-react';
 import { Student, User } from '@prisma/client';
 import { StudentCard } from './StudentCard';
 import { StudentForm } from './StudentForm';
+import { Skeleton } from '@/components/ui/skeleton';
 
 type StudentWithUser = Student & {
   user: Pick<User, 'name' | 'email'>;
@@ -13,6 +14,7 @@ type StudentWithUser = Student & {
 
 interface StudentListProps {
   students: StudentWithUser[];
+  isLoading?: boolean;
   onAddStudent: (student: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   onUpdateStudent: (id: string, data: Partial<StudentWithUser>) => Promise<void>;
   onScheduleLesson: (student: StudentWithUser) => void;
@@ -20,6 +22,7 @@ interface StudentListProps {
 
 export function StudentList({ 
   students, 
+  isLoading = false,
   onAddStudent, 
   onUpdateStudent,
   onScheduleLesson 
@@ -35,16 +38,42 @@ export function StudentList({
   );
 
   const handleAddStudent = async (data: any) => {
-    await onAddStudent(data);
-    setIsAddingStudent(false);
+    try {
+      await onAddStudent(data);
+      setIsAddingStudent(false);
+    } catch (error) {
+      // Error handling is managed by the mutation
+      console.error('Failed to add student:', error);
+    }
   };
 
   const handleUpdateStudent = async (data: any) => {
     if (editingStudent) {
-      await onUpdateStudent(editingStudent.id, data);
-      setEditingStudent(null);
+      try {
+        await onUpdateStudent(editingStudent.id, data);
+        setEditingStudent(null);
+      } catch (error) {
+        // Error handling is managed by the mutation
+        console.error('Failed to update student:', error);
+      }
     }
   };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center justify-between gap-4">
+          <Skeleton className="h-10 flex-1" />
+          <Skeleton className="h-10 w-32" />
+        </div>
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
+          {[1, 2, 3].map((i) => (
+            <Skeleton key={i} className="h-48" />
+          ))}
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
@@ -99,7 +128,7 @@ export function StudentList({
         </DialogContent>
       </Dialog>
 
-      {filteredStudents.length === 0 && (
+      {!isLoading && filteredStudents.length === 0 && (
         <div className="text-center py-8 text-muted-foreground">
           No students found matching your search criteria
         </div>
