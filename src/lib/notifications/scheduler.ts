@@ -18,10 +18,10 @@ export async function processNotifications(): Promise<NotificationResult> {
         gte: now,
         lt: tomorrow
       },
-      // Only send for scheduled lessons (not cancelled)
       status: 'SCHEDULED',
-      // Only get lessons where reminder hasn't been sent
-      reminderSent: false
+      payment: {
+        reminderSentAt: null // Using the Payment model's reminderSentAt field
+      }
     },
     include: {
       student: {
@@ -29,7 +29,8 @@ export async function processNotifications(): Promise<NotificationResult> {
           user: true
         }
       },
-      rink: true
+      rink: true,
+      payment: true
     }
   });
 
@@ -44,11 +45,13 @@ export async function processNotifications(): Promise<NotificationResult> {
         email: lesson.student.user.email
       });
 
-      // Mark reminder as sent
-      await prisma.lesson.update({
-        where: { id: lesson.id },
-        data: { reminderSent: true }
-      });
+      // If there's a payment record, update its reminderSentAt
+      if (lesson.payment) {
+        await prisma.payment.update({
+          where: { id: lesson.payment.id },
+          data: { reminderSentAt: new Date() }
+        });
+      }
 
     } catch (error) {
       console.error('Failed to send lesson reminder:', error);
@@ -61,20 +64,21 @@ export async function processNotifications(): Promise<NotificationResult> {
     where: {
       status: 'COMPLETED',
       payment: {
-        status: 'PENDING'
+        status: 'PENDING',
+        reminderSentAt: null
       },
       startTime: {
         lt: now,
         gte: addDays(now, -7)
-      },
-      paymentReminderSent: false
+      }
     },
     include: {
       student: {
         include: {
           user: true
         }
-      }
+      },
+      payment: true
     }
   });
 
@@ -89,11 +93,13 @@ export async function processNotifications(): Promise<NotificationResult> {
         email: lesson.student.user.email
       });
 
-      // Mark payment reminder as sent
-      await prisma.lesson.update({
-        where: { id: lesson.id },
-        data: { paymentReminderSent: true }
-      });
+      // Update payment reminder sent timestamp
+      if (lesson.payment) {
+        await prisma.payment.update({
+          where: { id: lesson.payment.id },
+          data: { reminderSentAt: new Date() }
+        });
+      }
 
     } catch (error) {
       console.error('Failed to send payment reminder:', error);
