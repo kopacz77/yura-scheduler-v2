@@ -4,26 +4,16 @@ import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { StudentOverview } from '@/components/dashboard/StudentOverview';
 import { UpcomingLessons } from '@/components/dashboard/UpcomingLessons';
 import { StudentProgress } from '@/components/dashboard/StudentProgress';
+import { DevErrorBoundary } from '@/components/dev/DevErrorBoundary';
 import { useStats } from '@/hooks/useStats';
 import { useSession } from 'next-auth/react';
 import { redirect } from 'next/navigation';
 
-export default function DashboardPage() {
-  const { data: session, status: authStatus } = useSession({
-    required: true,
-    onUnauthenticated() {
-      redirect('/auth/signin');
-    },
-  });
-
+function DashboardContent() {
   const { stats, isLoading, error } = useStats();
 
-  if (authStatus === 'loading') {
-    return <div>Loading...</div>;
-  }
-
   if (error) {
-    console.error('Dashboard error:', error);
+    throw error; // This will be caught by the error boundary
   }
 
   return (
@@ -55,5 +45,24 @@ export default function DashboardPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  const { data: session, status: authStatus } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
+
+  if (authStatus === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  return (
+    <DevErrorBoundary>
+      <DashboardContent />
+    </DevErrorBoundary>
   );
 }
