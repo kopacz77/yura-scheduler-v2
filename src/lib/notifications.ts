@@ -19,8 +19,7 @@ type CancellationData = NotificationData & {
 };
 
 const formatDateTime = (date: Date, timeZone: string) => {
-  const zonedDate = toZonedTime(date, timeZone);
-  return format(zonedDate, 'MMMM d, yyyy h:mm a');
+  return formatInTimeZone(date, timeZone, 'MMMM d, yyyy h:mm a');
 };
 
 export async function sendBookingConfirmation(data: NotificationData) {
