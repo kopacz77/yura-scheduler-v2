@@ -1,6 +1,6 @@
 import { Resend } from 'resend';
 import { format } from 'date-fns';
-import { zonedTimeToUtc, formatInTimeZone } from 'date-fns-tz';
+import { toZonedTime, formatInTimeZone } from 'date-fns-tz';
 
 const resend = new Resend(process.env.RESEND_API_KEY);
 
@@ -19,7 +19,8 @@ type CancellationData = NotificationData & {
 };
 
 const formatDateTime = (date: Date, timeZone: string) => {
-  return formatInTimeZone(date, timeZone, 'MMMM d, yyyy h:mm a');
+  const zonedDate = toZonedTime(date, timeZone);
+  return format(zonedDate, 'MMMM d, yyyy h:mm a');
 };
 
 export async function sendBookingConfirmation(data: NotificationData) {
