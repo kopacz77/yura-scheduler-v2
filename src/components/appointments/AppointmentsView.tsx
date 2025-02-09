@@ -44,9 +44,11 @@ export function AppointmentsView({
     }
   };
 
-  const handleDateSelect = (date: Date) => {
-    setSelectedDate(date);
-    fetchAppointments(date);
+  const handleDateSelect = (date: Date | undefined) => {
+    if (date) {
+      setSelectedDate(date);
+      fetchAppointments(date);
+    }
   };
 
   return (
