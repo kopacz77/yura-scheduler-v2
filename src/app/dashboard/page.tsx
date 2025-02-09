@@ -5,9 +5,26 @@ import { StudentOverview } from '@/components/dashboard/StudentOverview';
 import { UpcomingLessons } from '@/components/dashboard/UpcomingLessons';
 import { StudentProgress } from '@/components/dashboard/StudentProgress';
 import { useStats } from '@/hooks/useStats';
+import { useSession } from 'next-auth/react';
+import { redirect } from 'next/navigation';
 
 export default function DashboardPage() {
-  const { stats, isLoading } = useStats();
+  const { data: session, status: authStatus } = useSession({
+    required: true,
+    onUnauthenticated() {
+      redirect('/auth/signin');
+    },
+  });
+
+  const { stats, isLoading, error } = useStats();
+
+  if (authStatus === 'loading') {
+    return <div>Loading...</div>;
+  }
+
+  if (error) {
+    console.error('Dashboard error:', error);
+  }
 
   return (
     <div className="space-y-8 p-8 bg-accent/10 min-h-screen">
