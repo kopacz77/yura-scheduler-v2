@@ -1,18 +1,14 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { DashboardStats, StudentDistribution } from '@/types/stats';
+import { StudentDistribution } from '@/types/stats';
 
-interface ChartDataItem {
-  name: string;
-  count: number;
-  color: string;
-}
+interface ChartDataItem extends StudentDistribution {}
 
 interface StudentOverviewProps {
   distribution?: StudentDistribution[];
 }
 
 export function StudentOverview({ distribution }: StudentOverviewProps) {
-  const chartData: ChartDataItem[] = distribution?.map((item: StudentDistribution) => ({
+  const chartData: ChartDataItem[] = distribution?.map((item) => ({
     name: item.name,
     count: item.count,
     color: item.color
