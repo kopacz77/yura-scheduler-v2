@@ -11,7 +11,10 @@ import {
   Loader2,
   Check,
   X,
-  Snowflake,  // Using Snowflake for ice skating theme
+  Snowflake,
+  Users,
+  DollarSign,
+  Clock,
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
@@ -28,4 +31,7 @@ export const Icons = {
   spinner: Loader2,
   check: Check,
   close: X,
+  users: Users,
+  dollarSign: DollarSign,
+  clock: Clock,
 } as const;
