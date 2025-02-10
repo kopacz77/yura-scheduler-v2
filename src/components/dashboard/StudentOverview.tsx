@@ -1,90 +1,64 @@
-'use client';
-
-import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import type { DashboardStats } from '@/types/stats';
-import { BarChart, Bar, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts';
-
-interface StudentOverviewProps {
-  distribution?: DashboardStats['distribution'];
-  isLoading?: boolean;
-}
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardStats, StudentDistribution } from '@/types/stats';
 
 interface ChartDataItem {
   name: string;
-  value: number;
+  count: number;
+  color: string;
 }
 
-export function StudentOverview({ distribution, isLoading }: StudentOverviewProps) {
-  if (isLoading) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle>Student Level Distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[300px] animate-pulse rounded bg-muted" />
-        </CardContent>
-      </Card>
-    );
-  }
+interface StudentOverviewProps {
+  distribution?: StudentDistribution[];
+}
 
-  const chartData: ChartDataItem[] = distribution?.map((item) => ({
+export function StudentOverview({ distribution }: StudentOverviewProps) {
+  const chartData: ChartDataItem[] = distribution?.map((item: StudentDistribution) => ({
     name: item.name,
-    value: item.value,
-  })) || [];
+    count: item.count,
+    color: item.color
+  })) ?? [];
+
+  const totalStudents = chartData.reduce((sum, item) => sum + item.count, 0);
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Student Level Distribution</CardTitle>
+        <CardTitle>Student Overview</CardTitle>
+        <CardDescription>
+          Distribution of student levels and categories
+        </CardDescription>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData}>
-              <XAxis
-                dataKey="name"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `${value}`}
-              />
-              <Tooltip
-                content={({ active, payload }) => {
-                  if (!active || !payload?.length) {
-                    return null;
-                  }
-                  const [{ value }] = payload;
-                  return (
-                    <div className="rounded-lg border bg-background p-2 shadow-sm">
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="flex flex-col">
-                          <span className="text-[0.70rem] uppercase text-muted-foreground">
-                            Students
-                          </span>
-                          <span className="font-bold">
-                            {`${value} students (${((value as number / chartData.reduce((acc: number, cur: ChartDataItem) => acc + cur.value, 0)) * 100).toFixed(1)}%)`}
-                          </span>
-                        </div>
-                      </div>
-                    </div>
-                  );
-                }}
-              />
-              <Bar
-                dataKey="value"
-                fill="currentColor"
-                className="fill-primary"
-                radius={[4, 4, 0, 0]}
-              />
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="space-y-4">
+          {chartData.map((item) => (
+            <div key={item.name} className="flex items-center">
+              <div className="w-1/3">
+                <div className="flex items-center">
+                  <div
+                    className="h-3 w-3 rounded-full mr-2"
+                    style={{ backgroundColor: item.color }}
+                  />
+                  <span className="text-sm font-medium">{item.name}</span>
+                </div>
+              </div>
+              <div className="w-2/3">
+                <div className="flex items-center">
+                  <div className="w-full bg-secondary rounded-full h-2 mr-2">
+                    <div
+                      className="h-2 rounded-full"
+                      style={{
+                        width: `${(item.count / totalStudents) * 100}%`,
+                        backgroundColor: item.color,
+                      }}
+                    />
+                  </div>
+                  <span className="text-sm text-muted-foreground">
+                    {item.count}
+                  </span>
+                </div>
+              </div>
+            </div>
+          ))}
         </div>
       </CardContent>
     </Card>

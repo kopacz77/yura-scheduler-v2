@@ -14,10 +14,17 @@ export interface StatsProgressDataPoint {
   changePercentage: number;
 }
 
+export interface StudentDistribution {
+  name: string;
+  count: number;
+  color: string;
+}
+
 export interface DashboardStats {
   totalStudents: StatsDataPoint;
   activeStudents: StatsDataPoint;
   revenue: StatsDataPoint;
   completedLessons: StatsDataPoint;
   monthlyProgress: StatsProgressDataPoint[];
+  distribution: StudentDistribution[];
 }
