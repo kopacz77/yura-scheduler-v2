@@ -2,13 +2,10 @@
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { ProgressDataPoint } from '@/types/schedule';
 
 interface StudentProgressProps {
-  progressData?: {
-    name: string;
-    current: number;
-    total: number;
-  }[];
+  progressData?: ProgressDataPoint[];
   isLoading?: boolean;
 }
 
