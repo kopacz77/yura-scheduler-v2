@@ -1,22 +1,15 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   reactStrictMode: true,
-  // In development, we want longer timeouts for API routes
-  serverRuntimeConfig: {
-    api: {
-      bodyParser: {
-        sizeLimit: '1mb',
-      },
-      // Extended timeout in development for debugging
-      responseTimeout: process.env.NODE_ENV === 'development' ? 60000 : 10000,
-    },
+  swcMinify: true,
+  // Disable image optimization during development
+  images: {
+    unoptimized: process.env.NODE_ENV === 'development',
   },
-  // Enable more verbose logging in development
-  logging: process.env.NODE_ENV === 'development' ? {
-    fetches: {
-      fullUrl: true,
-    },
-  } : undefined,
+  webpack: (config, { isServer }) => {
+    // Add any webpack customizations here
+    return config;
+  },
 };
 
 module.exports = nextConfig;
