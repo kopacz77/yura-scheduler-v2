@@ -1,10 +1,7 @@
 import { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import { Toaster } from '@/components/ui/toaster';
-import { ThemeProvider } from '@/providers/theme-provider';
-import { QueryProvider } from '@/providers/query-provider';
-import { AuthProvider } from '@/contexts/auth-context';
-import { SessionProvider } from 'next-auth/react';
+import { ClientProviders } from '@/components/providers/ClientProviders';
 import type { Session } from 'next-auth';
 import '@/styles/globals.css';
 
@@ -25,20 +22,10 @@ export default function RootLayout({
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={inter.className}>
-        <SessionProvider session={session}>
-          <ThemeProvider
-            attribute="class"
-            defaultTheme="system"
-            enableSystem
-          >
-            <AuthProvider>
-              <QueryProvider>
-                {children}
-                <Toaster />
-              </QueryProvider>
-            </AuthProvider>
-          </ThemeProvider>
-        </SessionProvider>
+        <ClientProviders session={session}>
+          {children}
+          <Toaster />
+        </ClientProviders>
       </body>
     </html>
   );
