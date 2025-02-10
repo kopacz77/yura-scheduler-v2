@@ -8,6 +8,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Icons } from '@/components/ui/icons';
 import { toast } from 'sonner';
+import Link from 'next/link';
 
 export default function SignInPage() {
   const router = useRouter();
@@ -45,10 +46,10 @@ export default function SignInPage() {
     <div className="container flex h-screen w-screen flex-col items-center justify-center">
       <div className="mx-auto flex w-full flex-col justify-center space-y-6 sm:w-[350px]">
         <div className="flex flex-col space-y-2 text-center">
-          <Icons.logo className="mx-auto h-6 w-6" />
+          <Icons.logo className="mx-auto h-8 w-8 text-primary" />
           <h1 className="text-2xl font-semibold tracking-tight">Welcome back</h1>
           <p className="text-sm text-muted-foreground">
-            Enter your email to sign in to your account
+            Enter your credentials to sign in
           </p>
         </div>
 
@@ -80,7 +81,7 @@ export default function SignInPage() {
                   required
                 />
               </div>
-              <Button disabled={isLoading}>
+              <Button className="w-full" disabled={isLoading}>
                 {isLoading && (
                   <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
                 )}
@@ -88,6 +89,14 @@ export default function SignInPage() {
               </Button>
             </div>
           </form>
+          <div className="text-center text-sm text-muted-foreground">
+            <Link 
+              href="/auth/reset-password"
+              className="hover:text-primary underline underline-offset-4"
+            >
+              Forgot your password?
+            </Link>
+          </div>
         </div>
       </div>
     </div>
