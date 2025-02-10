@@ -64,8 +64,8 @@ const navItems: NavItem[] = [
     roles: ['ADMIN'],
   },
   {
-    title: 'Analytics',
-    href: '/admin/analytics',
+    title: 'Reports',
+    href: '/admin/reports',
     icon: BarChart,
     roles: ['ADMIN'],
   },
@@ -127,14 +127,14 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   return (
     <aside
       className={cn(
-        'fixed inset-y-0 left-0 z-50 w-64 transform bg-background transition-transform duration-200 ease-in-out lg:static lg:translate-x-0',
+        'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-background transition-transform duration-200 ease-in-out lg:static lg:translate-x-0',
         {
           'translate-x-0': isOpen,
           '-translate-x-full': !isOpen,
         }
       )}
     >
-      <div className="flex h-full flex-col border-r">
+      <div className="flex h-full flex-col">
         <div className="flex h-14 items-center justify-between px-4 lg:h-[4rem]">
           <span className="text-lg font-semibold">Yura Scheduler</span>
           <Button
