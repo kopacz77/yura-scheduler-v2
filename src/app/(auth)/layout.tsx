@@ -1,46 +1,17 @@
 'use client';
 
-import { useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { LoadingPage } from '@/components/loading/LoadingPage';
+import { redirect } from 'next/navigation';
 
-export default function AuthLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
-  const { data: session, status } = useSession();
-  const router = useRouter();
-
-  useEffect(() => {
-    if (status === 'loading') return;
-
-    if (session) {
-      // Redirect based on role
-      switch (session.user.role) {
-        case 'ADMIN':
-          router.push('/admin/dashboard');
-          break;
-        case 'STUDENT':
-          router.push('/student/dashboard');
-          break;
-        default:
-          router.push('/');
-      }
-    }
-  }, [session, status, router]);
-
-  if (status === 'loading') {
-    return <LoadingPage />;
-  }
+export default function AuthLayout({ children }: { children: React.ReactNode }) {
+  const { data: session } = useSession();
 
   if (session) {
-    return null;
+    redirect(session.user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard');
   }
 
   return (
-    <div className="min-h-screen bg-background">
+    <div className="flex min-h-screen flex-col justify-center py-12 sm:px-6 lg:px-8">
       {children}
     </div>
   );
