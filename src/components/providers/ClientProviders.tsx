@@ -2,7 +2,6 @@
 
 import { ThemeProvider } from '@/providers/theme-provider';
 import { QueryProvider } from '@/providers/query-provider';
-import { AuthProvider } from '@/contexts/auth-context';
 import { SessionProvider } from 'next-auth/react';
 import type { Session } from 'next-auth';
 
@@ -19,11 +18,9 @@ export function ClientProviders({ children, session }: ClientProvidersProps) {
         defaultTheme="system"
         enableSystem
       >
-        <AuthProvider>
-          <QueryProvider>
-            {children}
-          </QueryProvider>
-        </AuthProvider>
+        <QueryProvider>
+          {children}
+        </QueryProvider>
       </ThemeProvider>
     </SessionProvider>
   );
