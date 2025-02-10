@@ -1,7 +1,7 @@
 'use client';
 
 import { ThemeProvider } from '@/providers/theme-provider';
-import { QueryProvider } from '@/providers/query-provider';
+import { QueryProvider } from '@/providers/QueryProvider';
 import { SessionProvider } from 'next-auth/react';
 import type { Session } from 'next-auth';
 
