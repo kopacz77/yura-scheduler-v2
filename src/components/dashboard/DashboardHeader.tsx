@@ -1,105 +1,85 @@
-import { Card, CardContent } from '@/components/ui/card';
-import { CalendarDays, Users, DollarSign, TrendingUp } from 'lucide-react';
-import { Skeleton } from '@/components/ui/skeleton';
-import type { DashboardStats } from '@/types/stats';
+import { DashboardStats } from '@/types/stats';
 
 interface DashboardHeaderProps {
-  stats: DashboardStats['overview'] | undefined;
-  isLoading: boolean;
+  stats?: DashboardStats;
 }
 
-export function DashboardHeader({ stats, isLoading }: DashboardHeaderProps) {
+export function DashboardHeader({ stats }: DashboardHeaderProps) {
   return (
     <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <Card>
-        <CardContent className="flex items-center gap-4 p-6">
-          <Users className="h-8 w-8 text-blue-500" />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Total Students</p>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div>
-                <h3 className="text-2xl font-bold">{stats?.totalStudents.value || 0}</h3>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <span className={stats?.totalStudents.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
-                    {stats?.totalStudents.trend === 'up' ? '+' : '-'}{stats?.totalStudents.change || 0}
-                  </span>
-                  from last month
-                </p>
-              </div>
-            )}
+      {/* Total Students Card */}
+      <div className="rounded-xl border bg-card text-card-foreground shadow">
+        <div className="p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Total Students</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col">
+            <h3 className="text-2xl font-bold">{stats?.totalStudents.value || 0}</h3>
+            <div className="flex items-center space-x-1">
+              <span className={stats?.totalStudents.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+                {stats?.totalStudents.trend === 'up' ? '+' : '-'}{stats?.totalStudents.change || 0}
+              </span>
+              <span className="text-sm text-muted-foreground">from last month</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Card>
-        <CardContent className="flex items-center gap-4 p-6">
-          <CalendarDays className="h-8 w-8 text-green-500" />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Active Students</p>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div>
-                <h3 className="text-2xl font-bold">{stats?.activeStudents.value || 0}</h3>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <span className={stats?.activeStudents.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
-                    {stats?.activeStudents.trend === 'up' ? '+' : '-'}{stats?.activeStudents.change || 0}
-                  </span>
-                  from last month
-                </p>
-              </div>
-            )}
+      {/* Active Students Card */}
+      <div className="rounded-xl border bg-card text-card-foreground shadow">
+        <div className="p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Active Students</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col">
+            <h3 className="text-2xl font-bold">{stats?.activeStudents.value || 0}</h3>
+            <div className="flex items-center space-x-1">
+              <span className={stats?.activeStudents.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+                {stats?.activeStudents.trend === 'up' ? '+' : '-'}{stats?.activeStudents.change || 0}
+              </span>
+              <span className="text-sm text-muted-foreground">from last month</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Card>
-        <CardContent className="flex items-center gap-4 p-6">
-          <DollarSign className="h-8 w-8 text-yellow-500" />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Revenue</p>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div>
-                <h3 className="text-2xl font-bold">
-                  ${((stats?.revenue.value || 0) / 100).toFixed(2)}
-                </h3>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <span className={stats?.revenue.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
-                    {stats?.revenue.trend === 'up' ? '+' : '-'}${((stats?.revenue.change || 0) / 100).toFixed(2)}
-                  </span>
-                  from last month
-                </p>
-              </div>
-            )}
+      {/* Revenue Card */}
+      <div className="rounded-xl border bg-card text-card-foreground shadow">
+        <div className="p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Revenue</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col">
+            <h3 className="text-2xl font-bold">
+              ${((stats?.revenue.value || 0) / 100).toFixed(2)}
+            </h3>
+            <div className="flex items-center space-x-1">
+              <span className={stats?.revenue.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+                {stats?.revenue.trend === 'up' ? '+' : '-'}${((stats?.revenue.change || 0) / 100).toFixed(2)}
+              </span>
+              <span className="text-sm text-muted-foreground">from last month</span>
+            </div>
+          </div>
+        </div>
+      </div>
 
-      <Card>
-        <CardContent className="flex items-center gap-4 p-6">
-          <TrendingUp className="h-8 w-8 text-purple-500" />
-          <div>
-            <p className="text-sm font-medium text-muted-foreground">Completed Lessons</p>
-            {isLoading ? (
-              <Skeleton className="h-8 w-24" />
-            ) : (
-              <div>
-                <h3 className="text-2xl font-bold">{stats?.completedLessons.value || 0}</h3>
-                <p className="text-sm text-muted-foreground flex items-center gap-1">
-                  <span className={stats?.completedLessons.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
-                    {stats?.completedLessons.trend === 'up' ? '+' : '-'}{stats?.completedLessons.change || 0}
-                  </span>
-                  from last month
-                </p>
-              </div>
-            )}
+      {/* Completed Lessons Card */}
+      <div className="rounded-xl border bg-card text-card-foreground shadow">
+        <div className="p-6">
+          <div className="flex flex-row items-center justify-between space-y-0 pb-2">
+            <div className="text-sm font-medium">Completed Lessons</div>
           </div>
-        </CardContent>
-      </Card>
+          <div className="flex flex-col">
+            <h3 className="text-2xl font-bold">{stats?.completedLessons.value || 0}</h3>
+            <div className="flex items-center space-x-1">
+              <span className={stats?.completedLessons.trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+                {stats?.completedLessons.trend === 'up' ? '+' : '-'}{stats?.completedLessons.change || 0}
+              </span>
+              <span className="text-sm text-muted-foreground">from last month</span>
+            </div>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
