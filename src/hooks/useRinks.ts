@@ -3,23 +3,23 @@
 import { useState, useEffect } from 'react';
 import { toast } from '@/components/ui/use-toast';
 
-type TimeSlot = {
+export interface TimeSlot {
   id: string;
   startTime: string;
   endTime: string;
   daysOfWeek: number[];
   maxStudents: number;
   isActive: boolean;
-};
+}
 
-type Rink = {
+export interface Rink {
   id: string;
   name: string;
   address: string;
   timezone: string;
   maxCapacity: number;
   timeSlots: TimeSlot[];
-};
+}
 
 export function useRinks() {
   const [rinks, setRinks] = useState<Rink[]>([]);
@@ -100,7 +100,7 @@ export function useRinks() {
       const updatedRink = await response.json();
       setRinks((prev) =>
         prev.map((rink) =>
-          rink.id === rinkId ? updatedRink : rink
+          rink.id === rinkId ? { ...rink, ...updatedRink } : rink
         )
       );
 
@@ -112,6 +112,31 @@ export function useRinks() {
       return updatedRink;
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Failed to update rink';
+      toast({
+        title: 'Error',
+        description: message,
+        variant: 'destructive',
+      });
+      throw err;
+    }
+  };
+
+  const deleteRink = async (rinkId: string) => {
+    try {
+      const response = await fetch(`/api/rinks/${rinkId}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) throw new Error('Failed to delete rink');
+
+      setRinks((prev) => prev.filter((rink) => rink.id !== rinkId));
+
+      toast({
+        title: 'Success',
+        description: 'Rink deleted successfully',
+      });
+    } catch (err) {
+      const message = err instanceof Error ? err.message : 'Failed to delete rink';
       toast({
         title: 'Error',
         description: message,
@@ -176,7 +201,7 @@ export function useRinks() {
         prev.map((rink) => ({
           ...rink,
           timeSlots: rink.timeSlots.map((slot) =>
-            slot.id === slotId ? updatedSlot : slot
+            slot.id === slotId ? { ...slot, ...updatedSlot } : slot
           ),
         }))
       );
@@ -235,6 +260,7 @@ export function useRinks() {
     fetchRinks,
     addRink,
     updateRink,
+    deleteRink,
     addTimeSlot,
     updateTimeSlot,
     deleteTimeSlot,
