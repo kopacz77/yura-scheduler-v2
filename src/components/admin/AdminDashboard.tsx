@@ -5,6 +5,7 @@ import { StudentProgress } from '@/components/dashboard/StudentProgress';
 import { UpcomingLessons } from '@/components/dashboard/UpcomingLessons';
 import { useStats } from '@/hooks/useStats';
 import { ProgressDataPoint } from '@/types/schedule';
+import { StatsProgressDataPoint } from '@/types/stats';
 
 export function AdminDashboard() {
   const { stats, isLoading, error } = useStats();
@@ -13,11 +14,11 @@ export function AdminDashboard() {
     throw error;
   }
 
-  const mappedProgress: ProgressDataPoint[] = stats?.progress?.map(p => ({
+  const mappedProgress: ProgressDataPoint[] = (stats?.progress as StatsProgressDataPoint[] || []).map(p => ({
     name: p.name,
     current: p.value,
     total: p.total
-  })) || [];
+  }));
 
   return (
     <div className="space-y-8">
