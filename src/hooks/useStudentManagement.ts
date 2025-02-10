@@ -2,7 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { toast } from 'sonner';
 import { Student, User } from '@prisma/client';
 
-type StudentWithUser = Student & {
+export type StudentWithUser = Student & {
   user: Pick<User, 'name' | 'email'>;
 };
 
@@ -73,15 +73,48 @@ export function useStudentManagement() {
     },
   });
 
+  // Delete student
+  const deleteStudent = useMutation({
+    mutationFn: async (id: string) => {
+      const response = await fetch(`/api/students/${id}`, {
+        method: 'DELETE',
+      });
+
+      if (!response.ok) {
+        const error = await response.json().catch(() => ({}));
+        throw new Error(error.message || 'Failed to delete student');
+      }
+
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['students'] });
+      toast.success('Student deleted successfully');
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Failed to delete student');
+    },
+  });
+
+  // Get student progress
+  const getStudentProgress = async (studentId: string) => {
+    const response = await fetch(`/api/students/${studentId}/progress`);
+    if (!response.ok) {
+      const error = await response.json().catch(() => ({}));
+      throw new Error(error.message || 'Failed to fetch student progress');
+    }
+    return response.json();
+  };
+
   // Schedule lesson
   const scheduleLesson = useMutation({
-    mutationFn: async (student: StudentWithUser) => {
+    mutationFn: async ({ studentId, lessonData }: { studentId: string; lessonData: any }) => {
       const response = await fetch('/api/lessons', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          studentId: student.id,
-          // Add other required fields here
+          studentId,
+          ...lessonData,
         }),
       });
 
@@ -101,26 +134,26 @@ export function useStudentManagement() {
     },
   });
 
-  const handleAddStudent = async (student: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => {
-    await addStudent.mutateAsync(student);
-  };
-
-  const handleUpdateStudent = async (id: string, data: Partial<StudentWithUser>) => {
-    await updateStudent.mutateAsync({ id, data });
-  };
-
-  const handleScheduleLesson = (student: StudentWithUser) => {
-    scheduleLesson.mutate(student);
-  };
-
   return {
+    // Data
     students,
     isLoading,
-    addStudent: handleAddStudent,
-    updateStudent: handleUpdateStudent,
-    scheduleLesson: handleScheduleLesson,
+    
+    // Methods
+    addStudent: (student: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => 
+      addStudent.mutateAsync(student),
+    updateStudent: (id: string, data: Partial<StudentWithUser>) => 
+      updateStudent.mutateAsync({ id, data }),
+    deleteStudent: (id: string) => 
+      deleteStudent.mutateAsync(id),
+    getStudentProgress,
+    scheduleLesson: (studentId: string, lessonData: any) => 
+      scheduleLesson.mutateAsync({ studentId, lessonData }),
+
+    // Loading states
     isAddingStudent: addStudent.isPending,
     isUpdatingStudent: updateStudent.isPending,
+    isDeletingStudent: deleteStudent.isPending,
     isSchedulingLesson: scheduleLesson.isPending,
   };
 }
