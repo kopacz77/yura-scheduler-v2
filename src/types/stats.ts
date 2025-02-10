@@ -1,17 +1,23 @@
+export type TrendDirection = 'up' | 'down' | 'neutral';
+
+export interface StatsDataPoint {
+  value: number;
+  trend: TrendDirection;
+  change: number;
+}
+
+export interface StatsProgressDataPoint {
+  label: string;
+  count: number;
+  trend: TrendDirection;
+  percentage: number;
+  changePercentage: number;
+}
+
 export interface DashboardStats {
-  overview: {
-    totalStudents: number;
-    activeStudents: number;
-    revenue: number;
-    completedLessons: number;
-  };
-  distribution: Array<{
-    name: string;
-    value: number;
-  }>;
-  progress: Array<{
-    name: string;
-    value: number;
-    total: number;
-  }>;
+  totalStudents: StatsDataPoint;
+  activeStudents: StatsDataPoint;
+  revenue: StatsDataPoint;
+  completedLessons: StatsDataPoint;
+  monthlyProgress: StatsProgressDataPoint[];
 }
