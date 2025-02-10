@@ -4,12 +4,13 @@ import { useMemo } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
+import { TimeSlot, Lesson } from '@/types/schedule';
 
 interface CalendarViewProps {
   currentWeek: Date;
-  lessons: any[];
-  timeSlots?: any[];
-  onEditSlot?: (slot: any) => void;
+  lessons: Lesson[];
+  timeSlots?: TimeSlot[];
+  onEditSlot?: (slot: TimeSlot) => void;
   onRefresh?: () => void;
   className?: string;
 }
@@ -28,7 +29,7 @@ export function Calendar({
   }, [currentWeek]);
 
   const timeSlotsByDay = useMemo(() => {
-    const slots = new Map();
+    const slots = new Map<string, TimeSlot[]>();
     weekDays.forEach(day => {
       slots.set(format(day, 'yyyy-MM-dd'), []);
     });
@@ -36,7 +37,7 @@ export function Calendar({
     timeSlots.forEach(slot => {
       const day = format(new Date(slot.startTime), 'yyyy-MM-dd');
       if (slots.has(day)) {
-        slots.get(day).push(slot);
+        slots.get(day)?.push(slot);
       }
     });
 
@@ -44,7 +45,7 @@ export function Calendar({
   }, [weekDays, timeSlots]);
 
   const lessonsByDay = useMemo(() => {
-    const dayLessons = new Map();
+    const dayLessons = new Map<string, Lesson[]>();
     weekDays.forEach(day => {
       dayLessons.set(format(day, 'yyyy-MM-dd'), []);
     });
@@ -52,7 +53,7 @@ export function Calendar({
     lessons.forEach(lesson => {
       const day = format(new Date(lesson.startTime), 'yyyy-MM-dd');
       if (dayLessons.has(day)) {
-        dayLessons.get(day).push(lesson);
+        dayLessons.get(day)?.push(lesson);
       }
     });
 
@@ -70,7 +71,7 @@ export function Calendar({
                 {format(day, 'MMM d')}
               </div>
               <div className="space-y-1">
-                {timeSlotsByDay.get(format(day, 'yyyy-MM-dd'))?.map(slot => (
+                {timeSlotsByDay.get(format(day, 'yyyy-MM-dd'))?.map((slot: TimeSlot) => (
                   <div
                     key={slot.id}
                     className="cursor-pointer rounded bg-accent p-1 text-xs"
@@ -79,7 +80,7 @@ export function Calendar({
                     {format(new Date(slot.startTime), 'h:mm a')}
                   </div>
                 ))}
-                {lessonsByDay.get(format(day, 'yyyy-MM-dd'))?.map(lesson => (
+                {lessonsByDay.get(format(day, 'yyyy-MM-dd'))?.map((lesson: Lesson) => (
                   <div
                     key={lesson.id}
                     className="rounded bg-primary p-1 text-xs text-primary-foreground"
