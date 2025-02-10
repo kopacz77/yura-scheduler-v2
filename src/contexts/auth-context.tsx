@@ -13,13 +13,14 @@ type User = {
 
 type AuthContextType = {
   user: User | null;
+  isLoading: boolean;
   logout: () => Promise<void>;
 };
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const router = useRouter();
 
   const logout = async () => {
@@ -29,6 +30,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const value = {
     user: session?.user as User | null,
+    isLoading: status === 'loading',
     logout,
   };
 
