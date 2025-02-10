@@ -11,13 +11,13 @@ import {
   Loader2,
   Check,
   X,
-  Dumbbell,  // Using Dumbbell as a temporary icon for fitness/training
+  Snowflake,  // Using Snowflake for ice skating theme
 } from 'lucide-react';
 
 export type Icon = LucideIcon;
 
 export const Icons = {
-  logo: Dumbbell,
+  logo: Snowflake,
   chevronLeft: ChevronLeft,
   chevronRight: ChevronRight,
   sun: Sun,
