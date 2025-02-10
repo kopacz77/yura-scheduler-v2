@@ -1,37 +1,23 @@
-'use client';
-
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { StudentProgress } from '@/components/dashboard/StudentProgress';
-import { UpcomingLessons } from '@/components/dashboard/UpcomingLessons';
-import { useStats } from '@/hooks/useStats';
-import { ProgressDataPoint } from '@/types/schedule';
-import { StatsProgressDataPoint } from '@/types/stats';
+import { StatsProgressDataPoint, DashboardStats } from '@/types/stats';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 
 export function AdminDashboard() {
-  const { stats, isLoading, error } = useStats();
-
-  if (error) {
-    throw error;
-  }
-
-  const mappedProgress: ProgressDataPoint[] = (stats?.progress as StatsProgressDataPoint[] || []).map(p => ({
-    name: p.name,
-    current: p.value,
-    total: p.total
-  }));
+  // TODO: Implement data fetching
+  const stats: DashboardStats = {
+    totalStudents: { value: 0, trend: 'neutral', change: 0 },
+    activeStudents: { value: 0, trend: 'neutral', change: 0 },
+    revenue: { value: 0, trend: 'neutral', change: 0 },
+    completedLessons: { value: 0, trend: 'neutral', change: 0 },
+    monthlyProgress: []
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="grid gap-6 lg:grid-cols-2">
-        <div className="lg:col-span-1 h-full">
-          <StudentProgress 
-            progressData={mappedProgress}
-            isLoading={isLoading}
-          />
-        </div>
-        <div className="lg:col-span-1 h-full">
-          <UpcomingLessons />
-        </div>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      <div className="flex items-center justify-between space-y-2">
+        <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
+      </div>
+      <div className="grid gap-4">
+        <DashboardHeader stats={stats} />
       </div>
     </div>
   );
