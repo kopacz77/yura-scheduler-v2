@@ -3,7 +3,8 @@
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Form } from '@/components/auth/Form';
 import { toast } from '@/components/ui/use-toast';
 import { z } from 'zod';
 
@@ -58,10 +59,34 @@ export function ScheduleForm() {
   }
 
   return (
-    <Form {...form}>
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-        // Form fields here
-      </form>
+    <Form form={form} onSubmit={onSubmit}>
+      <div className="space-y-4">
+        <Input
+          type="text"
+          placeholder="Select rink"
+          {...form.register('rink')}
+        />
+        <Input
+          type="text"
+          placeholder="Select day"
+          {...form.register('weekday')}
+        />
+        <Input
+          type="time"
+          {...form.register('time')}
+        />
+        <Input
+          type="number"
+          placeholder="Duration (minutes)"
+          {...form.register('duration', { valueAsNumber: true })}
+        />
+        <Input
+          type="number"
+          placeholder="Max students"
+          {...form.register('maxStudents', { valueAsNumber: true })}
+        />
+        <Button type="submit">Create Recurring Slot</Button>
+      </div>
     </Form>
   );
 }
