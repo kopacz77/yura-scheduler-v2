@@ -6,6 +6,8 @@ import { signIn } from 'next-auth/react';
 import { toast } from '@/components/ui/use-toast';
 import { Form } from '@/components/auth/Form';
 import { z } from 'zod';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -49,7 +51,21 @@ export default function SignInPage() {
         <h1 className="text-2xl font-semibold">Sign In</h1>
       </div>
       <Form form={form} onSubmit={onSubmit}>
-        {/* Form fields */}
+        <div className="space-y-4">
+          <Input
+            type="email"
+            placeholder="Email"
+            {...form.register('email')}
+          />
+          <Input
+            type="password"
+            placeholder="Password"
+            {...form.register('password')}
+          />
+          <Button type="submit" className="w-full">
+            Sign In
+          </Button>
+        </div>
       </Form>
     </div>
   );
