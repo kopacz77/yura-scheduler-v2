@@ -12,9 +12,14 @@
     "test:e2e": "playwright test",
     "prisma:generate": "prisma generate",
     "prisma:push": "prisma db push",
+    "prisma:seed": "ts-node prisma/seed.ts",
+    "db:seed": "npm run prisma:generate && npm run prisma:push && npm run prisma:seed",
     "dev:check": "ts-node scripts/dev-utils.ts",
     "dev:debug": "cross-env DEBUG=true next dev",
     "typecheck": "tsc --noEmit"
+  },
+  "prisma": {
+    "seed": "ts-node prisma/seed.ts"
   },
   "dependencies": {
     "@dnd-kit/core": "^6.1.0",
