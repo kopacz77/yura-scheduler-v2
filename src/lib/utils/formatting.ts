@@ -1,25 +1,28 @@
-import { format } from 'date-fns';
-
-export function formatDate(date: Date): string {
-  return format(new Date(date), 'PPPP');
-}
-
-export function formatTime(date: Date): string {
-  return format(new Date(date), 'h:mm a');
-}
-
+// Currency formatting
 export function formatCurrency(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency: 'USD'
+    currency: 'USD',
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2
   }).format(amount);
 }
 
-export function formatPhoneNumber(phoneNumber: string): string {
-  const cleaned = phoneNumber.replace(/\D/g, '');
+// Number formatting
+export function formatPercentage(value: number): string {
+  return new Intl.NumberFormat('en-US', {
+    style: 'percent',
+    minimumFractionDigits: 1,
+    maximumFractionDigits: 1
+  }).format(value / 100);
+}
+
+// Phone number formatting
+export function formatPhoneNumber(phone: string): string {
+  const cleaned = phone.replace(/\D/g, '');
   const match = cleaned.match(/^(\d{3})(\d{3})(\d{4})$/);
   if (match) {
-    return '(' + match[1] + ') ' + match[2] + '-' + match[3];
+    return `(${match[1]}) ${match[2]}-${match[3]}`;
   }
-  return phoneNumber;
+  return phone;
 }
