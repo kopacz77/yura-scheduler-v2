@@ -3,95 +3,116 @@
 import * as React from 'react'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { useForm } from 'react-hook-form'
+import * as z from 'zod'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { LoadingSpinner } from '@/components/ui/loading'
+import { Icons } from '@/components/icons'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
-interface SignInFormProps extends React.HTMLAttributes<HTMLDivElement> {}
+const formSchema = z.object({
+  email: z.string().email('Invalid email address'),
+  password: z.string().min(6, 'Password must be at least 6 characters'),
+})
 
-export function SignInForm({ className, ...props }: SignInFormProps) {
+type FormData = z.infer<typeof formSchema>
+
+export function SignInForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
-  const [error, setError] = React.useState<string>("")
   const searchParams = useSearchParams()
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
 
-  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
-    setIsLoading(true)
-    setError("")
+  const form = useForm<FormData>({
+    resolver: zodResolver(formSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  })
 
-    const formData = new FormData(event.currentTarget)
-    
+  async function onSubmit(data: FormData) {
+    setIsLoading(true)
+
     try {
       const res = await signIn('credentials', {
-        email: formData.get('email'),
-        password: formData.get('password'),
+        email: data.email,
+        password: data.password,
         redirect: false,
+        callbackUrl,
       })
 
       if (res?.error) {
-        setError('Invalid email or password')
+        form.setError('root', { message: 'Invalid email or password' })
       } else if (res?.ok) {
         router.push(callbackUrl)
       }
     } catch (error) {
       console.error('Sign in error:', error)
-      setError('An error occurred during sign in')
+      form.setError('root', { message: 'An error occurred during sign in' })
     } finally {
       setIsLoading(false)
     }
   }
 
   return (
-    <div className={cn('grid gap-6', className)} {...props}>
-      <form onSubmit={onSubmit}>
-        <div className="grid gap-4">
-          <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
-            <Input
-              id="email"
-              name="email"
-              type="email"
-              autoCapitalize="none"
-              autoComplete="email"
-              autoCorrect="off"
-              disabled={isLoading}
-              required
-              placeholder="admin@example.com"
-            />
-          </div>
-          <div className="grid gap-2">
-            <Label htmlFor="password">Password</Label>
-            <Input
-              id="password"
-              name="password"
-              type="password"
-              autoComplete="current-password"
-              disabled={isLoading}
-              required
-            />
-          </div>
-          {error && (
-            <div className="rounded-md bg-red-50 p-3">
-              <div className="text-sm text-red-500">
-                {error}
-              </div>
-            </div>
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        <FormField
+          control={form.control}
+          name="email"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Email</FormLabel>
+              <FormControl>
+                <Input
+                  type="email"
+                  placeholder="you@example.com"
+                  {...field}
+                  disabled={isLoading}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
           )}
-          <Button 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading && <LoadingSpinner className="mr-2 h-4 w-4" />}
-            Sign In
-          </Button>
-        </div>
+        />
+        <FormField
+          control={form.control}
+          name="password"
+          render={({ field }) => (
+            <FormItem>
+              <FormLabel>Password</FormLabel>
+              <FormControl>
+                <Input
+                  type="password"
+                  {...field}
+                  disabled={isLoading}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
+        {form.formState.errors.root && (
+          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
+            {form.formState.errors.root.message}
+          </div>
+        )}
+        <Button
+          type="submit"
+          className="w-full"
+          disabled={isLoading}
+        >
+          {isLoading && (
+            <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+          )}
+          Sign In
+        </Button>
       </form>
-    </div>
+    </Form>
   )
 }
