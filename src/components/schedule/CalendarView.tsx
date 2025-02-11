@@ -2,13 +2,16 @@
 
 import { useState } from 'react';
 import { format, startOfWeek, endOfWeek } from 'date-fns';
-import { cn } from '@/lib/utils/index';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { Calendar } from '@/components/calendar/Calendar';
 import { LessonWithRelations, TimeSlot } from '@/types/schedule';
+import { StudentWithUser } from '@/types/student';
+
+type EnhancedLesson = LessonWithRelations & { student: StudentWithUser };
 
 interface CalendarViewProps {
-  lessons: LessonWithRelations[];
+  lessons: EnhancedLesson[];
   timeSlots?: TimeSlot[];
   onEditSlot?: (slot: TimeSlot) => void;
   className?: string;
