@@ -5,9 +5,6 @@ const nextConfig = {
   images: {
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  webpack: (config) => {
-    return config;
-  },
 };
 
 module.exports = nextConfig;
