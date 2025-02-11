@@ -1,70 +1,57 @@
-import { Resend } from 'resend';
+import { renderToString } from 'react-dom/server';
+import { LessonConfirmation } from './templates/LessonConfirmation';
 import { ScheduleReminder } from './templates/ScheduleReminder';
 import { PaymentReceipt } from './templates/PaymentReceipt';
-import { renderAsync } from '@react-email/components';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+const sendEmail = async (to: string, subject: string, html: string) => {
+  const response = await fetch('/api/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to, subject, html }),
+  });
 
-export async function sendLessonReminder({
-  studentName,
-  lessonDate,
-  lessonTime,
-  location,
-  email
-}: {
-  studentName: string;
-  lessonDate: string;
-  lessonTime: string;
-  location: string;
-  email: string;
-}) {
-  const html = await renderAsync(
-    ScheduleReminder({
-      studentName,
-      lessonDate,
-      lessonTime,
-      location
-    })
+  if (!response.ok) {
+    throw new Error('Failed to send email');
+  }
+
+  return response.json();
+};
+
+export const sendLessonConfirmation = async (student: any, lesson: any) => {
+  const html = renderToString(
+    LessonConfirmation({ student, lesson })
   );
 
-  return resend.emails.send({
-    from: 'Yura Min <admin@yuramin.com>',
-    to: email,
-    subject: 'Upcoming Lesson Reminder',
+  return sendEmail(
+    student.user.email,
+    'Lesson Confirmation',
     html
-  });
-}
+  );
+};
 
-export async function sendPaymentReminder({
-  studentName,
-  amount,
-  date,
-  lessonType,
-  email
-}: {
-  studentName: string;
-  amount: number;
-  date: string;
-  lessonType: string;
-  email: string;
-}) {
-  const html = await renderAsync(
-    PaymentReceipt({
-      studentName,
-      amount,
-      date,
-      lessonType
-    })
+export const sendScheduleReminder = async (student: any, lesson: any) => {
+  const html = renderToString(
+    ScheduleReminder({ student, lesson })
   );
 
-  return resend.emails.send({
-    from: 'Yura Min <admin@yuramin.com>',
-    to: email,
-    subject: 'Payment Receipt',
+  return sendEmail(
+    student.user.email,
+    'Upcoming Lesson Reminder',
     html
-  });
-}
+  );
+};
 
-// Re-export the email templates
-export * from './templates/ScheduleReminder';
-export * from './templates/PaymentReceipt';
+export const sendPaymentReceipt = async (payment: any, student: any, lesson: any) => {
+  const html = renderToString(
+    PaymentReceipt({ payment, student, lesson })
+  );
+
+  return sendEmail(
+    student.user.email,
+    'Payment Receipt',
+    html
+  );
+};
+
+// Re-export email templates
+export { LessonConfirmation, ScheduleReminder, PaymentReceipt };
