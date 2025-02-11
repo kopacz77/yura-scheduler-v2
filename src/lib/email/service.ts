@@ -1,122 +1,32 @@
-import { Resend } from 'resend';
-import { emailTemplates, generateReferenceCode } from './templates';
-import { Lesson, Student, User, PaymentMethod } from '@prisma/client';
+import { type Lesson } from '@prisma/client';
+import { StudentWithUser } from '@/types/student';
+import { emailTemplates } from './templates';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+export async function sendEmail(to: string, subject: string, html: string) {
+  const response = await fetch('/api/email/send', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ to, subject, html }),
+  });
 
-export class EmailService {
-  private static async sendEmail({
-    to,
-    subject,
-    html,
-  }: {
-    to: string;
-    subject: string;
-    html: string;
-  }) {
-    try {
-      const data = await resend.emails.send({
-        from: 'Yura Min Academy <info@ym-movement.com>',
-        to,
-        reply_to: 'yuraxmin@gmail.com',
-        subject,
-        html,
-      });
-      return { success: true, data };
-    } catch (error) {
-      console.error('Failed to send email:', error);
-      return { success: false, error };
-    }
+  if (!response.ok) {
+    throw new Error('Failed to send email');
   }
 
-  static async sendBookingConfirmation({
-    lesson,
-    student,
-    price,
-    paymentMethod,
-  }: {
-    lesson: Lesson;
-    student: Student & { user: User };
-    price: number;
-    paymentMethod: PaymentMethod;
-  }) {
-    const referenceCode = generateReferenceCode(
-      student.user.name || 'Student',
-      lesson.startTime
-    );
+  return response.json();
+}
 
-    const { subject, html } = emailTemplates.bookingConfirmation({
-      studentName: student.user.name || 'Student',
-      date: lesson.startTime,
-      startTime: lesson.startTime,
-      endTime: lesson.endTime,
-      location: lesson.rinkId,
-      address: 'TODO: Get rink address', // We'll need to add this to our rink data
-      duration: lesson.duration,
-      price,
-      paymentMethod,
-      referenceCode,
-    });
+export async function sendLessonConfirmation(student: StudentWithUser, lesson: Lesson) {
+  const { subject, body } = emailTemplates.lessonConfirmation(student, lesson);
+  return sendEmail(student.user.email, subject, body);
+}
 
-    return this.sendEmail({
-      to: student.user.email,
-      subject,
-      html,
-    });
-  }
+export async function sendScheduleReminder(student: StudentWithUser, lesson: Lesson) {
+  const { subject, body } = emailTemplates.scheduleReminder(student, lesson);
+  return sendEmail(student.user.email, subject, body);
+}
 
-  static async sendCancellationNotification({
-    lesson,
-    student,
-  }: {
-    lesson: Lesson;
-    student: Student & { user: User };
-  }) {
-    const { subject, html } = emailTemplates.lessonCancelled({
-      studentName: student.user.name || 'Student',
-      date: lesson.startTime,
-      startTime: lesson.startTime,
-      endTime: lesson.endTime,
-      location: lesson.rinkId,
-      address: 'TODO: Get rink address',
-      duration: lesson.duration,
-      price: lesson.price,
-    });
-
-    return this.sendEmail({
-      to: student.user.email,
-      subject,
-      html,
-    });
-  }
-
-  static async sendLessonReminder({
-    lesson,
-    student,
-    price,
-    isPaid,
-  }: {
-    lesson: Lesson;
-    student: Student & { user: User };
-    price: number;
-    isPaid: boolean;
-  }) {
-    const { subject, html } = emailTemplates.lessonReminder({
-      studentName: student.user.name || 'Student',
-      date: lesson.startTime,
-      startTime: lesson.startTime,
-      endTime: lesson.endTime,
-      location: lesson.rinkId,
-      address: 'TODO: Get rink address',
-      duration: lesson.duration,
-      price,
-      paymentMethod: isPaid ? undefined : 'VENMO', // Show payment reminder if not paid
-    });
-
-    return this.sendEmail({
-      to: student.user.email,
-      subject,
-      html,
-    });
-  }
+export async function sendPaymentReceipt(student: StudentWithUser, lesson: Lesson, payment: any) {
+  const { subject, body } = emailTemplates.paymentReceipt(student, payment, lesson);
+  return sendEmail(student.user.email, subject, body);
 }
