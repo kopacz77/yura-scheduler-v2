@@ -72,39 +72,29 @@ export const authOptions: NextAuthOptions = {
     },
     async redirect({ url, baseUrl }) {
       // After sign in, redirect based on user role
-      if (url.startsWith('/admin') || url.startsWith('/student')) {
-        return url; // Keep protected route redirects
-      }
-      
-      if (url === '/signin') {
-        return baseUrl; // Redirect to home if trying to access sign in while authenticated
-      }
+      if (url.startsWith(baseUrl)) {
+        // Keep internal URLs as is
+        return url;
+      } else if (url === '/signin') {
+        // After successful sign in, check user role from token
+        const token = await prisma.user.findFirst({
+          where: {
+            AND: [
+              { role: { not: null } },
+              { emailVerified: { not: null } }
+            ]
+          },
+          orderBy: { updatedAt: 'desc' }
+        });
 
-      // Default redirects based on role
-      const session = await prisma.session.findFirst({
-        where: {
-          expires: {
-            gt: new Date()
-          }
-        },
-        include: {
-          user: true
-        },
-        orderBy: {
-          expires: 'desc'
+        if (token?.role === 'ADMIN') {
+          return `${baseUrl}/admin/dashboard`;
         }
-      });
-
-      if (session?.user?.role === 'ADMIN') {
-        return `${baseUrl}/admin/dashboard`;
+        return `${baseUrl}/student/dashboard`;
       }
       
-      return `${baseUrl}/student/dashboard`;
-    }
-  },
-  events: {
-    async signIn({ user }) {
-      console.log(`User ${user.email} signed in`);
+      // Default to home page
+      return baseUrl;
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
