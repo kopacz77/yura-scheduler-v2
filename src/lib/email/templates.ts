@@ -1,85 +1,67 @@
-import { format } from 'date-fns';
-import { Payment, Lesson } from '@prisma/client';
-import type { StudentWithUser } from '@/types/student';
+import type { EmailTemplate, LessonEmailData, PaymentEmailData } from './types';
 
-export function generateReferenceCode(): string {
-  return `PMT-${Math.random().toString(36).substring(2, 8).toUpperCase()}`;
+export function lessonConfirmation(data: LessonEmailData): EmailTemplate {
+  return {
+    subject: 'Lesson Confirmation',
+    content: `
+      <h1>Lesson Confirmation</h1>
+      <p>Hi ${data.studentName},</p>
+      <p>Your lesson has been scheduled successfully:</p>
+      
+      <div style="margin: 20px 0">
+        <h2>Lesson Details</h2>
+        <ul>
+          <li>Date: ${data.lessonDate}</li>
+          <li>Time: ${data.lessonTime}</li>
+          <li>Duration: ${data.duration} minutes</li>
+          <li>Type: ${data.lessonType}</li>
+          ${data.price ? `<li>Price: $${data.price.toFixed(2)}</li>` : ''}
+        </ul>
+      </div>
+
+      ${data.location ? `
+        <div style="margin: 20px 0">
+          <h2>Location</h2>
+          <p>${data.location.name}</p>
+          <p>${data.location.address}</p>
+        </div>
+      ` : ''}
+
+      <p>Please arrive 10 minutes before your lesson.</p>
+      <p>Looking forward to seeing you!</p>
+    `
+  };
 }
 
-export const emailTemplates = {
-  lessonConfirmation: (student: StudentWithUser, lesson: Lesson) => ({
-    subject: 'Lesson Confirmation',
-    body: `
-      Hi ${student.user.name},
-
-      Your lesson has been scheduled for ${format(lesson.startTime, 'MMMM do, yyyy')} at ${format(lesson.startTime, 'h:mm a')}.
-
-      Duration: ${lesson.duration} minutes
-      Type: ${lesson.type}
-      Price: $${lesson.price.toFixed(2)}
-
-      Please arrive 10 minutes before your lesson time.
-
-      Best regards,
-      Yura Min's Ice Dance Studio
-    `.trim()
-  }),
-
-  scheduleReminder: (student: StudentWithUser, lesson: Lesson) => ({
-    subject: 'Upcoming Lesson Reminder',
-    body: `
-      Hi ${student.user.name},
-
-      This is a reminder about your upcoming lesson tomorrow at ${format(lesson.startTime, 'h:mm a')}.
-
-      Duration: ${lesson.duration} minutes
-      Type: ${lesson.type}
-
-      Please remember to arrive 10 minutes early.
-
-      Best regards,
-      Yura Min's Ice Dance Studio
-    `.trim()
-  }),
-
-  paymentReceipt: (student: StudentWithUser, payment: Payment, lesson: Lesson) => ({
+export function paymentReceipt(data: PaymentEmailData): EmailTemplate {
+  return {
     subject: 'Payment Receipt',
-    body: `
-      Hi ${student.user.name},
+    content: `
+      <h1>Payment Receipt</h1>
+      <p>Hi ${data.studentName},</p>
+      <p>Thank you for your payment. Here are the details:</p>
+      
+      <div style="margin: 20px 0">
+        <h2>Payment Details</h2>
+        <ul>
+          <li>Amount: $${data.amount.toFixed(2)}</li>
+          <li>Method: ${data.method}</li>
+          <li>Reference Code: ${data.referenceCode}</li>
+          <li>Date: ${data.date}</li>
+        </ul>
+      </div>
 
-      Thank you for your payment. Here are the details:
+      <div style="margin: 20px 0">
+        <h2>Lesson Details</h2>
+        <ul>
+          <li>Date: ${data.lesson.date}</li>
+          <li>Time: ${data.lesson.time}</li>
+          <li>Duration: ${data.lesson.duration} minutes</li>
+          <li>Type: ${data.lesson.type}</li>
+        </ul>
+      </div>
 
-      Amount: $${payment.amount.toFixed(2)}
-      Method: ${payment.method}
-      Reference Code: ${payment.referenceCode}
-      Date: ${format(payment.createdAt, 'MMMM do, yyyy')}
-
-      Lesson Details:
-      Date: ${format(lesson.startTime, 'MMMM do, yyyy')}
-      Time: ${format(lesson.startTime, 'h:mm a')}
-      Duration: ${lesson.duration} minutes
-      Type: ${lesson.type}
-
-      Best regards,
-      Yura Min's Ice Dance Studio
-    `.trim()
-  }),
-
-  paymentReminder: (student: StudentWithUser, payment: Payment, lesson: Lesson) => ({
-    subject: 'Payment Reminder',
-    body: `
-      Hi ${student.user.name},
-
-      This is a reminder about your pending payment:
-
-      Amount: $${payment.amount.toFixed(2)}
-      Reference Code: ${payment.referenceCode}
-      Lesson Date: ${format(lesson.startTime, 'MMMM do, yyyy')}
-
-      Please complete your payment at your earliest convenience.
-
-      Best regards,
-      Yura Min's Ice Dance Studio
-    `.trim()
-  })
-};
+      <p>If you have any questions, please don't hesitate to contact us.</p>
+    `
+  };
+}
