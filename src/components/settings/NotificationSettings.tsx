@@ -11,6 +11,8 @@ interface NotificationSetting {
   defaultEnabled: boolean;
 }
 
+type NotificationSettingsState = Record<string, boolean>;
+
 const notificationSettings: NotificationSetting[] = [
   {
     key: 'lessonReminders',
@@ -43,13 +45,13 @@ interface NotificationSettingsProps {
 }
 
 export function NotificationSettings({ onUpdateSetting }: NotificationSettingsProps) {
-  const [settings, setSettings] = useState(() =>
+  const [settings, setSettings] = useState<NotificationSettingsState>(() =>
     notificationSettings.reduce(
       (acc, setting) => ({
         ...acc,
         [setting.key]: setting.defaultEnabled,
       }),
-      {}
+      {} as NotificationSettingsState
     )
   );
 
