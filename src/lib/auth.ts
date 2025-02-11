@@ -1,4 +1,4 @@
-import { NextAuthOptions, getServerSession } from 'next-auth';
+import { NextAuthOptions } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import CredentialsProvider from 'next-auth/providers/credentials';
@@ -7,6 +7,10 @@ import { Role } from '@prisma/client';
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
+  session: {
+    strategy: 'jwt',
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+  },
   providers: [
     CredentialsProvider({
       name: 'credentials',
@@ -51,25 +55,33 @@ export const authOptions: NextAuthOptions = {
     signIn: '/signin',
     error: '/error'
   },
-  session: {
-    strategy: 'jwt'
-  },
   callbacks: {
-    async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id;
-        session.user.role = token.role as Role;
-      }
-      return session;
-    },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
       }
       return token;
+    },
+    async session({ session, token }) {
+      if (token) {
+        session.user.id = token.id;
+        session.user.role = token.role as Role;
+      }
+      return session;
     }
-  }
+  },
+  events: {
+    async signOut() {
+      // Clear any server-side session data
+      await prisma.session.deleteMany({
+        where: {
+          expires: {
+            lte: new Date()
+          }
+        }
+      });
+    }
+  },
+  debug: process.env.NODE_ENV === 'development'
 };
-
-export const getAuthSession = () => getServerSession(authOptions);
