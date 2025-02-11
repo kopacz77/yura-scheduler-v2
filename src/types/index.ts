@@ -26,3 +26,9 @@ export type {
   DashboardStats,
   StatsDataPoint
 } from './stats';
+
+// Re-export shared types
+export type {
+  ValidationError,
+  PaginationParams
+} from './shared';
