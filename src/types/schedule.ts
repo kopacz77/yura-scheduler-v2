@@ -1,4 +1,26 @@
-import type { Lesson, Student, Payment, Rink, RinkTimeSlot } from '@prisma/client';
+import type { Lesson as PrismaLesson, Student, Payment, Rink, RinkTimeSlot } from '@prisma/client';
+
+// Re-export Prisma types
+export type Lesson = PrismaLesson;
+
+// Resource and Appointment types for planner integration
+export interface Resource {
+  id: string;
+  name: string;
+  title?: string;
+  type: string;
+  [key: string]: any;
+}
+
+export interface Appointment {
+  id: string;
+  title: string;
+  start: Date;
+  end: Date;
+  resourceId: string;
+  studentId?: string;
+  [key: string]: any;
+}
 
 // Basic scheduling types
 export interface TimeSlot {
