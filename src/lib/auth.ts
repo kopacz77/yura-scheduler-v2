@@ -13,8 +13,8 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   pages: {
-    signIn: '/(auth)/signin',  // Update to match route group
-    error: '/(auth)/error'
+    signIn: '/signin',  // Remove /auth/ prefix since (auth) is a route group
+    error: '/error'
   },
   session: {
     strategy: 'jwt'
