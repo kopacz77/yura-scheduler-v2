@@ -11,16 +11,18 @@ export * from './stats';
 export * from './student';
 export * from './utils';
 
-// Re-export common utility types
+// Re-export common utility types from schedule
 export type {
   TimeSlot,
   LessonWithRelations,
   ProgressDataPoint,
   RinkWithSchedule,
   Appointment,
-  Resource,
-  DashboardStats,
-  StatsDataPoint,
-  ValidationError,
-  PaginationParams,
+  Resource
 } from './schedule';
+
+// Re-export stats types
+export type {
+  DashboardStats,
+  StatsDataPoint
+} from './stats';
