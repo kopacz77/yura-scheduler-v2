@@ -15,6 +15,8 @@ interface ErrorProps {
 interface ErrorBoundaryProps {
   error: Error & { digest?: string };
   reset: () => void;
+  title?: string;
+  message?: string;
 }
 
 // Basic error message
@@ -36,17 +38,17 @@ export function ErrorMessage({ title = 'Error', message, retry }: ErrorProps) {
 }
 
 // Error boundary with retry
-export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
+export function ErrorBoundary({ error, reset, title = 'Something went wrong!', message }: ErrorBoundaryProps) {
   useEffect(() => {
     console.error('Error:', error);
   }, [error]);
 
-  const errorMessage = error?.message || 'An unexpected error occurred.';
+  const errorMessage = message || error?.message || 'An unexpected error occurred.';
 
   return (
     <div className="flex min-h-[200px] items-center justify-center p-4">
       <ErrorMessage
-        title="Something went wrong!"
+        title={title}
         message={errorMessage}
         retry={reset}
       />
@@ -55,17 +57,19 @@ export function ErrorBoundary({ error, reset }: ErrorBoundaryProps) {
 }
 
 // Full page error
-export function ErrorPage({ error, reset }: ErrorBoundaryProps) {
+export function ErrorPage({ error, reset, title = 'Something went wrong!', message }: ErrorBoundaryProps) {
   useEffect(() => {
     console.error('App-level error:', error);
   }, [error]);
 
+  const errorMessage = message || error?.message || 'An unexpected error occurred.';
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
       <Alert className="max-w-md">
-        <AlertTitle>Something went wrong</AlertTitle>
+        <AlertTitle>{title}</AlertTitle>
         <AlertDescription>
-          {error?.message || 'An unexpected error occurred'}
+          {errorMessage}
           <div className="mt-4">
             <Button onClick={reset}>Try again</Button>
           </div>
