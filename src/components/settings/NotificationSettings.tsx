@@ -1,105 +1,89 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
-import { toast } from 'sonner';
 
 interface NotificationSetting {
-  id: string;
-  label: string;
-  description: string;
   key: string;
+  title: string;
+  description: string;
+  defaultEnabled: boolean;
 }
 
 const notificationSettings: NotificationSetting[] = [
   {
-    id: 'lesson-reminders',
-    label: 'Lesson Reminders',
-    description: 'Get notified about upcoming lessons 24 hours in advance',
     key: 'lessonReminders',
+    title: 'Lesson Reminders',
+    description: 'Receive reminders before upcoming lessons',
+    defaultEnabled: true,
   },
   {
-    id: 'schedule-changes',
-    label: 'Schedule Changes',
-    description: 'Receive notifications when your lesson schedule is modified',
-    key: 'scheduleChanges',
-  },
-  {
-    id: 'payment-reminders',
-    label: 'Payment Reminders',
-    description: 'Get reminded about pending payments',
     key: 'paymentReminders',
+    title: 'Payment Reminders',
+    description: 'Get notified about pending payments',
+    defaultEnabled: true,
+  },
+  {
+    key: 'scheduleChanges',
+    title: 'Schedule Changes',
+    description: 'Get notified when there are changes to your schedule',
+    defaultEnabled: true,
+  },
+  {
+    key: 'announcements',
+    title: 'Announcements',
+    description: 'Receive studio announcements and updates',
+    defaultEnabled: true,
   },
 ];
 
-export function NotificationSettings() {
-  const [settings, setSettings] = useState<Record<string, boolean>>({
-    lessonReminders: true,
-    scheduleChanges: true,
-    paymentReminders: true,
-  });
+interface NotificationSettingsProps {
+  onUpdateSetting?: (key: string, enabled: boolean) => Promise<void>;
+}
 
-  const [isLoading, setIsLoading] = useState(false);
+export function NotificationSettings({ onUpdateSetting }: NotificationSettingsProps) {
+  const [settings, setSettings] = useState(() =>
+    notificationSettings.reduce(
+      (acc, setting) => ({
+        ...acc,
+        [setting.key]: setting.defaultEnabled,
+      }),
+      {}
+    )
+  );
 
-  const updateSetting = async (key: string, value: boolean) => {
+  const updateSetting = async (key: string, enabled: boolean) => {
     try {
-      setIsLoading(true);
-      const response = await fetch('/api/user/notifications', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          key,
-          value,
-        }),
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to update notification settings');
+      if (onUpdateSetting) {
+        await onUpdateSetting(key, enabled);
       }
-
-      setSettings(prev => ({
-        ...prev,
-        [key]: value,
-      }));
-
-      toast.success('Notification settings updated');
+      setSettings(prev => ({ ...prev, [key]: enabled }));
     } catch (error) {
-      console.error('Notification settings update error:', error);
-      toast.error('Failed to update notification settings');
-    } finally {
-      setIsLoading(false);
+      console.error('Failed to update notification setting:', error);
     }
   };
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Notification Preferences</CardTitle>
-        <CardDescription>
-          Choose how you want to be notified about important updates
-        </CardDescription>
+        <CardTitle>Notification Settings</CardTitle>
       </CardHeader>
       <CardContent className="space-y-6">
-        {notificationSettings.map(setting => (
+        {notificationSettings.map((setting) => (
           <div
-            key={setting.id}
-            className="flex flex-row items-center justify-between space-y-0"
+            key={setting.key}
+            className="flex items-center justify-between space-x-2"
           >
             <div className="space-y-0.5">
-              <Label htmlFor={setting.id}>{setting.label}</Label>
-              <p className="text-sm text-muted-foreground">
+              <div className="text-sm font-medium">{setting.title}</div>
+              <div className="text-sm text-muted-foreground">
                 {setting.description}
-              </p>
+              </div>
             </div>
             <Switch
-              id={setting.id}
-              checked={settings[setting.key]}
+              checked={settings[setting.key] ?? setting.defaultEnabled}
               onCheckedChange={(checked) => updateSetting(setting.key, checked)}
-              disabled={isLoading}
             />
           </div>
         ))}
