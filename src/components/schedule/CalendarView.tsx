@@ -12,15 +12,17 @@ interface CalendarViewProps {
   timeSlots?: TimeSlot[];
   onEditSlot?: (slot: TimeSlot) => void;
   className?: string;
+  initialWeek?: Date;
 }
 
 export function CalendarView({
   lessons,
-  timeSlots,
+  timeSlots = [],
   onEditSlot,
-  className
+  className,
+  initialWeek = new Date()
 }: CalendarViewProps) {
-  const [currentWeek, setCurrentWeek] = useState(new Date());
+  const [currentWeek, setCurrentWeek] = useState(initialWeek);
 
   return (
     <div className={cn('space-y-4', className)}>
