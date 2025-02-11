@@ -1,10 +1,13 @@
-'use client';
-
-import { useSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
+import { authOptions } from '@/lib/auth';
 
-export default function AuthLayout({ children }: { children: React.ReactNode }) {
-  const { data: session } = useSession();
+export default async function AuthLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
+  const session = await getServerSession(authOptions);
 
   if (session) {
     redirect(session.user.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard');
