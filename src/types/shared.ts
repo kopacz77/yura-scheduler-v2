@@ -1,13 +1,11 @@
-// Shared types used across multiple files
-export type Theme = 'light' | 'dark' | 'system';
+export interface ValidationError {
+  field: string;
+  message: string;
+}
 
-export type ColorScheme = {
-  primary: string;
-  secondary: string;
-  accent: string;
-  background: string;
-  text: string;
-  error: string;
-  success: string;
-  warning: string;
-};
+export interface PaginationParams {
+  page?: number;
+  limit?: number;
+  sortBy?: string;
+  sortOrder?: 'asc' | 'desc';
+}
