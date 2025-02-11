@@ -9,7 +9,6 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
-    maxAge: 30 * 24 * 60 * 60, // 30 days
   },
   providers: [
     CredentialsProvider({
@@ -70,18 +69,5 @@ export const authOptions: NextAuthOptions = {
       }
       return session;
     }
-  },
-  events: {
-    async signOut() {
-      // Clear any server-side session data
-      await prisma.session.deleteMany({
-        where: {
-          expires: {
-            lte: new Date()
-          }
-        }
-      });
-    }
-  },
-  debug: process.env.NODE_ENV === 'development'
+  }
 };
