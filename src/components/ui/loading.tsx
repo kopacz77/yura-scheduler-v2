@@ -1,5 +1,7 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Card, CardContent } from '@/components/ui/card';
@@ -60,6 +62,8 @@ export function LoadingCard() {
 
 // Route change loading overlay
 export function RouteChangeLoader() {
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
@@ -76,3 +80,6 @@ export function RouteChangeLoader() {
     </div>
   );
 }
+
+// For backward compatibility
+export const Loading = LoadingPage;
