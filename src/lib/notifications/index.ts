@@ -1,4 +1,4 @@
-import { utcToZonedTime, formatInTimeZone } from 'date-fns-tz';
+import { formatDateTime, getLocalDateTime } from '@/lib/utils/date';
 import type { Appointment } from '@/types/schedule';
 
 export function processNotifications() {
@@ -12,17 +12,15 @@ export function processNotifications() {
       return;
     }
 
+    const localStart = getLocalDateTime(appointment.start);
+
     return {
       userId: appointment.studentId,
       appointmentId: appointment.id,
       type: 'REMINDER',
       title: 'Upcoming Lesson',
-      body: `You have a lesson scheduled for ${formatInTimeZone(
-        appointment.start,
-        'America/New_York',
-        'MMM dd, yyyy h:mm a'
-      )}`,
-      scheduledFor: appointment.start,
+      body: `You have a lesson scheduled for ${formatDateTime(localStart)}`,
+      scheduledFor: localStart,
     };
   };
 
