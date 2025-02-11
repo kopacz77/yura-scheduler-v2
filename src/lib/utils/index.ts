@@ -1,14 +1,16 @@
 import { type ClassValue, clsx } from 'clsx';
 import { twMerge } from 'tailwind-merge';
 
-// Tailwind class name utility
+// Common utilities
 export function cn(...inputs: ClassValue[]) {
   return twMerge(clsx(inputs));
 }
 
-// General utilities
-export function wait(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+export function formatCurrency(amount: number) {
+  return new Intl.NumberFormat('en-US', {
+    style: 'currency',
+    currency: 'USD',
+  }).format(amount);
 }
 
 // Re-export all utilities
