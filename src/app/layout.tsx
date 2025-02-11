@@ -1,28 +1,23 @@
-import { Metadata } from 'next';
-import { Inter } from 'next/font/google';
-import { Toaster } from '@/components/ui/toaster';
-import { ClientProviders } from '@/components/providers/ClientProviders';
 import '@/styles/globals.css';
-
-const inter = Inter({ subsets: ['latin'] });
+import { GeistSans } from 'geist/font/sans';
+import { Providers } from '@/providers';
+import { Metadata } from 'next';
 
 export const metadata: Metadata = {
-  title: 'Yura Min Scheduler',
-  description: 'Schedule management system for ice dance coaching',
+  title: {
+    default: 'Yura Ice Dance',
+    template: '%s - Yura Ice Dance',
+  },
+  description: 'Ice dance coaching and scheduling platform',
 };
 
-export default function RootLayout({
-  children,
-}: {
-  children: React.ReactNode;
-}) {
+export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={inter.className}>
-        <ClientProviders session={null}>
+      <body className={GeistSans.className}>
+        <Providers>
           {children}
-          <Toaster />
-        </ClientProviders>
+        </Providers>
       </body>
     </html>
   );
