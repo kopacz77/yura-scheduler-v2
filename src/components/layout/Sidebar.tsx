@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { cn } from '@/lib/utils/index';
+import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
@@ -10,10 +10,11 @@ import { ChevronLeft, ChevronRight } from 'lucide-react';
 interface SidebarProps {
   isOpen?: boolean;
   onToggle?: () => void;
+  onClose?: () => void;
   children?: React.ReactNode;
 }
 
-export function Sidebar({ isOpen = true, onToggle, children }: SidebarProps) {
+export function Sidebar({ isOpen = true, onToggle, onClose, children }: SidebarProps) {
   const pathname = usePathname();
 
   return (
