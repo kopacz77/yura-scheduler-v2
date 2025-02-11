@@ -74,3 +74,6 @@ export function ErrorPage({ error, reset }: ErrorBoundaryProps) {
     </div>
   );
 }
+
+// For backward compatibility
+export const Error = ErrorPage;
