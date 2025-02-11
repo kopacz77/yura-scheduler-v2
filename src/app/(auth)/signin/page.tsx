@@ -2,12 +2,14 @@
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
-import { signIn } from 'next-auth/react';
+import { signIn, useSession } from 'next-auth/react';
 import { toast } from '@/components/ui/use-toast';
 import { Form } from '@/components/auth/Form';
 import { z } from 'zod';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
 const formSchema = z.object({
   email: z.string().email(),
@@ -15,6 +17,15 @@ const formSchema = z.object({
 });
 
 export default function SignInPage() {
+  const router = useRouter();
+  const { data: session, status } = useSession();
+
+  useEffect(() => {
+    if (status === 'authenticated') {
+      router.push('/dashboard');
+    }
+  }, [status, router]);
+
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -43,6 +54,12 @@ export default function SignInPage() {
       title: 'Success',
       description: 'Signed in successfully',
     });
+
+    router.push('/dashboard');
+  }
+
+  if (status === 'loading') {
+    return <div>Loading...</div>;
   }
 
   return (
