@@ -5,10 +5,6 @@ const nextConfig = {
   images: {
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  experimental: {
-    appDir: true,
-    serverActions: true,
-  },
   webpack: (config, { isServer }) => {
     return config;
   },
