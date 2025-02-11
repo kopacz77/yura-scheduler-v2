@@ -1,16 +1,17 @@
-import { ThemeProvider } from 'next-themes';
+'use client';
+
+import { ThemeProvider as NextThemeProvider } from 'next-themes';
 import { Toaster } from '@/components/ui/toaster';
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <ThemeProvider
+    <NextThemeProvider
       attribute="class"
       defaultTheme="system"
       enableSystem
-      disableTransitionOnChange
     >
       {children}
       <Toaster />
-    </ThemeProvider>
+    </NextThemeProvider>
   );
 }
