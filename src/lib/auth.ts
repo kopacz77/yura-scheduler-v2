@@ -51,8 +51,9 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   pages: {
-    signIn: '/(auth)/signin',
-    error: '/(auth)/error'
+    signIn: '/signin',
+    error: '/auth/error',
+    signOut: '/'
   },
   callbacks: {
     async jwt({ token, user }) {
@@ -68,6 +69,20 @@ export const authOptions: NextAuthOptions = {
         session.user.role = token.role as Role;
       }
       return session;
+    },
+    async redirect({ url, baseUrl }) {
+      // Handle custom redirects based on user role
+      if (url.startsWith(baseUrl)) {
+        // Internal URL - return as is
+        return url;
+      } else if (url.startsWith('/')) {
+        // Make relative URLs absolute
+        return `${baseUrl}${url}`;
+      }
+      // Default to homepage for external URLs
+      return baseUrl;
     }
-  }
+  },
+  secret: process.env.NEXTAUTH_SECRET,
+  debug: process.env.NODE_ENV === 'development',
 };
