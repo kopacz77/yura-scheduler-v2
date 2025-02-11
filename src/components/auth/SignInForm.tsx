@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { useSearchParams } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 
 import { cn } from '@/lib/utils'
@@ -13,6 +13,7 @@ import { LoadingSpinner } from '@/components/ui/loading'
 interface SignInFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SignInForm({ className, ...props }: SignInFormProps) {
+  const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
   const [error, setError] = React.useState<string>("")
   const searchParams = useSearchParams()
@@ -30,11 +31,12 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
         email: formData.get('email'),
         password: formData.get('password'),
         redirect: false,
-        callbackUrl,
       })
 
       if (res?.error) {
-        setError(res.error)
+        setError('Invalid email or password')
+      } else if (res?.ok) {
+        router.push(callbackUrl)
       }
     } catch (error) {
       console.error('Sign in error:', error)
@@ -59,6 +61,7 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
               autoCorrect="off"
               disabled={isLoading}
               required
+              placeholder="admin@example.com"
             />
           </div>
           <div className="grid gap-2">
@@ -73,11 +76,17 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
             />
           </div>
           {error && (
-            <div className="text-sm text-red-500">
-              {error}
+            <div className="rounded-md bg-red-50 p-3">
+              <div className="text-sm text-red-500">
+                {error}
+              </div>
             </div>
           )}
-          <Button type="submit" disabled={isLoading}>
+          <Button 
+            type="submit" 
+            disabled={isLoading}
+            className="w-full"
+          >
             {isLoading && <LoadingSpinner className="mr-2 h-4 w-4" />}
             Sign In
           </Button>
