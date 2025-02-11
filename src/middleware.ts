@@ -6,13 +6,8 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Public paths
-    if (
-      path === '/' || 
-      path === '/signin' || 
-      path === '/error' ||
-      path.startsWith('/api/auth/')
-    ) {
+    // Allow access to auth-related paths
+    if (path.startsWith('/api/auth/') || path === '/signin' || path === '/error') {
       return NextResponse.next();
     }
 
@@ -37,14 +32,13 @@ export default withAuth(
     callbacks: {
       authorized: ({ token, req }) => {
         const path = req.nextUrl.pathname;
-        // Always allow auth pages and API routes
-        if (
-          path === '/signin' || 
-          path === '/error' ||
-          path.startsWith('/api/auth/')
-        ) {
+        
+        // Always allow signin and auth API routes
+        if (path === '/signin' || path.startsWith('/api/auth/')) {
           return true;
         }
+
+        // Require authentication for all other routes
         return !!token;
       },
     },
@@ -53,12 +47,7 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!_next/static|_next/image|favicon.ico).*)',
+    // Protect all routes except static files
+    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:jpg|jpeg|gif|png|svg|ico)$).*)',
   ],
 };
