@@ -6,11 +6,11 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Public paths - allow both auth and (auth) patterns
+    // Public paths
     if (
       path === '/' || 
-      path.startsWith('/auth/') || 
-      path.startsWith('/(auth)/') ||
+      path === '/signin' || 
+      path === '/error' ||
       path.startsWith('/api/auth/')
     ) {
       return NextResponse.next();
@@ -18,7 +18,7 @@ export default withAuth(
 
     // Must be authenticated from this point
     if (!token) {
-      return NextResponse.redirect(new URL('/(auth)/signin', req.url));
+      return NextResponse.redirect(new URL('/signin', req.url));
     }
 
     // Admin trying to access student pages
@@ -39,8 +39,8 @@ export default withAuth(
         const path = req.nextUrl.pathname;
         // Always allow auth pages and API routes
         if (
-          path.startsWith('/auth/') || 
-          path.startsWith('/(auth)/') ||
+          path === '/signin' || 
+          path === '/error' ||
           path.startsWith('/api/auth/')
         ) {
           return true;
