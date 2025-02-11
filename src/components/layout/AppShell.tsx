@@ -1,28 +1,32 @@
 'use client';
 
 import { useState } from 'react';
-import { Sidebar } from './Sidebar';
-import { TopNav } from './TopNav';
-import { useMediaQuery } from '@/hooks/useMediaQuery';
+import { Sidebar } from '@/components/ui/sidebar';
+import { useSession } from 'next-auth/react';
+import { usePathname } from 'next/navigation';
+import { cn } from '@/lib/utils';
 
-export function AppShell({ children }: { children: React.ReactNode }) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const isDesktop = useMediaQuery('(min-width: 1024px)');
+interface AppShellProps {
+  children: React.ReactNode;
+}
+
+export function AppShell({ children }: AppShellProps) {
+  const { data: session } = useSession();
+  const pathname = usePathname();
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="relative min-h-screen bg-background">
-      <TopNav onMenuClick={() => setSidebarOpen(true)} />
-      <div className="flex h-[calc(100vh-4rem)]">
-        <Sidebar
-          isOpen={isDesktop || sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-        />
-        <main className="flex-1 overflow-y-auto p-4 md:p-6">
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
-        </main>
-      </div>
+    <div className="flex min-h-screen">
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setSidebarOpen(!isSidebarOpen)}
+      />
+      <main className={cn(
+        'flex-1 transition-all duration-300',
+        isSidebarOpen ? 'ml-64' : 'ml-16'
+      )}>
+        {children}
+      </main>
     </div>
   );
 }
