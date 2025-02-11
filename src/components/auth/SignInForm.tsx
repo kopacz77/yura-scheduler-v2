@@ -10,7 +10,6 @@ import * as z from 'zod'
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
 import { Icons } from '@/components/icons'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
 
@@ -72,6 +71,8 @@ export function SignInForm() {
                 <Input
                   type="email"
                   placeholder="you@example.com"
+                  className="bg-white"
+                  autoComplete="email"
                   {...field}
                   disabled={isLoading}
                 />
@@ -85,10 +86,20 @@ export function SignInForm() {
           name="password"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Password</FormLabel>
+              <div className="flex items-center justify-between">
+                <FormLabel>Password</FormLabel>
+                <Link 
+                  href="/forgot-password"
+                  className="text-sm font-medium text-blue-600 hover:text-blue-500"
+                >
+                  Forgot password?
+                </Link>
+              </div>
               <FormControl>
                 <Input
                   type="password"
+                  className="bg-white"
+                  autoComplete="current-password"
                   {...field}
                   disabled={isLoading}
                 />
