@@ -1,6 +1,6 @@
 'use client';
 
-import { ErrorBoundary } from '@/components/ui/error';
+import { ErrorMessage } from '@/components/ui/error';
 
 export default function StudentErrorPage({
   error,
@@ -10,11 +10,10 @@ export default function StudentErrorPage({
   reset: () => void;
 }) {
   return (
-    <ErrorBoundary
-      error={error}
-      reset={reset}
+    <ErrorMessage
       title="Failed to load student profile"
-      message="There was an error loading the student profile. Please try again."
+      message={error.message || 'An unexpected error occurred while loading the student profile.'}
+      retry={reset}
     />
   );
 }
