@@ -1,6 +1,7 @@
+'use client';
+
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import * as z from 'zod';
 import {
   Form,
   FormControl,
@@ -11,50 +12,44 @@ import {
 } from '@/components/ui/form';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { useToast } from '@/components/ui/use-toast';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Student, Level, User } from '@prisma/client';
+import { StudentWithUser } from '@/types/student';
+import * as z from 'zod';
 
-type StudentWithUser = Student & {
-  user: Pick<User, 'name' | 'email'>;
-};
-
-const studentSchema = z.object({
-  name: z.string().min(2, 'Name must be at least 2 characters'),
-  email: z.string().email('Invalid email address'),
+const studentFormSchema = z.object({
+  email: z.string().email(),
+  name: z.string().min(2),
   phone: z.string().optional(),
-  level: z.nativeEnum(Level),
-  maxLessonsPerWeek: z.number().min(1).max(10),
+  level: z.enum(['PRE_PRELIMINARY', 'PRELIMINARY', 'PRE_JUVENILE', 'JUVENILE', 'INTERMEDIATE', 'NOVICE', 'JUNIOR', 'SENIOR']),
+  maxLessonsPerWeek: z.number().min(1).max(7),
   notes: z.string().optional(),
   emergencyContact: z.object({
     name: z.string(),
     phone: z.string(),
     relationship: z.string(),
-  }),
+  }).optional(),
 });
 
-type StudentFormData = z.infer<typeof studentSchema>;
+type StudentFormData = z.infer<typeof studentFormSchema>;
 
 interface StudentFormProps {
-  initialData?: Partial<StudentWithUser>;
-  onSubmit: (data: StudentFormData) => void;
-  onCancel?: () => void;
-  isLoading?: boolean;
+  initialData?: StudentWithUser;
+  onSubmit: (data: StudentFormData) => Promise<void>;
+  onCancel: () => void;
 }
 
-export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false }: StudentFormProps) {
-  const { toast } = useToast();
+export function StudentForm({ initialData, onSubmit, onCancel }: StudentFormProps) {
   const form = useForm<StudentFormData>({
-    resolver: zodResolver(studentSchema),
+    resolver: zodResolver(studentFormSchema),
     defaultValues: {
-      name: initialData?.user?.name || '',
-      email: initialData?.user?.email || '',
-      phone: initialData?.phone || '',
-      level: initialData?.level || Level.PRE_PRELIMINARY,
-      maxLessonsPerWeek: initialData?.maxLessonsPerWeek || 3,
-      notes: initialData?.notes || '',
-      emergencyContact: {
+      email: initialData?.user.email ?? '',
+      name: initialData?.user.name ?? '',
+      phone: initialData?.phone ?? '',
+      level: initialData?.level ?? 'PRELIMINARY',
+      maxLessonsPerWeek: initialData?.maxLessonsPerWeek ?? 3,
+      notes: initialData?.notes ?? '',
+      emergencyContact: initialData?.emergencyContact as any ?? {
         name: '',
         phone: '',
         relationship: '',
@@ -65,30 +60,23 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
   const handleSubmit = async (data: StudentFormData) => {
     try {
       await onSubmit(data);
-      toast({
-        title: 'Success',
-        description: initialData ? 'Student updated successfully' : 'Student created successfully',
-      });
+      form.reset();
     } catch (error) {
-      toast({
-        title: 'Error',
-        description: 'Something went wrong. Please try again.',
-        variant: 'destructive',
-      });
+      console.error('Failed to submit form:', error);
     }
   };
 
   return (
-    <Form form={form} onSubmit={handleSubmit}>
-      <div className="space-y-6">
+    <Form {...form}>
+      <form onSubmit={form.handleSubmit(handleSubmit)} className="space-y-6">
         <FormField
           control={form.control}
-          name="name"
+          name="email"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Name</FormLabel>
+              <FormLabel>Email</FormLabel>
               <FormControl>
-                <Input placeholder="John Doe" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -97,12 +85,12 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
 
         <FormField
           control={form.control}
-          name="email"
+          name="name"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Email</FormLabel>
+              <FormLabel>Name</FormLabel>
               <FormControl>
-                <Input type="email" placeholder="john@example.com" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -116,7 +104,7 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
             <FormItem>
               <FormLabel>Phone</FormLabel>
               <FormControl>
-                <Input type="tel" placeholder="+1 (555) 000-0000" {...field} />
+                <Input {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -128,22 +116,22 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
           name="level"
           render={({ field }) => (
             <FormItem>
-              <FormLabel>Skating Level</FormLabel>
-              <Select 
-                onValueChange={field.onChange} 
-                defaultValue={field.value}
-              >
+              <FormLabel>Level</FormLabel>
+              <Select onValueChange={field.onChange} defaultValue={field.value}>
                 <FormControl>
                   <SelectTrigger>
                     <SelectValue placeholder="Select level" />
                   </SelectTrigger>
                 </FormControl>
                 <SelectContent>
-                  {Object.values(Level).map((level) => (
-                    <SelectItem key={level} value={level}>
-                      {level.replace('_', ' ').toLowerCase()}
-                    </SelectItem>
-                  ))}
+                  <SelectItem value="PRE_PRELIMINARY">Pre-Preliminary</SelectItem>
+                  <SelectItem value="PRELIMINARY">Preliminary</SelectItem>
+                  <SelectItem value="PRE_JUVENILE">Pre-Juvenile</SelectItem>
+                  <SelectItem value="JUVENILE">Juvenile</SelectItem>
+                  <SelectItem value="INTERMEDIATE">Intermediate</SelectItem>
+                  <SelectItem value="NOVICE">Novice</SelectItem>
+                  <SelectItem value="JUNIOR">Junior</SelectItem>
+                  <SelectItem value="SENIOR">Senior</SelectItem>
                 </SelectContent>
               </Select>
               <FormMessage />
@@ -158,13 +146,7 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
             <FormItem>
               <FormLabel>Maximum Lessons per Week</FormLabel>
               <FormControl>
-                <Input 
-                  type="number" 
-                  min={1} 
-                  max={10} 
-                  {...field} 
-                  onChange={(e) => field.onChange(parseInt(e.target.value))}
-                />
+                <Input type="number" {...field} onChange={e => field.onChange(parseInt(e.target.value))} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -178,10 +160,7 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
             <FormItem>
               <FormLabel>Notes</FormLabel>
               <FormControl>
-                <Textarea 
-                  placeholder="Any additional notes or comments" 
-                  {...field} 
-                />
+                <Textarea {...field} />
               </FormControl>
               <FormMessage />
             </FormItem>
@@ -190,7 +169,6 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
 
         <div className="space-y-4">
           <h3 className="text-lg font-medium">Emergency Contact</h3>
-          
           <FormField
             control={form.control}
             name="emergencyContact.name"
@@ -198,7 +176,7 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
               <FormItem>
                 <FormLabel>Name</FormLabel>
                 <FormControl>
-                  <Input placeholder="Emergency contact name" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -212,7 +190,7 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
               <FormItem>
                 <FormLabel>Phone</FormLabel>
                 <FormControl>
-                  <Input type="tel" placeholder="Emergency contact phone" {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -226,7 +204,7 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
               <FormItem>
                 <FormLabel>Relationship</FormLabel>
                 <FormControl>
-                  <Input placeholder="e.g., Parent, Spouse, etc." {...field} />
+                  <Input {...field} />
                 </FormControl>
                 <FormMessage />
               </FormItem>
@@ -234,17 +212,15 @@ export function StudentForm({ initialData, onSubmit, onCancel, isLoading = false
           />
         </div>
 
-        <div className="flex justify-end gap-4">
-          {onCancel && (
-            <Button type="button" variant="outline" onClick={onCancel}>
-              Cancel
-            </Button>
-          )}
-          <Button type="submit" disabled={isLoading}>
-            {isLoading ? 'Saving...' : (initialData ? 'Update Student' : 'Add Student')}
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={onCancel}>
+            Cancel
+          </Button>
+          <Button type="submit">
+            {initialData ? 'Update' : 'Create'} Student
           </Button>
         </div>
-      </div>
+      </form>
     </Form>
   );
 }
