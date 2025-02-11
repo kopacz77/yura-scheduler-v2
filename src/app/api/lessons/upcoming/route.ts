@@ -2,10 +2,15 @@ import { NextResponse } from 'next/server';
 import { getServerSession } from 'next-auth/next';
 import { prisma } from '@/lib/prisma';
 import { startOfDay, endOfDay, addDays } from 'date-fns';
+import { headers } from 'next/headers';
+
+export const dynamic = 'force-dynamic';
 
 export async function GET() {
   try {
+    const headersList = headers();
     const session = await getServerSession();
+    
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
