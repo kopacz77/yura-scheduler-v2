@@ -6,40 +6,53 @@ export default withAuth(
     const token = req.nextauth.token;
     const path = req.nextUrl.pathname;
 
-    // Allow access to auth-related paths
-    if (path.startsWith('/api/auth/') || path === '/signin' || path === '/error') {
+    // Allow public routes
+    if (path === '/signin' || path === '/signup' || path.startsWith('/api/auth')) {
+      // If user is already authenticated, redirect to appropriate dashboard
+      if (token) {
+        return NextResponse.redirect(
+          new URL(
+            token.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard',
+            req.url
+          )
+        );
+      }
       return NextResponse.next();
     }
 
-    // Must be authenticated from this point
+    // Handle root path
+    if (path === '/') {
+      if (!token) {
+        return NextResponse.redirect(new URL('/signin', req.url));
+      }
+      return NextResponse.redirect(
+        new URL(
+          token.role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard',
+          req.url
+        )
+      );
+    }
+
+    // Protected routes
     if (!token) {
       return NextResponse.redirect(new URL('/signin', req.url));
     }
 
-    // Admin trying to access student pages
-    if (token.role === 'ADMIN' && path.startsWith('/student/')) {
-      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
+    // Role-based access control
+    if (path.startsWith('/admin/') && token.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/student/dashboard', req.url));
     }
 
-    // Student trying to access admin pages
-    if (token.role === 'STUDENT' && path.startsWith('/admin/')) {
-      return NextResponse.redirect(new URL('/student/dashboard', req.url));
+    if (path.startsWith('/student/') && token.role !== 'STUDENT') {
+      return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
 
     return NextResponse.next();
   },
   {
     callbacks: {
-      authorized: ({ token, req }) => {
-        const path = req.nextUrl.pathname;
-        
-        // Always allow signin and auth API routes
-        if (path === '/signin' || path.startsWith('/api/auth/')) {
-          return true;
-        }
-
-        // Require authentication for all other routes
-        return !!token;
+      authorized: ({ req }) => {
+        return true; // Authorization is handled in the middleware function
       },
     },
   }
@@ -47,7 +60,13 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    // Protect all routes except static files
-    '/((?!_next/static|_next/image|favicon.ico|.*\.(?:jpg|jpeg|gif|png|svg|ico)$).*)',
+    /*
+     * Match all request paths except for the ones starting with:
+     * - api/auth (auth API routes)
+     * - _next/static (static files)
+     * - _next/image (image optimization files)
+     * - favicon.ico (favicon file)
+     */
+    '/((?!api/auth|_next/static|_next/image|favicon.ico).*)',
   ],
 };
