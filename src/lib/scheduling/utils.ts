@@ -1,91 +1,32 @@
-import { addMinutes, isBefore, isAfter } from 'date-fns';
-import { utcToZonedTime, formatInTimeZone } from 'date-fns-tz';
-import { Appointment } from '@/types/domain';
+import { addDays, format, parseISO, startOfDay, endOfDay } from 'date-fns';
+import { getLocalDateTime } from '@/lib/utils/date';
 
-// Time zone utilities
-export function convertTimeToZone(date: Date, timeZone: string): Date {
-  return utcToZonedTime(date, timeZone);
+interface DateRange {
+  start: Date;
+  end: Date;
 }
 
-export function formatScheduleTime(date: Date, timeZone: string): string {
-  return formatInTimeZone(date, timeZone, 'h:mm a');
-}
-
-// Conflict checking
-export function hasTimeConflict(
-  start1: Date,
-  end1: Date,
-  start2: Date,
-  end2: Date
-): boolean {
-  return (
-    (isAfter(start1, start2) && isBefore(start1, end2)) ||
-    (isAfter(end1, start2) && isBefore(end1, end2)) ||
-    (isBefore(start1, start2) && isAfter(end1, end2))
-  );
-}
-
-export function checkAppointmentConflicts(
-  newStart: Date,
-  newEnd: Date,
-  existingAppointments: Appointment[],
-  excludeId?: string
-): boolean {
-  return existingAppointments.some(
-    appointment =>
-      appointment.id !== excludeId &&
-      hasTimeConflict(
-        newStart,
-        newEnd,
-        new Date(appointment.start),
-        new Date(appointment.end)
-      )
-  );
-}
-
-// Resource management
-export function validateResourceAvailability(
-  resourceId: string,
-  start: Date,
-  end: Date,
-  currentBookings: Appointment[]
-): {
-  available: boolean;
-  conflicts?: Appointment[];
-} {
-  const conflicts = currentBookings.filter(
-    booking =>
-      booking.resourceId === resourceId &&
-      hasTimeConflict(start, end, new Date(booking.start), new Date(booking.end))
-  );
-
+export function generateDateRange(start: Date | string, days: number): DateRange {
+  const startDate = typeof start === 'string' ? parseISO(start) : start;
+  const localStart = getLocalDateTime(startDate);
+  
   return {
-    available: conflicts.length === 0,
-    conflicts: conflicts.length > 0 ? conflicts : undefined
+    start: startOfDay(localStart),
+    end: endOfDay(addDays(localStart, days))
   };
 }
 
-export function getResourceCapacity(
-  resourceId: string,
-  resources: Array<{ id: string; capacity: number }>
-): number {
-  const resource = resources.find(r => r.id === resourceId);
-  return resource?.capacity || 1;
+export function formatScheduleTime(date: Date | string) {
+  const localDate = getLocalDateTime(date);
+  return format(localDate, 'h:mm a');
 }
 
-export function checkResourceOverbooking(
-  resourceId: string,
-  start: Date,
-  end: Date,
-  resources: Array<{ id: string; capacity: number }>,
-  currentBookings: Appointment[]
-): boolean {
-  const capacity = getResourceCapacity(resourceId, resources);
-  const overlappingBookings = currentBookings.filter(
-    booking =>
-      booking.resourceId === resourceId &&
-      hasTimeConflict(start, end, new Date(booking.start), new Date(booking.end))
-  );
+export function formatScheduleDate(date: Date | string) {
+  const localDate = getLocalDateTime(date);
+  return format(localDate, 'EEEE, MMMM d, yyyy');
+}
 
-  return overlappingBookings.length >= capacity;
+export function formatScheduleDateTime(date: Date | string) {
+  const localDate = getLocalDateTime(date);
+  return format(localDate, 'EEEE, MMMM d, yyyy h:mm a');
 }
