@@ -51,8 +51,8 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   pages: {
-    signIn: '/signin',
-    error: '/auth/error',
+    signIn: '/(auth)/signin',
+    error: '/(auth)/error',
     signOut: '/'
   },
   callbacks: {
@@ -75,8 +75,8 @@ export const authOptions: NextAuthOptions = {
       if (url.startsWith(baseUrl)) {
         // Keep internal URLs as is
         return url;
-      } else if (url === '/signin') {
-        // After successful sign in, check user role
+      } else if (url.includes('/signin')) {
+        // After successful sign in, get user role from token
         const user = await prisma.user.findFirst({
           where: {
             AND: [
