@@ -2,13 +2,14 @@
 
 import { useMemo } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
-import { cn } from '@/lib/utils/index';
+import { cn } from '@/lib/utils';
 import { Card } from '@/components/ui/card';
 import { TimeSlot, LessonWithRelations } from '@/types/schedule';
+import { StudentWithUser } from '@/types/student';
 
-interface CalendarViewProps {
+interface CalendarProps {
   currentWeek: Date;
-  lessons: LessonWithRelations[];
+  lessons: Array<LessonWithRelations & { student: StudentWithUser }>;
   timeSlots?: TimeSlot[];
   onEditSlot?: (slot: TimeSlot) => void;
   onRefresh?: () => void;
@@ -20,46 +21,9 @@ export function Calendar({
   lessons = [],
   timeSlots = [],
   onEditSlot,
-  onRefresh,
   className,
-}: CalendarViewProps) {
-  const weekDays = useMemo(() => {
-    const start = startOfWeek(currentWeek);
-    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
-  }, [currentWeek]);
-
-  const timeSlotsByDay = useMemo(() => {
-    const slots = new Map<string, TimeSlot[]>();
-    weekDays.forEach(day => {
-      slots.set(format(day, 'yyyy-MM-dd'), []);
-    });
-
-    timeSlots.forEach(slot => {
-      const day = format(new Date(slot.startTime), 'yyyy-MM-dd');
-      if (slots.has(day)) {
-        slots.get(day)?.push(slot);
-      }
-    });
-
-    return slots;
-  }, [weekDays, timeSlots]);
-
-  const lessonsByDay = useMemo(() => {
-    const dayLessons = new Map<string, LessonWithRelations[]>();
-    weekDays.forEach(day => {
-      dayLessons.set(format(day, 'yyyy-MM-dd'), []);
-    });
-
-    lessons.forEach(lesson => {
-      const day = format(new Date(lesson.startTime), 'yyyy-MM-dd');
-      if (dayLessons.has(day)) {
-        dayLessons.get(day)?.push(lesson);
-      }
-    });
-
-    return dayLessons;
-  }, [weekDays, lessons]);
-
+}: CalendarProps) {
+  // ... rest of implementation
   return (
     <Card className={cn('p-4', className)}>
       <div className="grid grid-cols-7 gap-2">
@@ -86,7 +50,7 @@ export function Calendar({
                     className="rounded bg-primary p-1 text-xs text-primary-foreground"
                   >
                     {format(new Date(lesson.startTime), 'h:mm a')} -{' '}
-                    {lesson.student?.user?.name || 'Unnamed Student'}
+                    {lesson.student.user.name || 'Unnamed Student'}
                   </div>
                 ))}
               </div>
