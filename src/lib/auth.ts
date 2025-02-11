@@ -13,8 +13,8 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   pages: {
-    signIn: '/auth/signin',
-    error: '/auth/error'
+    signIn: '/(auth)/signin',  // Update to match route group
+    error: '/(auth)/error'
   },
   session: {
     strategy: 'jwt'
