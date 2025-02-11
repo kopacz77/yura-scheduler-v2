@@ -5,7 +5,7 @@ const nextConfig = {
   images: {
     unoptimized: process.env.NODE_ENV === 'development',
   },
-  webpack: (config, { isServer }) => {
+  webpack: (config) => {
     return config;
   },
 };
