@@ -17,7 +17,7 @@ interface StudentListProps {
   isLoading?: boolean;
   onAddStudent: (student: Omit<StudentWithUser, 'id' | 'createdAt' | 'updatedAt'>) => Promise<void>;
   onUpdateStudent: (id: string, data: Partial<StudentWithUser>) => Promise<void>;
-  onScheduleLesson: (student: StudentWithUser) => void;
+  onScheduleLesson: (studentId: string, lessonData: any) => Promise<void>;
 }
 
 export function StudentList({ 
@@ -42,7 +42,6 @@ export function StudentList({
       await onAddStudent(data);
       setIsAddingStudent(false);
     } catch (error) {
-      // Error handling is managed by the mutation
       console.error('Failed to add student:', error);
     }
   };
@@ -53,9 +52,20 @@ export function StudentList({
         await onUpdateStudent(editingStudent.id, data);
         setEditingStudent(null);
       } catch (error) {
-        // Error handling is managed by the mutation
         console.error('Failed to update student:', error);
       }
+    }
+  };
+
+  const handleScheduleLesson = async (student: StudentWithUser) => {
+    try {
+      await onScheduleLesson(student.id, {
+        // Default lesson data, can be customized based on requirements
+        type: 'PRIVATE',
+        duration: 60,
+      });
+    } catch (error) {
+      console.error('Failed to schedule lesson:', error);
     }
   };
 
@@ -110,7 +120,7 @@ export function StudentList({
             key={student.id}
             student={student}
             onEdit={setEditingStudent}
-            onSchedule={onScheduleLesson}
+            onSchedule={() => handleScheduleLesson(student)}
           />
         ))}
       </div>
