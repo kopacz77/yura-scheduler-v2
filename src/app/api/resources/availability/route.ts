@@ -1,36 +1,26 @@
-import { NextResponse } from 'next/server';
-import { prisma } from '@/lib/prisma';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { type NextRequest } from 'next/server';
 import { getResourceAvailability } from '@/lib/scheduling/resources';
 
-export { dynamic, revalidate } from '../../config';
+export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams;
+  const resourceId = searchParams.get('resourceId');
+  const startDate = searchParams.get('startDate');
+  const endDate = searchParams.get('endDate');
 
-export async function GET(req: Request) {
+  if (!resourceId || !startDate || !endDate) {
+    return new Response('Missing required parameters', { status: 400 });
+  }
+
   try {
-    const session = await getServerSession(authOptions);
-    if (!session) {
-      return new NextResponse('Unauthorized', { status: 401 });
-    }
-
-    const { searchParams } = new URL(req.url);
-    const startDate = searchParams.get('startDate');
-    const endDate = searchParams.get('endDate');
-    const duration = searchParams.get('duration');
-
-    if (!startDate || !endDate) {
-      return new NextResponse('Missing required parameters', { status: 400 });
-    }
-
     const availability = await getResourceAvailability(
-      new Date(startDate),
-      new Date(endDate),
-      duration ? parseInt(duration) : undefined
+      resourceId,
+      startDate,
+      endDate
     );
 
-    return NextResponse.json(availability);
+    return Response.json(availability);
   } catch (error) {
-    console.error('Error fetching resource availability:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    console.error('Failed to get resource availability:', error);
+    return new Response('Failed to get resource availability', { status: 500 });
   }
 }
