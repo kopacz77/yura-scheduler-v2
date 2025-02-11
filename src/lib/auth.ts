@@ -76,18 +76,18 @@ export const authOptions: NextAuthOptions = {
         // Keep internal URLs as is
         return url;
       } else if (url === '/signin') {
-        // After successful sign in, check user role from token
-        const token = await prisma.user.findFirst({
+        // After successful sign in, check user role
+        const user = await prisma.user.findFirst({
           where: {
             AND: [
-              { role: { not: null } },
+              { role: { in: [Role.ADMIN, Role.STUDENT] } },
               { emailVerified: { not: null } }
             ]
           },
           orderBy: { updatedAt: 'desc' }
         });
 
-        if (token?.role === 'ADMIN') {
+        if (user?.role === Role.ADMIN) {
           return `${baseUrl}/admin/dashboard`;
         }
         return `${baseUrl}/student/dashboard`;
