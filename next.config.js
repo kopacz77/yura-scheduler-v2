@@ -2,12 +2,14 @@
 const nextConfig = {
   reactStrictMode: true,
   swcMinify: true,
-  // Disable image optimization during development
   images: {
     unoptimized: process.env.NODE_ENV === 'development',
   },
+  experimental: {
+    appDir: true,
+    serverActions: true,
+  },
   webpack: (config, { isServer }) => {
-    // Add any webpack customizations here
     return config;
   },
 };
