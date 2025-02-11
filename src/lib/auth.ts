@@ -71,16 +71,40 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle custom redirects based on user role
-      if (url.startsWith(baseUrl)) {
-        // Internal URL - return as is
-        return url;
-      } else if (url.startsWith('/')) {
-        // Make relative URLs absolute
-        return `${baseUrl}${url}`;
+      // After sign in, redirect based on user role
+      if (url.startsWith('/admin') || url.startsWith('/student')) {
+        return url; // Keep protected route redirects
       }
-      // Default to homepage for external URLs
-      return baseUrl;
+      
+      if (url === '/signin') {
+        return baseUrl; // Redirect to home if trying to access sign in while authenticated
+      }
+
+      // Default redirects based on role
+      const session = await prisma.session.findFirst({
+        where: {
+          expires: {
+            gt: new Date()
+          }
+        },
+        include: {
+          user: true
+        },
+        orderBy: {
+          expires: 'desc'
+        }
+      });
+
+      if (session?.user?.role === 'ADMIN') {
+        return `${baseUrl}/admin/dashboard`;
+      }
+      
+      return `${baseUrl}/student/dashboard`;
+    }
+  },
+  events: {
+    async signIn({ user }) {
+      console.log(`User ${user.email} signed in`);
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
