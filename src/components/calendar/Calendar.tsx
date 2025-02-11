@@ -23,7 +23,43 @@ export function Calendar({
   onEditSlot,
   className,
 }: CalendarProps) {
-  // ... rest of implementation
+  const weekDays = useMemo(() => {
+    const start = startOfWeek(currentWeek);
+    return Array.from({ length: 7 }, (_, i) => addDays(start, i));
+  }, [currentWeek]);
+
+  const timeSlotsByDay = useMemo(() => {
+    const slots = new Map<string, TimeSlot[]>();
+    weekDays.forEach(day => {
+      slots.set(format(day, 'yyyy-MM-dd'), []);
+    });
+
+    timeSlots.forEach(slot => {
+      const day = format(new Date(slot.startTime), 'yyyy-MM-dd');
+      if (slots.has(day)) {
+        slots.get(day)?.push(slot);
+      }
+    });
+
+    return slots;
+  }, [weekDays, timeSlots]);
+
+  const lessonsByDay = useMemo(() => {
+    const dayLessons = new Map<string, typeof lessons>([]);
+    weekDays.forEach(day => {
+      dayLessons.set(format(day, 'yyyy-MM-dd'), []);
+    });
+
+    lessons.forEach(lesson => {
+      const day = format(new Date(lesson.startTime), 'yyyy-MM-dd');
+      if (dayLessons.has(day)) {
+        dayLessons.get(day)?.push(lesson);
+      }
+    });
+
+    return dayLessons;
+  }, [weekDays, lessons]);
+
   return (
     <Card className={cn('p-4', className)}>
       <div className="grid grid-cols-7 gap-2">
