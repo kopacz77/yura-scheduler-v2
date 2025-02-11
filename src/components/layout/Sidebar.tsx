@@ -31,7 +31,8 @@ interface NavItem {
   roles?: string[];
 }
 
-const navItems: NavItem[] = [
+// Navigation routes configuration
+const routes: NavItem[] = [
   // Admin Routes
   {
     title: 'Dashboard',
@@ -120,52 +121,67 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     onClose();
   }, [pathname, isOpen, onClose]);
 
-  const filteredNavItems = navItems.filter(
+  const filteredRoutes = routes.filter(
     (item) => item.roles?.includes(userRole)
   );
 
   return (
-    <aside
-      className={cn(
-        'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-background transition-transform duration-200 ease-in-out lg:static lg:translate-x-0',
-        {
-          'translate-x-0': isOpen,
-          '-translate-x-full': !isOpen,
-        }
-      )}
-    >
-      <div className="flex h-full flex-col">
-        <div className="flex h-14 items-center justify-between px-4 lg:h-[4rem]">
-          <span className="text-lg font-semibold">Yura Scheduler</span>
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={onClose}
-            className="lg:hidden"
-          >
-            <X className="h-4 w-4" />
-          </Button>
+    <>
+      {/* Sidebar */}
+      <aside
+        className={cn(
+          'fixed inset-y-0 left-0 z-50 w-64 transform border-r bg-background transition-transform duration-200 ease-in-out lg:static lg:translate-x-0',
+          {
+            'translate-x-0': isOpen,
+            '-translate-x-full': !isOpen,
+          }
+        )}
+      >
+        <div className="flex h-full flex-col">
+          {/* Header */}
+          <div className="flex h-14 items-center justify-between px-4 lg:h-[4rem]">
+            <span className="text-lg font-semibold">Yura Scheduler</span>
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={onClose}
+              className="lg:hidden"
+            >
+              <X className="h-4 w-4" />
+              <span className="sr-only">Close menu</span>
+            </Button>
+          </div>
+
+          {/* Navigation */}
+          <ScrollArea className="flex-1 px-2 py-2">
+            <nav className="space-y-1">
+              {filteredRoutes.map((item) => (
+                <Link key={item.href} href={item.href}>
+                  <span
+                    className={cn(
+                      'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
+                      pathname === item.href
+                        ? 'bg-accent text-accent-foreground'
+                        : 'transparent'
+                    )}
+                  >
+                    <item.icon className="mr-2 h-4 w-4" />
+                    {item.title}
+                  </span>
+                </Link>
+              ))}
+            </nav>
+          </ScrollArea>
         </div>
-        <ScrollArea className="flex-1 px-2 py-2">
-          <nav className="space-y-1">
-            {filteredNavItems.map((item) => (
-              <Link key={item.href} href={item.href}>
-                <span
-                  className={cn(
-                    'group flex items-center rounded-md px-3 py-2 text-sm font-medium hover:bg-accent hover:text-accent-foreground',
-                    pathname === item.href
-                      ? 'bg-accent text-accent-foreground'
-                      : 'transparent'
-                  )}
-                >
-                  <item.icon className="mr-2 h-4 w-4" />
-                  {item.title}
-                </span>
-              </Link>
-            ))}
-          </nav>
-        </ScrollArea>
-      </div>
-    </aside>
+      </aside>
+
+      {/* Mobile Overlay */}
+      {isOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-background/80 backdrop-blur-sm lg:hidden"
+          onClick={onClose}
+        />
+      )}
+    </>
   );
 }
