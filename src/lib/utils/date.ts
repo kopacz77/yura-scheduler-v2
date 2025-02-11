@@ -1,12 +1,23 @@
-import { utcToZonedTime, formatInTimeZone } from 'date-fns-tz';
-import { format, addDays, isSameDay, addMinutes } from 'date-fns';
+import { format as fnsFormat, parseISO } from 'date-fns';
 
-export function formatToTimeZone(date: Date, timeZone: string, formatStr: string): string {
-  return formatInTimeZone(date, timeZone, formatStr);
+export function formatDate(date: Date | string, formatStr: string = 'PPP') {
+  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  return fnsFormat(dateObj, formatStr);
 }
 
-export function convertToTimeZone(date: Date, timeZone: string): Date {
-  return utcToZonedTime(date, timeZone);
+export function formatTime(date: Date | string, formatStr: string = 'p') {
+  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  return fnsFormat(dateObj, formatStr);
 }
 
-// Other date utility functions...
+export function formatDateTime(date: Date | string, formatStr: string = 'PPp') {
+  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  return fnsFormat(dateObj, formatStr);
+}
+
+// Helper for handling timezone offsets
+export function getLocalDateTime(date: Date | string) {
+  const dateObj = typeof date === 'string' ? parseISO(date) : date;
+  const offset = new Date().getTimezoneOffset();
+  return new Date(dateObj.getTime() - (offset * 60 * 1000));
+}
