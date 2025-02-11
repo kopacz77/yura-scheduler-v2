@@ -1,17 +1,18 @@
-import '@/styles/globals.css';
+import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { Providers } from '@/providers';
-import { Metadata } from 'next';
+import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: {
-    default: 'Yura Ice Dance',
-    template: '%s - Yura Ice Dance',
-  },
-  description: 'Ice dance coaching and scheduling platform',
+  title: 'Yura Ice Dance Scheduler',
+  description: 'Schedule lessons with Yura Min',
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={GeistSans.className}>
