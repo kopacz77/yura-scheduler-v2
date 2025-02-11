@@ -1,36 +1,24 @@
-import { Level, User } from '@prisma/client';
+import { type User, type Student, type Role } from '@prisma/client';
 
-export interface StudentWithUser {
-  id: string;
-  userId: string;
-  user: User;
-  phone: string | null;
+export interface UserData {
+  name: string | null;
+  email: string;
+}
+
+export interface StudentWithUser extends Omit<Student, 'user'> {
+  user: UserData;
+}
+
+export interface StudentFormData {
+  email: string;
+  name: string;
+  phone?: string;
+  level: string;
   maxLessonsPerWeek: number;
-  notes: string | null;
-  level: Level;
-  emergencyContact: {
+  notes?: string;
+  emergencyContact?: {
     name: string;
     phone: string;
     relationship: string;
-  } | null;
-  createdAt: Date;
-  updatedAt: Date;
-}
-
-export interface StudentProgress {
-  studentId: string;
-  date: string;
-  skillLevel: number;
-  attendance: number;
-  notes?: string;
-  evaluatedBy: string;
-}
-
-export interface StudentStats {
-  totalLessons: number;
-  completedLessons: number;
-  upcomingLessons: number;
-  averageAttendance: number;
-  currentLevel: Level;
-  progressRate: number;
+  };
 }
