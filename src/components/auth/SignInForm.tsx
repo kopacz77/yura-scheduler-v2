@@ -6,26 +6,39 @@ import { signIn } from 'next-auth/react'
 
 import { cn } from '@/lib/utils'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 import { LoadingSpinner } from '@/components/ui/loading'
-import { Icons } from '@/components/icons'
 
 interface SignInFormProps extends React.HTMLAttributes<HTMLDivElement> {}
 
 export function SignInForm({ className, ...props }: SignInFormProps) {
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const [error, setError] = React.useState<string>("")
   const searchParams = useSearchParams()
   const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
 
-  async function onSubmit(event: React.SyntheticEvent) {
+  async function onSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault()
     setIsLoading(true)
+    setError("")
 
+    const formData = new FormData(event.currentTarget)
+    
     try {
-      await signIn('google', {
+      const res = await signIn('credentials', {
+        email: formData.get('email'),
+        password: formData.get('password'),
+        redirect: false,
         callbackUrl,
       })
+
+      if (res?.error) {
+        setError(res.error)
+      }
     } catch (error) {
       console.error('Sign in error:', error)
+      setError('An error occurred during sign in')
     } finally {
       setIsLoading(false)
     }
@@ -34,32 +47,42 @@ export function SignInForm({ className, ...props }: SignInFormProps) {
   return (
     <div className={cn('grid gap-6', className)} {...props}>
       <form onSubmit={onSubmit}>
-        <div className="grid gap-2">
-          <Button 
-            variant="outline" 
-            type="submit" 
-            disabled={isLoading}
-            className="w-full"
-          >
-            {isLoading ? (
-              <LoadingSpinner className="mr-2 h-4 w-4" />
-            ) : (
-              <Icons.google className="mr-2 h-4 w-4" />
-            )}
-            Sign in with Google
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label htmlFor="email">Email</Label>
+            <Input
+              id="email"
+              name="email"
+              type="email"
+              autoCapitalize="none"
+              autoComplete="email"
+              autoCorrect="off"
+              disabled={isLoading}
+              required
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor="password">Password</Label>
+            <Input
+              id="password"
+              name="password"
+              type="password"
+              autoComplete="current-password"
+              disabled={isLoading}
+              required
+            />
+          </div>
+          {error && (
+            <div className="text-sm text-red-500">
+              {error}
+            </div>
+          )}
+          <Button type="submit" disabled={isLoading}>
+            {isLoading && <LoadingSpinner className="mr-2 h-4 w-4" />}
+            Sign In
           </Button>
         </div>
       </form>
-      <div className="relative">
-        <div className="absolute inset-0 flex items-center">
-          <span className="w-full border-t" />
-        </div>
-        <div className="relative flex justify-center text-xs uppercase">
-          <span className="bg-background px-2 text-muted-foreground">
-            Secure Authentication
-          </span>
-        </div>
-      </div>
     </div>
   )
 }
