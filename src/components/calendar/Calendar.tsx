@@ -2,13 +2,13 @@
 
 import { useMemo } from 'react';
 import { format, startOfWeek, addDays } from 'date-fns';
-import { cn } from '@/lib/utils';
+import { cn } from '@/lib/utils/index';
 import { Card } from '@/components/ui/card';
-import { TimeSlot, Lesson } from '@/types/schedule';
+import { TimeSlot, LessonWithRelations } from '@/types/schedule';
 
 interface CalendarViewProps {
   currentWeek: Date;
-  lessons: Lesson[];
+  lessons: LessonWithRelations[];
   timeSlots?: TimeSlot[];
   onEditSlot?: (slot: TimeSlot) => void;
   onRefresh?: () => void;
@@ -45,7 +45,7 @@ export function Calendar({
   }, [weekDays, timeSlots]);
 
   const lessonsByDay = useMemo(() => {
-    const dayLessons = new Map<string, Lesson[]>();
+    const dayLessons = new Map<string, LessonWithRelations[]>();
     weekDays.forEach(day => {
       dayLessons.set(format(day, 'yyyy-MM-dd'), []);
     });
@@ -80,7 +80,7 @@ export function Calendar({
                     {format(new Date(slot.startTime), 'h:mm a')}
                   </div>
                 ))}
-                {lessonsByDay.get(format(day, 'yyyy-MM-dd'))?.map((lesson: Lesson) => (
+                {lessonsByDay.get(format(day, 'yyyy-MM-dd'))?.map((lesson) => (
                   <div
                     key={lesson.id}
                     className="rounded bg-primary p-1 text-xs text-primary-foreground"
