@@ -86,7 +86,7 @@ export function Calendar({
                     className="rounded bg-primary p-1 text-xs text-primary-foreground"
                   >
                     {format(new Date(lesson.startTime), 'h:mm a')} -{' '}
-                    {lesson.student.user.name}
+                    {lesson.student?.user?.name || 'Unnamed Student'}
                   </div>
                 ))}
               </div>
