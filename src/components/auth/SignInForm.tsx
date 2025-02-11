@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation'
 import { signIn } from 'next-auth/react'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { useForm } from 'react-hook-form'
+import Link from 'next/link'
 import * as z from 'zod'
 
 import { cn } from '@/lib/utils'
@@ -125,5 +126,5 @@ export function SignInForm() {
         </Button>
       </form>
     </Form>
-  )
+  );
 }
