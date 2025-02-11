@@ -4,8 +4,8 @@ import { Providers } from '@/components/providers';
 import '@/styles/globals.css';
 
 export const metadata: Metadata = {
-  title: 'Yura Ice Dance Scheduler',
-  description: 'Schedule lessons with Yura Min',
+  title: 'YM Movement - Ice Dance with Yura Min',
+  description: 'Schedule your ice dance lessons with Olympic athlete Yura Min',
 };
 
 export default function RootLayout({
