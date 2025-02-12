@@ -1,42 +1,125 @@
-import { Metadata } from 'next'
-import { SignInForm } from '@/components/auth/SignInForm'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Logo } from '@/components/ui/logo'
-import Link from 'next/link'
+'use client';
 
-export const metadata: Metadata = {
-  title: 'Sign In - YM Movement',
-  description: 'Sign in to manage your ice dance lessons',
-}
+import { useState } from 'react';
+import { signIn } from 'next-auth/react';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Icons } from '@/components/ui/icons';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+
+const signInSchema = z.object({
+  email: z.string().email('Invalid email format'),
+  password: z.string().min(1, 'Password is required'),
+});
+
+type SignInFormData = z.infer<typeof signInSchema>;
 
 export default function SignInPage() {
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const callbackUrl = searchParams.get('callbackUrl') || '/';
+  const [error, setError] = useState<string | null>(null);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<SignInFormData>({
+    resolver: zodResolver(signInSchema),
+  });
+
+  const onSubmit = async (data: SignInFormData) => {
+    try {
+      setIsLoading(true);
+      setError(null);
+
+      const result = await signIn('credentials', {
+        redirect: false,
+        email: data.email.toLowerCase(),
+        password: data.password,
+      });
+
+      if (!result?.error) {
+        router.push(callbackUrl);
+        router.refresh();
+      } else {
+        setError('Invalid email or password');
+      }
+    } catch (error) {
+      setError('An error occurred during sign in');
+      console.error('Sign in error:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center bg-gradient-to-b from-slate-50 to-slate-100 px-4 py-8">
-      <Link href="/" className="mb-8 flex items-center space-x-2">
-        <Logo size="small" />
-        <span className="text-xl font-semibold">YM Movement</span>
-      </Link>
-      
-      <Card className="w-full max-w-[400px] border-none shadow-md md:border">
-        <CardHeader className="space-y-1 text-center">
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>
-            Sign in to manage your ice dance lessons
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SignInForm />
-          <div className="mt-4 text-center text-sm">
-            <span className="text-slate-600">Don't have an account? </span>
-            <Link 
-              href="/signup" 
-              className="font-medium text-blue-600 hover:text-blue-500"
-            >
-              Sign up
-            </Link>
+    <div className="flex flex-col items-center justify-center min-h-screen py-12 px-4 sm:px-6 lg:px-8">
+      <div className="w-full max-w-md space-y-8">
+        <div className="text-center">
+          <h2 className="text-3xl font-bold">Welcome back</h2>
+          <p className="mt-2 text-sm text-gray-600">
+            Sign in to your account
+          </p>
+        </div>
+
+        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+
+          <div className="space-y-4">
+            <div>
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                autoComplete="email"
+                {...register('email')}
+                className={errors.email ? 'border-red-500' : ''}
+                disabled={isLoading}
+              />
+              {errors.email && (
+                <p className="mt-1 text-sm text-red-500">{errors.email.message}</p>
+              )}
+            </div>
+
+            <div>
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                autoComplete="current-password"
+                {...register('password')}
+                className={errors.password ? 'border-red-500' : ''}
+                disabled={isLoading}
+              />
+              {errors.password && (
+                <p className="mt-1 text-sm text-red-500">{errors.password.message}</p>
+              )}
+            </div>
           </div>
-        </CardContent>
-      </Card>
+
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+          >
+            {isLoading && (
+              <Icons.spinner className="mr-2 h-4 w-4 animate-spin" />
+            )}
+            Sign in
+          </Button>
+        </form>
+      </div>
     </div>
-  )
+  );
 }
