@@ -16,9 +16,23 @@ type StudentLevelData = {
   count: number;
 };
 
+type RevenueData = {
+  period: string;
+  amount: number;
+  target?: number;
+};
+
 export function AdminDashboard() {
   const { data: session, status } = useSession();
   const [studentStats, setStudentStats] = useState<StudentLevelData[]>([]);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([
+    { period: 'Jan', amount: 12000 },
+    { period: 'Feb', amount: 14000 },
+    { period: 'Mar', amount: 16000 },
+    { period: 'Apr', amount: 15000 },
+    { period: 'May', amount: 17000 },
+    { period: 'Jun', amount: 19000 },
+  ]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -86,7 +100,7 @@ export function AdminDashboard() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2">
-        <RevenueChart />
+        <RevenueChart data={revenueData} />
         <PaymentReport />
       </div>
     </div>
