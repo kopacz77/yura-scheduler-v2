@@ -13,6 +13,8 @@ model User {
   name          String?
   password      String?
   role          Role      @default(STUDENT)
+  active        Boolean   @default(true)
+  lastLogin     DateTime?
   emailVerified DateTime?
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
@@ -35,27 +37,27 @@ model Student {
 }
 
 model Lesson {
-  id                String       @id @default(cuid())
-  studentId         String
-  student           Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  rinkId            String
-  rink              Rink         @relation(fields: [rinkId], references: [id])
-  startTime         DateTime
-  endTime           DateTime
-  duration          Int          
-  type              LessonType   @default(PRIVATE)
-  area              RinkArea     @default(MAIN_RINK)
-  status            LessonStatus @default(SCHEDULED)
-  cancellationReason String?
-  cancellationTime  DateTime?
-  notes             String?
-  price             Float
-  payment           Payment?
-  timeSlotId        String?
-  timeSlot          RinkTimeSlot? @relation(fields: [timeSlotId], references: [id])
+  id                    String       @id @default(cuid())
+  studentId             String
+  student               Student      @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  rinkId                String
+  rink                  Rink         @relation(fields: [rinkId], references: [id])
+  startTime             DateTime
+  endTime               DateTime
+  duration              Int
+  type                  LessonType   @default(PRIVATE)
+  area                  RinkArea     @default(MAIN_RINK)
+  status                LessonStatus @default(SCHEDULED)
+  cancellationReason    String?
+  cancellationTime      DateTime?
+  notes                 String?
+  price                 Float
+  payment               Payment?
+  timeSlotId           String?
+  timeSlot             RinkTimeSlot? @relation(fields: [timeSlotId], references: [id])
   googleCalendarEventId String?
-  createdAt         DateTime     @default(now())
-  updatedAt         DateTime     @updatedAt
+  createdAt            DateTime      @default(now())
+  updatedAt            DateTime      @updatedAt
 
   @@index([startTime])
   @@index([studentId])
@@ -86,16 +88,16 @@ model Payment {
 }
 
 model Rink {
-  id              String        @id @default(cuid())
-  name            String        @unique
-  timezone        String
-  address         String
-  lessons         Lesson[]
-  timeSlots       RinkTimeSlot[]
-  recurringPatterns RecurringPattern[]
-  maxCapacity     Int?
-  createdAt       DateTime      @default(now())
-  updatedAt       DateTime      @updatedAt
+  id                 String             @id @default(cuid())
+  name               String             @unique
+  timezone           String
+  address            String
+  lessons            Lesson[]
+  timeSlots          RinkTimeSlot[]
+  recurringPatterns  RecurringPattern[]
+  maxCapacity        Int?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
 }
 
 model RinkTimeSlot {
@@ -109,7 +111,7 @@ model RinkTimeSlot {
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
-  recurringId String?   // Link to recurring pattern if this is part of a series
+  recurringId String?
 
   @@index([rinkId])
   @@index([startTime])
@@ -120,11 +122,11 @@ model RecurringPattern {
   id          String    @id @default(cuid())
   rinkId      String
   rink        Rink      @relation(fields: [rinkId], references: [id], onDelete: Cascade)
-  daysOfWeek  Int[]     // Store days when this pattern repeats
-  startDate   DateTime  // Pattern start date
-  endDate     DateTime  // Pattern end date
-  startTime   String    // Time in HH:mm format
-  duration    Int       // Duration in minutes
+  daysOfWeek  Int[]
+  startDate   DateTime
+  endDate     DateTime
+  startTime   String
+  duration    Int
   maxStudents Int       @default(1)
   isActive    Boolean   @default(true)
   createdAt   DateTime  @default(now())
