@@ -1,93 +1,58 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth/next';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { startOfDay, endOfDay, addDays } from 'date-fns';
-import { headers } from 'next/headers';
-
-export const dynamic = 'force-dynamic';
+import { startOfDay, addDays } from 'date-fns';
 
 export async function GET() {
   try {
-    const headersList = headers();
-    const session = await getServerSession();
-    
+    const session = await getServerSession(authOptions);
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const today = new Date();
-    const endDate = addDays(today, 7); // Get lessons for the next 7 days
+    const today = startOfDay(new Date());
+    const nextWeek = addDays(today, 7);
 
-    let lessons;
-    if (session.user.role === 'ADMIN') {
-      lessons = await prisma.lesson.findMany({
-        where: {
-          startTime: {
-            gte: startOfDay(today),
-            lte: endOfDay(endDate),
-          },
-          status: 'SCHEDULED',
+    const query = {
+      where: {
+        startTime: {
+          gte: today,
+          lt: nextWeek,
         },
-        include: {
+        status: {
+          not: 'CANCELLED',
+        },
+        ...(session.user.role === 'STUDENT' ? {
           student: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                },
+            userId: session.user.id,
+          },
+        } : {}),
+      },
+      include: {
+        student: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                email: true,
               },
             },
           },
-          rink: true,
         },
-        orderBy: {
-          startTime: 'asc',
-        },
-        take: 5,
-      });
-    } else {
-      // For students, only show their own lessons
-      const student = await prisma.student.findFirst({
-        where: {
-          userId: session.user.id,
-        },
-      });
+        rink: true,
+      },
+      orderBy: {
+        startTime: 'asc',
+      },
+      take: 10,
+    };
 
-      if (!student) {
-        return new NextResponse('Student not found', { status: 404 });
-      }
-
-      lessons = await prisma.lesson.findMany({
-        where: {
-          studentId: student.id,
-          startTime: {
-            gte: startOfDay(today),
-            lte: endOfDay(endDate),
-          },
-          status: 'SCHEDULED',
-        },
-        include: {
-          student: {
-            include: {
-              user: {
-                select: {
-                  name: true,
-                },
-              },
-            },
-          },
-          rink: true,
-        },
-        orderBy: {
-          startTime: 'asc',
-        },
-        take: 5,
-      });
-    }
+    const lessons = await prisma.lesson.findMany(query);
 
     return NextResponse.json(lessons);
   } catch (error) {
     console.error('Error fetching upcoming lessons:', error);
-    return new NextResponse('Internal error', { status: 500 });
+    return new NextResponse('Internal Server Error', { status: 500 });
   }
 }
