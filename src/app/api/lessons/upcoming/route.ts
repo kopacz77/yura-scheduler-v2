@@ -1,33 +1,33 @@
 import { NextResponse } from 'next/server';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
 import { prisma } from '@/lib/prisma';
-import { startOfDay, addDays } from 'date-fns';
+import { LessonStatus } from '@prisma/client';
+import { auth } from '@/lib/auth';
 
-export async function GET() {
+export async function GET(req: Request) {
   try {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const today = startOfDay(new Date());
-    const nextWeek = addDays(today, 7);
+    const today = new Date();
+    const nextWeek = new Date();
+    nextWeek.setDate(nextWeek.getDate() + 7);
 
     const query = {
       where: {
+        ...(session.user.role === 'STUDENT' && {
+          student: {
+            userId: session.user.id
+          }
+        }),
         startTime: {
           gte: today,
-          lt: nextWeek,
+          lt: nextWeek
         },
         status: {
-          not: 'CANCELLED',
-        },
-        ...(session.user.role === 'STUDENT' ? {
-          student: {
-            userId: session.user.id,
-          },
-        } : {}),
+          not: LessonStatus.CANCELLED
+        }
       },
       include: {
         student: {
@@ -35,21 +35,20 @@ export async function GET() {
             user: {
               select: {
                 name: true,
-                email: true,
-              },
-            },
-          },
+                email: true
+              }
+            }
+          }
         },
-        rink: true,
+        rink: true
       },
       orderBy: {
-        startTime: 'asc',
+        startTime: 'asc'
       },
-      take: 10,
+      take: 10
     };
 
     const lessons = await prisma.lesson.findMany(query);
-
     return NextResponse.json(lessons);
   } catch (error) {
     console.error('Error fetching upcoming lessons:', error);
