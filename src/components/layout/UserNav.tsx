@@ -1,7 +1,7 @@
 'use client';
 
-import { LogOut, User, Settings } from 'lucide-react';
-import { useAuth } from '@/contexts/auth-context';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -10,57 +10,40 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { useRouter } from 'next/navigation';
+import { signOut, useSession } from 'next-auth/react';
+import Link from 'next/link';
 
-type UserNavProps = {
-  user: {
-    name: string | null;
-    email: string;
-    role: string;
-  };
-};
+export function UserNav() {
+  const { data: session } = useSession();
 
-export function UserNav({ user }: UserNavProps) {
-  const { logout } = useAuth();
-  const router = useRouter();
-
-  const initials = user.name
-    ? user.name
-        .split(' ')
-        .map((n) => n[0])
-        .join('')
-        .toUpperCase()
-    : user.email[0].toUpperCase();
+  if (!session?.user) return null;
 
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative h-8 w-8 rounded-full">
           <Avatar className="h-8 w-8">
-            <AvatarFallback>{initials}</AvatarFallback>
+            <AvatarFallback>{session.user.name?.[0] || 'U'}</AvatarFallback>
           </Avatar>
         </Button>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className="w-56" align="end" forceMount>
+      <DropdownMenuContent align="end" className="w-56">
         <DropdownMenuLabel className="font-normal">
           <div className="flex flex-col space-y-1">
-            <p className="text-sm font-medium leading-none">{user.name || 'User'}</p>
-            <p className="text-xs leading-none text-muted-foreground">{user.email}</p>
+            <p className="text-sm font-medium leading-none">{session.user.name}</p>
+            <p className="text-xs leading-none text-muted-foreground">
+              {session.user.email}
+            </p>
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => router.push('/settings')}>
-          <Settings className="mr-2 h-4 w-4" />
-          Settings
+        <DropdownMenuItem asChild>
+          <Link href="/settings">Settings</Link>
         </DropdownMenuItem>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem 
-          onClick={() => logout()}
+        <DropdownMenuItem
           className="text-red-600 focus:text-red-600"
+          onSelect={() => signOut()}
         >
-          <LogOut className="mr-2 h-4 w-4" />
           Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
