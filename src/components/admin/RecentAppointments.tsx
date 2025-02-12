@@ -2,6 +2,11 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar } from '@/components/ui/avatar';
 import { format } from 'date-fns';
+import { cn } from '@/lib/utils';
+
+interface RecentAppointmentsProps {
+  className?: string;
+}
 
 const recentAppointments = [
   {
@@ -30,9 +35,9 @@ const recentAppointments = [
   }
 ];
 
-export function RecentAppointments() {
+export function RecentAppointments({ className }: RecentAppointmentsProps) {
   return (
-    <Card>
+    <Card className={className}>
       <CardHeader>
         <CardTitle>Recent Appointments</CardTitle>
       </CardHeader>
@@ -55,7 +60,12 @@ export function RecentAppointments() {
               </div>
               <div className="text-right">
                 <p className="text-sm">{appointment.type}</p>
-                <p className={`text-xs ${appointment.status === 'Completed' ? 'text-green-500' : appointment.status === 'Cancelled' ? 'text-red-500' : 'text-blue-500'}`}>
+                <p className={cn(
+                  'text-xs',
+                  appointment.status === 'Completed' ? 'text-green-500' : 
+                  appointment.status === 'Cancelled' ? 'text-red-500' : 
+                  'text-blue-500'
+                )}>
                   {appointment.status}
                 </p>
               </div>
