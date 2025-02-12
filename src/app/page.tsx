@@ -1,20 +1,29 @@
+import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
 export default function HomePage() {
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center">
-      <div className="mx-auto w-full max-w-5xl px-6 text-center">
-        <h1 className="font-heading text-4xl sm:text-5xl md:text-6xl lg:text-7xl">
-          Yura Scheduler
-        </h1>
-        <p className="mt-4 text-xl text-muted-foreground">
-          Schedule and manage ice skating lessons with ease.
-        </p>
-        <div className="mt-8 flex justify-center gap-4">
-          <Button asChild size="lg">
-            <Link href="/signin">Get Started</Link>
+    <div className="flex h-screen">
+      <div className="w-1/2 bg-gradient-to-r from-blue-500 to-blue-600 flex items-center justify-center">
+        <div className="text-white p-12">
+          <h1 className="text-5xl font-bold mb-6">Welcome to Yura's Ice Dance</h1>
+          <p className="text-xl mb-8">
+            Schedule your ice dance lessons with Olympic ice dancer Yura Min
+          </p>
+          <Button asChild className="bg-white text-blue-600 hover:bg-blue-50">
+            <Link href="/signin">Sign In</Link>
           </Button>
+        </div>
+      </div>
+      <div className="w-1/2 bg-white flex items-center justify-center">
+        <div className="relative w-full h-full">
+          <Image
+            src="/skating.jpg" // We'll need to add this image
+            alt="Ice Dancing"
+            layout="fill"
+            objectFit="cover"
+          />
         </div>
       </div>
     </div>
