@@ -1,26 +1,16 @@
 'use client';
 
+import { useEffect, useState } from 'react';
 import { useSession } from 'next-auth/react';
+import { Level } from '@prisma/client';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Overview } from './Overview';
+import { StudentStats } from './StudentStats';
 import { LessonStats } from './LessonStats';
 import { RecentAppointments } from './RecentAppointments';
-import { StudentStats } from './StudentStats';
-import { PaymentReport } from './PaymentReport';
 import { RevenueChart } from './RevenueChart';
-import { useEffect, useState } from 'react';
-import { Level } from '@prisma/client';
-
-type StudentLevelData = {
-  level: string;
-  count: number;
-};
-
-type RevenueData = {
-  period: string;
-  amount: number;
-  target?: number;
-};
+import { PaymentReport } from './PaymentReport';
+import { StudentLevelData, RevenueData } from '@/types';
 
 export function AdminDashboard() {
   const { data: session, status } = useSession();
@@ -35,7 +25,7 @@ export function AdminDashboard() {
         const response = await fetch('/api/stats');
         if (!response.ok) throw new Error('Failed to fetch dashboard stats');
         const data = await response.json();
-        
+
         // Format student stats
         const formattedStudentStats = Object.values(Level).map(level => ({
           level: level.toString(),
