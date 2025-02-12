@@ -4,38 +4,36 @@ import { NextResponse } from 'next/server';
 export default withAuth(
   async function middleware(req) {
     const token = req.nextauth.token;
-    const isAuth = !!token;
-    const isAuthPage = req.nextUrl.pathname === '/signin';
-    const isAdminRoute = req.nextUrl.pathname.startsWith('/admin');
-    const isStudentRoute = req.nextUrl.pathname.startsWith('/student');
-    
-    // Redirect authenticated users away from auth pages
-    if (isAuthPage) {
-      if (isAuth) {
-        const role = token.role;
-        const redirectUrl = role === 'ADMIN' ? '/admin/dashboard' : '/student/dashboard';
-        return NextResponse.redirect(new URL(redirectUrl, req.url));
+    const url = req.nextUrl;
+
+    // Auth page handling
+    if (url.pathname.startsWith('/(auth)') || url.pathname === '/signin') {
+      if (token) {
+        // Redirect authenticated users to their appropriate dashboard
+        return NextResponse.redirect(
+          new URL(
+            token.role === 'ADMIN' ? '/admin/dashboard' : '/student-portal',
+            req.url
+          )
+        );
       }
       return NextResponse.next();
     }
 
-    // Protected route checks
-    if (!isAuth) {
-      let callbackUrl = req.nextUrl.pathname;
-      if (req.nextUrl.search) {
-        callbackUrl += req.nextUrl.search;
-      }
+    // Protected routes require authentication
+    if (!token) {
+      const callbackUrl = encodeURIComponent(url.pathname + url.search);
       return NextResponse.redirect(
-        new URL(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`, req.url)
+        new URL(`/signin?callbackUrl=${callbackUrl}`, req.url)
       );
     }
 
     // Role-based access control
-    if (isAdminRoute && token.role !== 'ADMIN') {
-      return NextResponse.redirect(new URL('/student/dashboard', req.url));
+    if (url.pathname.startsWith('/admin') && token.role !== 'ADMIN') {
+      return NextResponse.redirect(new URL('/student-portal', req.url));
     }
 
-    if (isStudentRoute && token.role !== 'STUDENT') {
+    if (url.pathname.startsWith('/student-portal') && token.role !== 'STUDENT') {
       return NextResponse.redirect(new URL('/admin/dashboard', req.url));
     }
 
@@ -44,11 +42,12 @@ export default withAuth(
   {
     callbacks: {
       authorized: ({ req, token }) => {
-        // Public routes
-        if (req.nextUrl.pathname === '/signin') {
+        // Allow public routes
+        if (req.nextUrl.pathname.startsWith('/(auth)') || 
+            req.nextUrl.pathname === '/signin') {
           return true;
         }
-        // Protected routes require authentication
+        // All other routes require authentication
         return !!token;
       }
     },
@@ -57,12 +56,6 @@ export default withAuth(
 
 export const config = {
   matcher: [
-    '/signin',
-    '/admin/:path*',
-    '/student/:path*',
-    '/schedule/:path*',
-    '/settings/:path*',
-    '/students/:path*',
-    '/payments/:path*',
+    '/((?!api|_next/static|_next/image|favicon.ico).*)',
   ],
 };
