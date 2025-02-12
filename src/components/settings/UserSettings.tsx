@@ -1,66 +1,39 @@
-'use client';
+import { useSession } from 'next-auth/react';
+import { useState } from 'react';
 
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Input } from '@/components/ui/input';
-import { Button } from '@/components/ui/button';
-import { Textarea } from '@/components/ui/textarea';
-import { useAuth } from '@/hooks/useAuth';
+export default function UserSettings() {
+  const { data: session } = useSession();
+  const [isLoading, setIsLoading] = useState(false);
 
-export function UserSettings() {
-  const { user } = useAuth();
+  if (!session?.user) return null;
 
   return (
     <div className="space-y-6">
-      <Card>
-        <CardHeader>
-          <CardTitle>Profile Information</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="name">Name</Label>
-              <Input id="name" defaultValue={user?.name} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input id="email" type="email" defaultValue={user?.email} />
-            </div>
-          </div>
-          <div className="space-y-2">
-            <Label htmlFor="bio">Bio</Label>
-            <Textarea
-              id="bio"
-              placeholder="Tell us a little about yourself"
-              className="min-h-[100px]"
-            />
-          </div>
-          <Button>Save Changes</Button>
-        </CardContent>
-      </Card>
+      <div>
+        <h3 className="text-lg font-medium">Profile Settings</h3>
+        <p className="text-sm text-muted-foreground">
+          Update your personal information and preferences.
+        </p>
+      </div>
 
-      <Card>
-        <CardHeader>
-          <CardTitle>Password</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label htmlFor="current-password">Current Password</Label>
-            <Input id="current-password" type="password" />
-          </div>
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="new-password">New Password</Label>
-              <Input id="new-password" type="password" />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="confirm-password">Confirm Password</Label>
-              <Input id="confirm-password" type="password" />
-            </div>
-          </div>
-          <Button>Update Password</Button>
-        </CardContent>
-      </Card>
+      <div className="space-y-4">
+        <div>
+          <label className="text-sm font-medium">Name</label>
+          <p className="text-sm text-muted-foreground">{session.user.name}</p>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Email</label>
+          <p className="text-sm text-muted-foreground">{session.user.email}</p>
+        </div>
+
+        <div>
+          <label className="text-sm font-medium">Role</label>
+          <p className="text-sm text-muted-foreground">
+            {session.user.role?.toLowerCase()}
+          </p>
+        </div>
+      </div>
     </div>
   );
 }
