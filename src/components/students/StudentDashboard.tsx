@@ -1,43 +1,28 @@
-'use client';
-
-import { useSession } from 'next-auth/react';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { UpcomingLessons } from '../schedule/UpcomingLessons';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { CalendarView } from '../schedule/CalendarView';
 import { useState } from 'react';
+import { CalendarView } from '@/components/calendar/CalendarView';
+import { UpcomingLessons } from '@/components/schedule/UpcomingLessons';
 
-export function StudentDashboard() {
-  const { data: session } = useSession();
-  const [currentWeek] = useState(new Date());
+export default function StudentDashboard() {
+  const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
-  if (!session?.user || session.user.role !== 'STUDENT') {
-    return (
-      <Alert variant="destructive">
-        <AlertDescription>
-          You do not have permission to view this page.
-        </AlertDescription>
-      </Alert>
-    );
-  }
+  const handleDateChange = (date: Date) => {
+    setSelectedDate(date);
+  };
 
   return (
-    <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <h2 className="text-3xl font-bold tracking-tight">Welcome back, {session.user.name}</h2>
-      </div>
+    <div className="space-y-6">
+      <section>
+        <h2 className="text-2xl font-bold mb-4">My Schedule</h2>
+        <CalendarView
+          selectedDate={selectedDate}
+          onChange={handleDateChange}
+          readOnly
+        />
+      </section>
 
-      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
-        <Card>
-          <CardHeader>
-            <CardTitle>My Schedule</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <CalendarView currentWeek={currentWeek} readOnly />
-          </CardContent>
-        </Card>
+      <section>
         <UpcomingLessons />
-      </div>
+      </section>
     </div>
   );
 }
