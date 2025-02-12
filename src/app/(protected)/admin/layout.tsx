@@ -1,3 +1,4 @@
+import { AppShell } from '@/components/layout/AppShell';
 import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
 import { authOptions } from '@/lib/auth';
@@ -17,9 +18,5 @@ export default async function AdminLayout({
     redirect('/student/dashboard');
   }
 
-  return (
-    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
-      {children}
-    </div>
-  );
+  return <AppShell>{children}</AppShell>;
 }
