@@ -26,12 +26,20 @@ export const authOptions: NextAuthOptions = {
           placeholder: 'Enter your password'
         }
       },
-      async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            throw new Error('Missing credentials');
-          }
+      async authorize(credentials, req) {
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Missing credentials');
+        }
 
+        // Test database connection
+        try {
+          await prisma.$connect();
+        } catch (error) {
+          console.error('Database connection error:', error);
+          throw new Error('Database connection failed');
+        }
+
+        try {
           const user = await prisma.user.findUnique({
             where: {
               email: credentials.email.toLowerCase(),
@@ -65,8 +73,10 @@ export const authOptions: NextAuthOptions = {
             role: user.role
           };
         } catch (error) {
-          console.error('Auth error:', error);
+          console.error('Authorization error:', error);
           return null;
+        } finally {
+          await prisma.$disconnect();
         }
       }
     })
@@ -77,8 +87,8 @@ export const authOptions: NextAuthOptions = {
     signOut: '/'
   },
   callbacks: {
-    async jwt({ token, user }) {
-      if (user) {
+    async jwt({ token, user, account }) {
+      if (account?.type === 'credentials' && user) {
         token.id = user.id;
         token.role = user.role;
         token.email = user.email;
@@ -86,35 +96,35 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token && token.email) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-        session.user.email = token.email;
+      if (token) {
+        session.user = {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as Role,
+          email: token.email as string
+        };
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Keep internal URLs
-      if (url.startsWith(baseUrl)) {
+      // Handle relative URLs
+      if (url.startsWith('/')) {
+        return `${baseUrl}${url}`;
+      }
+      // Handle absolute URLs that start with the base URL
+      else if (url.startsWith(baseUrl)) {
         return url;
       }
       
-      // After sign in, redirect based on role
-      if (url.includes('/signin')) {
-        const session = await fetch(`${baseUrl}/api/auth/session`).then(res => res.json());
-        
-        if (!session?.user) {
-          return baseUrl;
-        }
-
-        if (session.user.role === Role.ADMIN) {
-          return `${baseUrl}/admin/dashboard`;
-        }
-        return `${baseUrl}/student/dashboard`;
-      }
-      
-      // Default to home
       return baseUrl;
+    }
+  },
+  events: {
+    async signIn({ user }) {
+      console.log('User signed in:', user);
+    },
+    async signOut({ token }) {
+      console.log('User signed out:', token);
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
