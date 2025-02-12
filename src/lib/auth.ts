@@ -26,7 +26,7 @@ export const authOptions: NextAuthOptions = {
           placeholder: 'Enter your password'
         }
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Missing credentials');
         }
@@ -77,8 +77,8 @@ export const authOptions: NextAuthOptions = {
     signOut: '/'
   },
   callbacks: {
-    async jwt({ token, user, account }) {
-      if (account?.type === 'credentials' && user) {
+    async jwt({ token, user }) {
+      if (user) {
         token.id = user.id;
         token.role = user.role;
         token.email = user.email;
@@ -87,23 +87,13 @@ export const authOptions: NextAuthOptions = {
     },
     async session({ session, token }) {
       if (token) {
-        session.user = {
-          ...session.user,
-          id: token.id as string,
-          role: token.role as Role,
-          email: token.email as string
-        };
+        session.user.id = token.id as string;
+        session.user.role = token.role as Role;
+        session.user.email = token.email as string;
       }
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // After sign in, redirect based on role
-      if (url.includes('/signin')) {
-        return token?.role === Role.ADMIN ? 
-          `${baseUrl}/admin/dashboard` : 
-          `${baseUrl}/student/dashboard`;
-      }
-      
       // Handle relative URLs
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
@@ -116,24 +106,5 @@ export const authOptions: NextAuthOptions = {
       return baseUrl;
     }
   },
-  // Only log in development
-  logger: {
-    error(code, ...message) {
-      if (process.env.NODE_ENV === 'development') {
-        console.error(code, ...message);
-      }
-    },
-    warn(code, ...message) {
-      if (process.env.NODE_ENV === 'development') {
-        console.warn(code, ...message);
-      }
-    },
-    debug(code, ...message) {
-      if (process.env.NODE_ENV === 'development') {
-        console.debug(code, ...message);
-      }
-    },
-  },
-  secret: process.env.NEXTAUTH_SECRET,
-  // No debug mode needed as we have custom logger
+  secret: process.env.NEXTAUTH_SECRET
 };
