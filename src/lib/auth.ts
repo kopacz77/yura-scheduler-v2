@@ -51,7 +51,7 @@ export const authOptions: NextAuthOptions = {
     })
   ],
   pages: {
-    signIn: '/signin',  // Remove (auth) from URLs
+    signIn: '/signin',
     error: '/auth/error',
     signOut: '/'
   },
@@ -71,32 +71,32 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // After sign in, redirect based on user role
       if (url.startsWith(baseUrl)) {
-        // Keep internal URLs as is
         return url;
       } else if (url.includes('/signin')) {
-        // Get user role from token for redirection
-        const user = await prisma.user.findFirst({
-          where: {
-            AND: [
-              { role: { in: [Role.ADMIN, Role.STUDENT] } },
-              { emailVerified: { not: null } }
-            ]
-          },
-          orderBy: { updatedAt: 'desc' }
-        });
+        try {
+          const user = await prisma.user.findFirst({
+            where: {
+              AND: [
+                { role: { in: [Role.ADMIN, Role.STUDENT] } },
+                { emailVerified: { not: null } }
+              ]
+            },
+            orderBy: { updatedAt: 'desc' }
+          });
 
-        if (user?.role === Role.ADMIN) {
-          return `${baseUrl}/admin/dashboard`;
+          if (user?.role === Role.ADMIN) {
+            return `${baseUrl}/admin/dashboard`;
+          }
+          return `${baseUrl}/student/dashboard`;
+        } catch (error) {
+          console.error('Redirect error:', error);
+          return baseUrl;
         }
-        return `${baseUrl}/student/dashboard`;
       }
-      
-      // Default to home page
       return baseUrl;
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
+  debug: false, // Turn off debug mode
 };
