@@ -1,10 +1,15 @@
 'use client';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { cn } from '@/lib/utils';
 
-export function LessonStats() {
+interface LessonStatsProps {
+  className?: string;
+}
+
+export function LessonStats({ className }: LessonStatsProps) {
   return (
-    <div className="grid gap-4 grid-cols-1 sm:grid-cols-2">
+    <div className={cn("grid gap-4 grid-cols-1 sm:grid-cols-2", className)}>
       <Card>
         <CardHeader>
           <CardTitle>Total Lessons</CardTitle>
