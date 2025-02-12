@@ -11,7 +11,20 @@ export default async function ProtectedLayout({
   const session = await getServerSession(authOptions);
 
   if (!session?.user) {
-    redirect('/signin');
+    const currentPath = typeof window !== 'undefined' ? window.location.pathname : '';
+    redirect(`/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
+  }
+
+  // Additional role-based checks
+  const isAdminRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/admin');
+  const isStudentRoute = typeof window !== 'undefined' && window.location.pathname.startsWith('/student');
+
+  if (isAdminRoute && session.user.role !== 'ADMIN') {
+    redirect('/student/dashboard');
+  }
+
+  if (isStudentRoute && session.user.role !== 'STUDENT') {
+    redirect('/admin/dashboard');
   }
 
   return (
