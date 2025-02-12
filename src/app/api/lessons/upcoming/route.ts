@@ -1,33 +1,35 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 import { LessonStatus } from '@prisma/client';
-import { auth } from '@/lib/auth';
 
-export async function GET(req: Request) {
+export async function GET(request: Request) {
   try {
-    const session = await auth();
-    if (!session?.user) {
+    const session = await getServerSession(authOptions);
+    
+    if (!session?.user?.id) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    const today = new Date();
+    const now = new Date();
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
 
     const query = {
       where: {
-        ...(session.user.role === 'STUDENT' && {
-          student: {
-            userId: session.user.id
-          }
-        }),
         startTime: {
-          gte: today,
+          gte: now,
           lt: nextWeek
         },
         status: {
           not: LessonStatus.CANCELLED
-        }
+        },
+        ...(session.user.role === 'STUDENT' && {
+          student: {
+            userId: session.user.id
+          }
+        })
       },
       include: {
         student: {
@@ -49,9 +51,10 @@ export async function GET(req: Request) {
     };
 
     const lessons = await prisma.lesson.findMany(query);
+
     return NextResponse.json(lessons);
   } catch (error) {
     console.error('Error fetching upcoming lessons:', error);
-    return new NextResponse('Internal Server Error', { status: 500 });
+    return new NextResponse('Internal Error', { status: 500 });
   }
 }
