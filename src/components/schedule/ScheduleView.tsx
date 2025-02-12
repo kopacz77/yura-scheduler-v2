@@ -1,3 +1,5 @@
+'use client';
+
 import { useEffect, useState } from 'react';
 import { Rink } from '@prisma/client';
 import { useToast } from '@/components/ui/use-toast';
