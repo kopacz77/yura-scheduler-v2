@@ -42,17 +42,11 @@ export const authOptions: NextAuthOptions = {
               name: true,
               password: true,
               role: true,
-              emailVerified: true,
             },
           });
 
           if (!user || !user.password) {
             throw new Error('Invalid credentials');
-          }
-
-          // Only check email verification for non-admin users
-          if (user.role !== 'ADMIN' && !user.emailVerified) {
-            throw new Error('Email not verified');
           }
 
           const isValid = await bcrypt.compare(
@@ -89,25 +83,6 @@ export const authOptions: NextAuthOptions = {
         token.id = user.id;
         token.role = user.role;
         token.email = user.email;
-      } else {
-        // Check token validity on subsequent requests
-        const dbUser = await prisma.user.findUnique({
-          where: { email: token.email as string },
-          select: { 
-            id: true,
-            role: true,
-            emailVerified: true 
-          }
-        });
-
-        if (!dbUser) {
-          return null; // Token no longer valid
-        }
-
-        // Only enforce email verification for non-admin users
-        if (dbUser.role !== 'ADMIN' && !dbUser.emailVerified) {
-          return null;
-        }
       }
       return token;
     },
@@ -125,7 +100,7 @@ export const authOptions: NextAuthOptions = {
         return url;
       }
       
-      // After sign in, redirect based on role stored in session
+      // After sign in, redirect based on role
       if (url.includes('/signin')) {
         try {
           const user = await prisma.user.findFirst({
@@ -152,5 +127,5 @@ export const authOptions: NextAuthOptions = {
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Keep debug on to see what's happening
+  debug: true, // Keep debug mode for testing
 };
