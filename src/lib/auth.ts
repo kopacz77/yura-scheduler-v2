@@ -1,42 +1,46 @@
-import { NextAuthOptions } from 'next-auth';
+import { NextAuthOptions, Session } from 'next-auth';
 import { PrismaAdapter } from '@next-auth/prisma-adapter';
 import { prisma } from '@/lib/prisma';
 import CredentialsProvider from 'next-auth/providers/credentials';
 import bcrypt from 'bcryptjs';
 import { Role } from '@prisma/client';
 
+export interface ExtendedSession extends Session {
+  user: {
+    id: string;
+    email: string;
+    name?: string | null;
+    role: Role;
+  };
+}
+
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 hours
-    updateAge: 60 * 60, // 1 hour
+    updateAge: 60 * 60,   // 1 hour
+  },
+  pages: {
+    signIn: '/signin',
+    error: '/(auth)/error',
+    signOut: '/',
   },
   providers: [
     CredentialsProvider({
       name: 'credentials',
       credentials: {
-        email: { 
-          label: 'Email', 
-          type: 'email',
-          placeholder: 'you@example.com'
-        },
-        password: { 
-          label: 'Password', 
-          type: 'password',
-          placeholder: 'Enter your password'
-        }
+        email: { label: 'Email', type: 'email' },
+        password: { label: 'Password', type: 'password' },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials?.email || !credentials?.password) {
-          throw new Error('Missing credentials');
+          throw new Error('Please enter your email and password');
         }
 
         try {
           const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email.toLowerCase(),
-            },
+            where: { email: credentials.email.toLowerCase() },
             select: {
               id: true,
               email: true,
@@ -64,24 +68,18 @@ export const authOptions: NextAuthOptions = {
             id: user.id,
             email: user.email,
             name: user.name,
-            role: user.role
+            role: user.role,
           };
         } catch (error) {
           console.error('Authorization error:', error);
           return null;
         }
-      }
-    })
+      },
+    }),
   ],
-  pages: {
-    signIn: '/signin',
-    error: '/auth/error',
-    signOut: '/'
-  },
   callbacks: {
     async jwt({ token, user, trigger, session }) {
       if (trigger === 'update' && session) {
-        // Handle session updates
         return { ...token, ...session.user };
       }
 
@@ -94,33 +92,33 @@ export const authOptions: NextAuthOptions = {
       return token;
     },
     async session({ session, token }) {
-      if (token) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as Role;
-        session.user.email = token.email as string;
-      }
-      return session;
+      return {
+        ...session,
+        user: {
+          ...session.user,
+          id: token.id as string,
+          role: token.role as Role,
+          email: token.email as string,
+        },
+      };
     },
     async redirect({ url, baseUrl }) {
-      // Always allow relative URLs
-      if (url.startsWith('/')) {
-        return `${baseUrl}${url}`;
-      }
-      // Allow returning to the same origin
-      if (new URL(url).origin === baseUrl) {
+      // Prevents open redirects
+      const targetUrl = new URL(url, baseUrl);
+      
+      if (targetUrl.origin === baseUrl) {
         return url;
       }
-      // Default to base URL
       return baseUrl;
-    }
+    },
   },
   events: {
     async signIn({ user }) {
       await prisma.user.update({
         where: { id: user.id },
-        data: { lastLogin: new Date() }
+        data: { lastLogin: new Date() },
       });
     },
   },
-  secret: process.env.NEXTAUTH_SECRET
+  secret: process.env.NEXTAUTH_SECRET,
 };
