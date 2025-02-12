@@ -17,7 +17,7 @@ export interface RecurringSlotFormProps {
   onCancel: () => void;
 }
 
-export default function RecurringSlotForm({ onSubmit, onCancel }: RecurringSlotFormProps) {
+const RecurringSlotForm = ({ onSubmit, onCancel }: RecurringSlotFormProps) => {
   const { register, handleSubmit, formState: { errors } } = useForm<SlotFormData>({
     resolver: zodResolver(slotSchema),
     defaultValues: {
@@ -29,7 +29,24 @@ export default function RecurringSlotForm({ onSubmit, onCancel }: RecurringSlotF
 
   return (
     <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-      {/* Form fields... */}
+      {/* Form fields */}
+      <div className="flex justify-end space-x-2">
+        <button
+          type="button"
+          onClick={onCancel}
+          className="btn-secondary"
+        >
+          Cancel
+        </button>
+        <button
+          type="submit"
+          className="btn-primary"
+        >
+          Save
+        </button>
+      </div>
     </form>
   );
-}
+};
+
+export default RecurringSlotForm;
