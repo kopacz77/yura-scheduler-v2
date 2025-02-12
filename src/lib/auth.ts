@@ -1,17 +1,17 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { compare } from "bcryptjs";
-import { NextAuthOptions, Session, DefaultSession } from "next-auth";
-import { Role } from "@prisma/client";
+import { getServerSession, type NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
+import { Role } from "@prisma/client";
 
-export interface ExtendedSession extends Session {
+export interface ExtendedSession {
   user: {
     id: string;
     email: string;
     name?: string | null;
     role: Role;
-  } & DefaultSession["user"];
+  };
 }
 
 export const authOptions: NextAuthOptions = {
@@ -88,3 +88,6 @@ export const authOptions: NextAuthOptions = {
     },
   },
 };
+
+// Helper function to get session on server side
+export const getAuthSession = () => getServerSession(authOptions);
