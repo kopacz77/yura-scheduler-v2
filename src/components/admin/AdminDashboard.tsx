@@ -25,34 +25,41 @@ type RevenueData = {
 export function AdminDashboard() {
   const { data: session, status } = useSession();
   const [studentStats, setStudentStats] = useState<StudentLevelData[]>([]);
-  const [revenueData, setRevenueData] = useState<RevenueData[]>([
-    { period: 'Jan', amount: 12000 },
-    { period: 'Feb', amount: 14000 },
-    { period: 'Mar', amount: 16000 },
-    { period: 'Apr', amount: 15000 },
-    { period: 'May', amount: 17000 },
-    { period: 'Jun', amount: 19000 },
-  ]);
+  const [revenueData, setRevenueData] = useState<RevenueData[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     async function fetchStats() {
       try {
-        const response = await fetch('/api/admin/student-stats');
-        if (!response.ok) throw new Error('Failed to fetch student stats');
+        const response = await fetch('/api/stats');
+        if (!response.ok) throw new Error('Failed to fetch dashboard stats');
         const data = await response.json();
         
-        // Transform the data into the format expected by StudentStats
-        const formattedStats = Object.values(Level).map(level => ({
+        // Format student stats
+        const formattedStudentStats = Object.values(Level).map(level => ({
           level: level.toString(),
-          count: data.levels[level] || 0
+          count: data.distribution.find((d: any) => d.level === level)?.count || 0
         }));
-        
-        setStudentStats(formattedStats);
+        setStudentStats(formattedStudentStats);
+
+        // Format revenue data
+        const currentMonth = new Date().getMonth();
+        const last6Months = Array.from({ length: 6 }, (_, i) => {
+          const d = new Date();
+          d.setMonth(currentMonth - i);
+          return d.toLocaleString('default', { month: 'short' });
+        }).reverse();
+
+        const formattedRevenueData = last6Months.map(month => ({
+          period: month,
+          amount: 0, // You'll need to update this with real data
+          target: 15000 // Example target
+        }));
+        setRevenueData(formattedRevenueData);
       } catch (err) {
-        console.error('Error fetching student stats:', err);
-        setError('Could not load student statistics');
+        console.error('Error fetching dashboard stats:', err);
+        setError('Could not load dashboard statistics');
       } finally {
         setIsLoading(false);
       }
