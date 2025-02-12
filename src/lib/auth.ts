@@ -27,59 +27,50 @@ export const authOptions: NextAuthOptions = {
         }
       },
       async authorize(credentials) {
-        try {
-          if (!credentials?.email || !credentials?.password) {
-            throw new Error('Missing credentials');
-          }
-
-          const user = await prisma.user.findUnique({
-            where: {
-              email: credentials.email.toLowerCase(),
-            },
-            select: {
-              id: true,
-              email: true,
-              name: true,
-              password: true,
-              role: true,
-              // TODO: Re-enable email verification after testing existing accounts
-              // Requirements:
-              // 1. Add email verification on signup
-              // 2. Implement email verification flow
-              // 3. Add email verification check here
-              // 4. Consider verification bypass for admin accounts
-              // emailVerified: true,
-            },
-          });
-
-          if (!user || !user.password) {
-            throw new Error('Invalid credentials');
-          }
-
-          // TODO: Add back email verification check
-          // if (!user.emailVerified) {
-          //   throw new Error('Email not verified');
-          // }
-
-          const isValid = await bcrypt.compare(
-            credentials.password,
-            user.password
-          );
-
-          if (!isValid) {
-            throw new Error('Invalid credentials');
-          }
-
-          return {
-            id: user.id,
-            email: user.email,
-            name: user.name,
-            role: user.role
-          };
-        } catch (error) {
-          console.error('Auth error:', error);
-          return null;
+        if (!credentials?.email || !credentials?.password) {
+          throw new Error('Missing credentials');
         }
+
+        // Test database connection first
+        try {
+          await prisma.$connect();
+        } catch (error) {
+          console.error('Database connection error:', error);
+          throw new Error('Database connection failed');
+        }
+
+        const user = await prisma.user.findUnique({
+          where: {
+            email: credentials.email.toLowerCase(),
+          },
+          select: {
+            id: true,
+            email: true,
+            name: true,
+            password: true,
+            role: true,
+          },
+        });
+
+        if (!user || !user.password) {
+          throw new Error('Invalid credentials');
+        }
+
+        const isValid = await bcrypt.compare(
+          credentials.password,
+          user.password
+        );
+
+        if (!isValid) {
+          throw new Error('Invalid credentials');
+        }
+
+        return {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role
+        };
       }
     })
   ],
@@ -91,7 +82,6 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
-        // Initial sign in
         token.id = user.id;
         token.role = user.role;
         token.email = user.email;
@@ -107,33 +97,23 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Keep internal URLs
+      // Handle absolute URLs that start with the base URL
       if (url.startsWith(baseUrl)) {
         return url;
       }
       
       // After sign in, redirect based on role
       if (url.includes('/signin')) {
-        try {
-          const user = await prisma.user.findFirst({
-            where: {
-              email: token?.email as string,
-            },
-            select: {
-              role: true
-              // TODO: Add back email verification check when implementing the feature
-              // emailVerified: true
-            }
-          });
-
-          if (user?.role === Role.ADMIN) {
-            return `${baseUrl}/admin/dashboard`;
-          }
-          return `${baseUrl}/student/dashboard`;
-        } catch (error) {
-          console.error('Redirect error:', error);
+        const session = await fetch(`${baseUrl}/api/auth/session`).then(res => res.json());
+        
+        if (!session?.user) {
           return baseUrl;
         }
+
+        if (session.user.role === Role.ADMIN) {
+          return `${baseUrl}/admin/dashboard`;
+        }
+        return `${baseUrl}/student/dashboard`;
       }
       
       // Default to home
@@ -141,5 +121,5 @@ export const authOptions: NextAuthOptions = {
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Keep debug mode for testing
+  debug: process.env.NODE_ENV === 'development', // Only debug in development
 };
