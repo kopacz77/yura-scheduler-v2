@@ -1,27 +1,22 @@
-import type { Metadata } from 'next';
-import { GeistSans } from 'geist/font/sans';
-import { Providers } from '@/components/providers';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/auth';
+import { Inter } from 'next/font/google';
+import { Toaster } from '@/components/ui/toaster';
+import { cn } from '@/lib/utils';
 import '@/styles/globals.css';
+import { Providers } from '@/components/providers';
 
-export const metadata: Metadata = {
-  title: 'YM Movement - Ice Dance with Yura Min',
-  description: 'Schedule your ice dance lessons with Olympic athlete Yura Min',
-};
+const inter = Inter({ subsets: ['latin'] });
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const session = await getServerSession(authOptions);
-
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={GeistSans.className}>
-        <Providers session={session}>
+      <body className={cn(inter.className, 'min-h-screen')}>
+        <Providers>
           {children}
+          <Toaster />
         </Providers>
       </body>
     </html>
