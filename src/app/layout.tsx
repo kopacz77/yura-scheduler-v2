@@ -6,14 +6,18 @@ import { Providers } from '@/components/providers';
 
 const inter = Inter({ subsets: ['latin'] });
 
-export default function RootLayout({
-  children,
-}: {
+interface RootLayoutProps {
   children: React.ReactNode;
-}) {
+}
+
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={cn(inter.className, 'min-h-screen')}>
+      <head />
+      <body className={cn(
+        'min-h-screen bg-background font-sans antialiased',
+        inter.className
+      )}>
         <Providers>
           {children}
           <Toaster />
