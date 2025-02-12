@@ -2,68 +2,126 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
+import { Role } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
-export const revalidate = 0;
+export const revalidate = 60; // Cache for 1 minute
 
 export async function GET(req: Request) {
   try {
     const session = await getServerSession(authOptions);
-    console.log('Session:', session);
 
-    if (!session) {
+    if (!session?.user) {
       return new NextResponse('Unauthorized', { status: 401 });
     }
 
-    // Debug queries
-    console.log('Fetching stats...');
+    // Check if user has admin access for all stats
+    const isAdmin = session.user.role === Role.ADMIN;
 
-    // Get students info
-    const [totalStudents, completedLessons, payments, distribution] = await Promise.all([
+    // Time period calculations
+    const thirtyDaysAgo = new Date();
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+    
+    const previousThirtyDays = new Date(thirtyDaysAgo);
+    previousThirtyDays.setDate(previousThirtyDays.getDate() - 30);
+
+    // Fetch current period stats
+    const [
+      totalStudents,
+      activeStudents,
+      completedLessons,
+      payments,
+      distribution
+    ] = await Promise.all([
       // Total students
       prisma.student.count(),
       
-      // Completed lessons
-      prisma.lesson.count({
+      // Active students (had a lesson in last 30 days)
+      prisma.student.count({
         where: {
-          status: 'COMPLETED'
+          lessons: {
+            some: {
+              startTime: { gte: thirtyDaysAgo }
+            }
+          }
         }
       }),
 
-      // Revenue
+      // Completed lessons in last 30 days
+      prisma.lesson.count({
+        where: {
+          status: 'COMPLETED',
+          startTime: { gte: thirtyDaysAgo }
+        }
+      }),
+
+      // Revenue from last 30 days
       prisma.payment.aggregate({
         where: {
-          status: 'COMPLETED'
+          status: 'COMPLETED',
+          createdAt: { gte: thirtyDaysAgo }
         },
-        _sum: {
-          amount: true
-        }
+        _sum: { amount: true }
       }),
 
       // Level distribution
       prisma.student.groupBy({
         by: ['level'],
-        _count: true
+        _count: true,
+        orderBy: { level: 'asc' }
       })
     ]);
 
-    console.log('Stats fetched:', { totalStudents, completedLessons, payments, distribution });
-
-    // Get active students (had a lesson in the last 30 days)
-    const thirtyDaysAgo = new Date();
-    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-    
-    const activeStudents = await prisma.student.count({
-      where: {
-        lessons: {
-          some: {
-            startTime: {
-              gte: thirtyDaysAgo
+    // Fetch previous period stats for trends
+    const [
+      previousActiveStudents,
+      previousCompletedLessons,
+      previousPayments
+    ] = await Promise.all([
+      prisma.student.count({
+        where: {
+          lessons: {
+            some: {
+              startTime: {
+                gte: previousThirtyDays,
+                lt: thirtyDaysAgo
+              }
             }
           }
         }
-      }
-    });
+      }),
+
+      prisma.lesson.count({
+        where: {
+          status: 'COMPLETED',
+          startTime: {
+            gte: previousThirtyDays,
+            lt: thirtyDaysAgo
+          }
+        }
+      }),
+
+      prisma.payment.aggregate({
+        where: {
+          status: 'COMPLETED',
+          createdAt: {
+            gte: previousThirtyDays,
+            lt: thirtyDaysAgo
+          }
+        },
+        _sum: { amount: true }
+      })
+    ]);
+
+    // Calculate trends
+    const calculateTrend = (current: number, previous: number) => {
+      if (previous === 0) return { change: 100, trend: 'up' };
+      const change = ((current - previous) / previous) * 100;
+      return {
+        change: Math.round(change * 10) / 10,
+        trend: change >= 0 ? 'up' : 'down'
+      };
+    };
 
     // Calculate level distribution percentages
     const levelDistribution = distribution.map(d => ({
@@ -72,39 +130,43 @@ export async function GET(req: Request) {
       percentage: totalStudents > 0 ? (d._count / totalStudents) * 100 : 0
     }));
 
+    const currentRevenue = payments._sum.amount || 0;
+    const previousRevenue = previousPayments._sum.amount || 0;
+
     const stats = {
       overview: {
         totalStudents: {
           value: totalStudents,
-          change: 0,
-          trend: 'up'
+          ...calculateTrend(totalStudents, totalStudents) // No previous data for total
         },
         activeStudents: {
           value: activeStudents,
-          change: 0,
-          trend: 'up'
+          ...calculateTrend(activeStudents, previousActiveStudents)
         },
         completedLessons: {
           value: completedLessons,
-          change: 0,
-          trend: 'up'
+          ...calculateTrend(completedLessons, previousCompletedLessons)
         },
         revenue: {
-          value: payments._sum.amount || 0,
-          change: 0,
-          trend: 'up'
+          value: currentRevenue,
+          ...calculateTrend(currentRevenue, previousRevenue)
         }
       },
       distribution: levelDistribution
     };
 
-    console.log('Returning stats:', stats);
     return NextResponse.json(stats);
   } catch (error) {
     console.error('Error fetching stats:', error);
     return new NextResponse(
-      JSON.stringify({ error: 'Failed to fetch stats', details: error instanceof Error ? error.message : 'Unknown error' }),
-      { status: 500, headers: { 'Content-Type': 'application/json' } }
+      JSON.stringify({
+        error: 'Failed to fetch stats',
+        details: error instanceof Error ? error.message : 'Unknown error'
+      }),
+      { 
+        status: 500,
+        headers: { 'Content-Type': 'application/json' }
+      }
     );
   }
 }
