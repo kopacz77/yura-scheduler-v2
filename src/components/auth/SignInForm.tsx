@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Icons } from '@/components/icons'
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Alert, AlertDescription } from '@/components/ui/alert'
 
 const formSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -24,6 +25,7 @@ type FormData = z.infer<typeof formSchema>
 export function SignInForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
+  const [error, setError] = React.useState<string | null>(null)
   const searchParams = useSearchParams()
   const callbackUrl = searchParams?.get('callbackUrl')
 
@@ -37,24 +39,30 @@ export function SignInForm() {
 
   async function onSubmit(data: FormData) {
     setIsLoading(true)
+    setError(null)
 
     try {
       const res = await signIn('credentials', {
-        email: data.email,
+        email: data.email.toLowerCase(),
         password: data.password,
-        redirect: false // Handle redirect manually after checking response
+        redirect: false
       })
 
       if (res?.error) {
-        form.setError('root', { message: 'Invalid email or password' })
-      } else if (res?.ok) {
-        // Get current user role from session and redirect accordingly
-        router.push(callbackUrl || '/admin/dashboard')
-        router.refresh() // Refresh to update session state
+        setError('Invalid email or password')
+        return
       }
+
+      if (!res?.ok) {
+        setError('Something went wrong. Please try again.')
+        return
+      }
+
+      router.push(callbackUrl || '/') // Let NextAuth handle the role-based redirect
+      router.refresh()
     } catch (error) {
       console.error('Sign in error:', error)
-      form.setError('root', { message: 'An error occurred during sign in' })
+      setError('An unexpected error occurred')
     } finally {
       setIsLoading(false)
     }
@@ -63,6 +71,12 @@ export function SignInForm() {
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+        {error && (
+          <Alert variant="destructive">
+            <AlertDescription>{error}</AlertDescription>
+          </Alert>
+        )}
+
         <FormField
           control={form.control}
           name="email"
@@ -110,11 +124,7 @@ export function SignInForm() {
             </FormItem>
           )}
         />
-        {form.formState.errors.root && (
-          <div className="rounded-md bg-destructive/10 p-3 text-sm text-destructive">
-            {form.formState.errors.root.message}
-          </div>
-        )}
+        
         <Button
           type="submit"
           className="w-full"
