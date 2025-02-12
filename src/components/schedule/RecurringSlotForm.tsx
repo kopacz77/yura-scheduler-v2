@@ -1,265 +1,225 @@
 'use client';
 
 import { useState } from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { useForm } from 'react-hook-form';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { z } from 'zod';
+import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Button } from '@/components/ui/button';
-import { Toggle } from '@/components/ui/toggle';
-import { Calendar, Clock, MapPin, Users } from 'lucide-react';
-import { format } from 'date-fns';
-import { DEFAULT_RINKS } from '@/config/rinks';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Checkbox } from '@/components/ui/checkbox';
+import { format, parse, addMinutes } from 'date-fns';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface RecurringSlotFormProps {
-  onSubmit: (data: any) => void;
-  onCancel: () => void;
-}
-
-const DAYS_OF_WEEK = [
-  { name: 'Mon', value: '1' },
-  { name: 'Tue', value: '2' },
-  { name: 'Wed', value: '3' },
-  { name: 'Thu', value: '4' },
-  { name: 'Fri', value: '5' },
-  { name: 'Sat', value: '6' },
-  { name: 'Sun', value: '0' },
+const weekDays = [
+  { id: 0, label: 'Sunday' },
+  { id: 1, label: 'Monday' },
+  { id: 2, label: 'Tuesday' },
+  { id: 3, label: 'Wednesday' },
+  { id: 4, label: 'Thursday' },
+  { id: 5, label: 'Friday' },
+  { id: 6, label: 'Saturday' },
 ];
 
-export function RecurringSlotForm({ onSubmit, onCancel }: RecurringSlotFormProps) {
-  const [selectedDays, setSelectedDays] = useState<string[]>([]);
-  const [formData, setFormData] = useState({
-    rinkId: '',
-    startDate: '',
-    endDate: '',
-    startTime: '',
-    duration: '60',
-    maxStudents: '1'
+const recurringSlotSchema = z.object({
+  startDate: z.string().min(1, 'Start date is required'),
+  endDate: z.string().min(1, 'End date is required'),
+  startTime: z.string().regex(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/, 'Invalid time format'),
+  duration: z.string().transform(Number).pipe(
+    z.number().min(15, 'Duration must be at least 15 minutes')
+  ),
+  maxStudents: z.string().transform(Number).pipe(
+    z.number().min(1, 'Must allow at least 1 student')
+  ),
+  daysOfWeek: z.array(z.number()).min(1, 'Select at least one day'),
+});
+
+type RecurringSlotFormData = z.infer<typeof recurringSlotSchema>;
+
+interface RecurringSlotFormProps {
+  rinkId: string;
+  onSuccess?: () => void;
+  onCancel?: () => void;
+}
+
+export function RecurringSlotForm({ rinkId, onSuccess, onCancel }: RecurringSlotFormProps) {
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [selectedDays, setSelectedDays] = useState<number[]>([]);
+
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+    setValue,
+  } = useForm<RecurringSlotFormData>({
+    resolver: zodResolver(recurringSlotSchema),
+    defaultValues: {
+      daysOfWeek: [],
+      duration: '30',
+      maxStudents: '1',
+    },
   });
 
-  const [errors, setErrors] = useState<Record<string, string>>({});
-
-  const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({ ...prev, [field]: value }));
-    // Clear error when field is modified
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
+  const handleDayToggle = (dayId: number) => {
+    setSelectedDays(current => {
+      const updated = current.includes(dayId)
+        ? current.filter(id => id !== dayId)
+        : [...current, dayId];
+      setValue('daysOfWeek', updated);
+      return updated;
+    });
   };
 
-  const toggleDay = (dayValue: string) => {
-    setSelectedDays(current =>
-      current.includes(dayValue)
-        ? current.filter(d => d !== dayValue)
-        : [...current, dayValue]
-    );
-    // Clear days error when selection changes
-    if (errors.days) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors.days;
-        return newErrors;
+  const onSubmit = async (data: RecurringSlotFormData) => {
+    try {
+      setIsSubmitting(true);
+      setError(null);
+
+      const startTime = parse(data.startTime, 'HH:mm', new Date());
+      const endTime = addMinutes(startTime, data.duration);
+
+      const response = await fetch('/api/schedule/recurring', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...data,
+          rinkId,
+          endTime: format(endTime, 'HH:mm'),
+        }),
       });
-    }
-  };
 
-  const validateForm = (): boolean => {
-    const newErrors: Record<string, string> = {};
+      if (!response.ok) {
+        const errorData = await response.json();
+        throw new Error(errorData.message || 'Failed to create recurring slots');
+      }
 
-    if (!formData.rinkId) newErrors.rinkId = 'Please select a rink';
-    if (!formData.startDate) newErrors.startDate = 'Start date is required';
-    if (!formData.endDate) newErrors.endDate = 'End date is required';
-    if (!formData.startTime) newErrors.startTime = 'Start time is required';
-    if (selectedDays.length === 0) newErrors.days = 'Please select at least one day';
-
-    if (formData.startDate && formData.endDate && formData.startDate > formData.endDate) {
-      newErrors.endDate = 'End date must be after start date';
-    }
-
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
-  const handleSubmit = () => {
-    if (validateForm()) {
-      onSubmit({
-        type: 'recurring',
-        ...formData,
-        daysString: selectedDays.join(',')
-      });
+      onSuccess?.();
+    } catch (err) {
+      console.error('Error creating recurring slots:', err);
+      setError(err instanceof Error ? err.message : 'Failed to create recurring slots');
+    } finally {
+      setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      {/* Location Details */}
-      <Card>
+    <Card>
+      <form onSubmit={handleSubmit(onSubmit)}>
         <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center">
-            <MapPin className="mr-2 h-4 w-4" />
-            Location Details
-          </CardTitle>
+          <CardTitle>Create Recurring Time Slots</CardTitle>
+          <CardDescription>
+            Set up recurring time slots for lessons
+          </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Select Rink</Label>
-            <Select 
-              onValueChange={(value) => handleInputChange('rinkId', value)}
-              value={formData.rinkId}
-            >
-              <SelectTrigger className={errors.rinkId ? 'border-red-500' : ''}>
-                <SelectValue placeholder="Choose a location" />
-              </SelectTrigger>
-              <SelectContent>
-                {Object.entries(DEFAULT_RINKS).map(([name, details]) => (
-                  <SelectItem key={name} value={name}>
-                    <div className="flex flex-col">
-                      <span>{name}</span>
-                      <span className="text-xs text-muted-foreground">{details.address}</span>
-                    </div>
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            {errors.rinkId && <span className="text-sm text-red-500">{errors.rinkId}</span>}
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Date Range */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center">
-            <Calendar className="mr-2 h-4 w-4" />
-            Date Range
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <Label>Start Date</Label>
-            <Input 
-              type="date" 
-              value={formData.startDate}
-              onChange={(e) => handleInputChange('startDate', e.target.value)}
-              className={errors.startDate ? 'border-red-500' : ''}
-            />
-            {errors.startDate && <span className="text-sm text-red-500">{errors.startDate}</span>}
-          </div>
-          <div className="space-y-2">
-            <Label>End Date</Label>
-            <Input 
-              type="date" 
-              value={formData.endDate}
-              onChange={(e) => handleInputChange('endDate', e.target.value)}
-              className={errors.endDate ? 'border-red-500' : ''}
-            />
-            {errors.endDate && <span className="text-sm text-red-500">{errors.endDate}</span>}
-          </div>
-        </CardContent>
-      </Card>
+        <CardContent className="space-y-6">
+          {error && (
+            <Alert variant="destructive">
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
 
-      {/* Time Details */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center">
-            <Clock className="mr-2 h-4 w-4" />
-            Time Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label>Start Time</Label>
-            <Input 
-              type="time" 
-              step="1800"
-              value={formData.startTime}
-              onChange={(e) => handleInputChange('startTime', e.target.value)}
-              className={errors.startTime ? 'border-red-500' : ''}
+            <Label htmlFor="startDate">Start Date</Label>
+            <Input
+              type="date"
+              id="startDate"
+              min={format(new Date(), 'yyyy-MM-dd')}
+              {...register('startDate')}
             />
-            {errors.startTime && <span className="text-sm text-red-500">{errors.startTime}</span>}
+            {errors.startDate && (
+              <p className="text-sm text-red-500">{errors.startDate.message}</p>
+            )}
           </div>
-          <div className="space-y-2">
-            <Label>Duration</Label>
-            <Select 
-              value={formData.duration}
-              onValueChange={(value) => handleInputChange('duration', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select duration" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="30">30 minutes</SelectItem>
-                <SelectItem value="60">60 minutes</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
 
-      {/* Recurring Pattern */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center">
-            <Calendar className="mr-2 h-4 w-4" />
-            Recurring Pattern
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <Label>Select Days</Label>
-            <div className="flex flex-wrap gap-2">
-              {DAYS_OF_WEEK.map((day) => (
-                <Toggle
-                  key={day.value}
-                  pressed={selectedDays.includes(day.value)}
-                  onPressedChange={() => toggleDay(day.value)}
-                  className={`px-3 py-2 ${errors.days ? 'border-red-500' : ''}`}
-                >
-                  {day.name}
-                </Toggle>
+          <div className="space-y-2">
+            <Label htmlFor="endDate">End Date</Label>
+            <Input
+              type="date"
+              id="endDate"
+              min={format(new Date(), 'yyyy-MM-dd')}
+              {...register('endDate')}
+            />
+            {errors.endDate && (
+              <p className="text-sm text-red-500">{errors.endDate.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="startTime">Start Time</Label>
+            <Input
+              type="time"
+              id="startTime"
+              {...register('startTime')}
+            />
+            {errors.startTime && (
+              <p className="text-sm text-red-500">{errors.startTime.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="duration">Duration (minutes)</Label>
+            <Input
+              type="number"
+              id="duration"
+              min="15"
+              step="15"
+              {...register('duration')}
+            />
+            {errors.duration && (
+              <p className="text-sm text-red-500">{errors.duration.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="maxStudents">Maximum Students</Label>
+            <Input
+              type="number"
+              id="maxStudents"
+              min="1"
+              {...register('maxStudents')}
+            />
+            {errors.maxStudents && (
+              <p className="text-sm text-red-500">{errors.maxStudents.message}</p>
+            )}
+          </div>
+
+          <div className="space-y-2">
+            <Label>Days of Week</Label>
+            <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 md:grid-cols-4">
+              {weekDays.map((day) => (
+                <div key={day.id} className="flex items-center space-x-2">
+                  <Checkbox
+                    id={`day-${day.id}`}
+                    checked={selectedDays.includes(day.id)}
+                    onCheckedChange={() => handleDayToggle(day.id)}
+                  />
+                  <Label htmlFor={`day-${day.id}`}>{day.label}</Label>
+                </div>
               ))}
             </div>
-            {errors.days && <span className="text-sm text-red-500">{errors.days}</span>}
+            {errors.daysOfWeek && (
+              <p className="text-sm text-red-500">{errors.daysOfWeek.message}</p>
+            )}
           </div>
         </CardContent>
-      </Card>
 
-      {/* Capacity Details */}
-      <Card className="md:col-span-2">
-        <CardHeader>
-          <CardTitle className="text-lg font-medium flex items-center">
-            <Users className="mr-2 h-4 w-4" />
-            Capacity Details
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Label>Maximum Students</Label>
-            <Select 
-              value={formData.maxStudents}
-              onValueChange={(value) => handleInputChange('maxStudents', value)}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Select capacity" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="1">1 student (Private)</SelectItem>
-                <SelectItem value="2">2 students</SelectItem>
-                <SelectItem value="3">3 students</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
-        </CardContent>
-      </Card>
-
-      <div className="md:col-span-2 flex justify-end space-x-2 mt-6">
-        <Button variant="outline" onClick={onCancel}>Cancel</Button>
-        <Button onClick={handleSubmit}>Create Recurring Slots</Button>
-      </div>
-    </div>
+        <CardFooter className="flex justify-between">
+          <Button
+            type="button"
+            variant="outline"
+            onClick={onCancel}
+            disabled={isSubmitting}
+          >
+            Cancel
+          </Button>
+          <Button type="submit" disabled={isSubmitting}>
+            {isSubmitting ? 'Creating...' : 'Create Slots'}
+          </Button>
+        </CardFooter>
+      </form>
+    </Card>
   );
 }
