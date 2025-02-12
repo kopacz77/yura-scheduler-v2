@@ -25,7 +25,8 @@ export function SignInForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
   const searchParams = useSearchParams()
-  const callbackUrl = searchParams?.get('callbackUrl') || '/dashboard'
+  // Let the server handle role-based redirect
+  const callbackUrl = searchParams?.get('callbackUrl')
 
   const form = useForm<FormData>({
     resolver: zodResolver(formSchema),
@@ -42,14 +43,13 @@ export function SignInForm() {
       const res = await signIn('credentials', {
         email: data.email,
         password: data.password,
-        redirect: false,
-        callbackUrl,
+        redirect: true, // Let NextAuth handle the redirect
+        callbackUrl: callbackUrl || '/admin/dashboard', // Default to admin dashboard
       })
 
+      // This code won't run if redirect is true
       if (res?.error) {
         form.setError('root', { message: 'Invalid email or password' })
-      } else if (res?.ok) {
-        router.push(callbackUrl)
       }
     } catch (error) {
       console.error('Sign in error:', error)
