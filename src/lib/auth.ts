@@ -1,9 +1,18 @@
 import { PrismaAdapter } from "@next-auth/prisma-adapter";
 import { compare } from "bcryptjs";
 import { NextAuthOptions } from "next-auth";
+import { Role } from "@prisma/client";
 import CredentialsProvider from "next-auth/providers/credentials";
 import { prisma } from "@/lib/prisma";
-import { Role } from "@prisma/client";
+
+export interface ExtendedSession {
+  user: {
+    id: string;
+    email: string;
+    name?: string | null;
+    role: Role;
+  };
+}
 
 export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
@@ -60,28 +69,21 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async session({ token, session }) {
       if (token) {
-        session.user.id = token.id;
-        session.user.name = token.name;
-        session.user.email = token.email;
-        session.user.role = token.role;
+        session.user = {
+          id: token.id as string,
+          name: token.name as string | null,
+          email: token.email as string,
+          role: token.role as Role,
+        };
       }
-
-      return session;
+      return session as ExtendedSession;
     },
     async jwt({ token, user }) {
       if (user) {
         token.id = user.id;
         token.role = user.role;
       }
-
       return token;
     },
   },
-};
-
-export type AuthUser = {
-  id: string;
-  name?: string | null;
-  email: string;
-  role: Role;
 };
