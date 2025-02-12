@@ -50,7 +50,8 @@ export const authOptions: NextAuthOptions = {
             throw new Error('Invalid credentials');
           }
 
-          if (!user.emailVerified) {
+          // Only check email verification for non-admin users
+          if (user.role !== 'ADMIN' && !user.emailVerified) {
             throw new Error('Email not verified');
           }
 
@@ -99,8 +100,13 @@ export const authOptions: NextAuthOptions = {
           }
         });
 
-        if (!dbUser || !dbUser.emailVerified) {
+        if (!dbUser) {
           return null; // Token no longer valid
+        }
+
+        // Only enforce email verification for non-admin users
+        if (dbUser.role !== 'ADMIN' && !dbUser.emailVerified) {
+          return null;
         }
       }
       return token;
@@ -114,14 +120,31 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      if (url === '/signin') {
-        // Go to appropriate dashboard after sign in
-        return '/admin/dashboard';
-      }
-      
-      // Allow internal URLs
+      // Keep internal URLs
       if (url.startsWith(baseUrl)) {
         return url;
+      }
+      
+      // After sign in, redirect based on role stored in session
+      if (url.includes('/signin')) {
+        try {
+          const user = await prisma.user.findFirst({
+            where: {
+              email: token?.email as string,
+            },
+            select: {
+              role: true
+            }
+          });
+
+          if (user?.role === Role.ADMIN) {
+            return `${baseUrl}/admin/dashboard`;
+          }
+          return `${baseUrl}/student/dashboard`;
+        } catch (error) {
+          console.error('Redirect error:', error);
+          return baseUrl;
+        }
       }
       
       // Default to home
@@ -129,5 +152,5 @@ export const authOptions: NextAuthOptions = {
     }
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: true, // Enable debug logs to see what's happening
+  debug: true, // Keep debug on to see what's happening
 };
