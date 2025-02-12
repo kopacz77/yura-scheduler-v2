@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getServerSession } from 'next-auth';
 import { authOptions } from '@/lib/auth';
-import { LessonStatus } from '@prisma/client';
+import { LessonStatus, Prisma } from '@prisma/client';
 
 export async function GET(request: Request) {
   try {
@@ -16,7 +16,7 @@ export async function GET(request: Request) {
     const nextWeek = new Date();
     nextWeek.setDate(nextWeek.getDate() + 7);
 
-    const query = {
+    const query: Prisma.LessonFindManyArgs = {
       where: {
         startTime: {
           gte: now,
@@ -45,7 +45,7 @@ export async function GET(request: Request) {
         rink: true
       },
       orderBy: {
-        startTime: 'asc'
+        startTime: 'asc' as const
       },
       take: 10
     };

@@ -1,8 +1,8 @@
 import { useState } from 'react';
-import { CalendarView } from '@/components/calendar/CalendarView';
-import { UpcomingLessons } from '@/components/schedule/UpcomingLessons';
+import CalendarView from '@/components/calendar/CalendarView';
+import UpcomingLessons from '@/components/schedule/UpcomingLessons';
 
-export default function StudentDashboard() {
+const StudentDashboard = () => {
   const [selectedDate, setSelectedDate] = useState<Date>(new Date());
 
   const handleDateChange = (date: Date) => {
@@ -25,4 +25,6 @@ export default function StudentDashboard() {
       </section>
     </div>
   );
-}
+};
+
+export default StudentDashboard;
