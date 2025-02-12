@@ -8,7 +8,7 @@ interface UseAuthProps {
 
 export function useAuth(props: UseAuthProps = {}) {
   const { data: session, status } = useSession({
-    required: props.required,
+    required: props.required ?? false,
   });
 
   const isLoading = status === 'loading';
