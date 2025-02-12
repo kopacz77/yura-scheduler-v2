@@ -6,10 +6,15 @@ export default withAuth(
     const token = req.nextauth.token;
     const url = req.nextUrl;
 
-    // Auth page handling
-    if (url.pathname.startsWith('/(auth)') || url.pathname === '/signin') {
+    // Allow public access to the home page
+    if (url.pathname === '/') {
+      return NextResponse.next();
+    }
+
+    // Handle auth pages
+    if (url.pathname === '/signin') {
       if (token) {
-        // Redirect authenticated users to their appropriate dashboard
+        // Redirect authenticated users to their dashboard
         return NextResponse.redirect(
           new URL(
             token.role === 'ADMIN' ? '/admin/dashboard' : '/student-portal',
@@ -22,9 +27,12 @@ export default withAuth(
 
     // Protected routes require authentication
     if (!token) {
-      const callbackUrl = encodeURIComponent(url.pathname + url.search);
+      let callbackUrl = url.pathname;
+      if (url.search) {
+        callbackUrl += url.search;
+      }
       return NextResponse.redirect(
-        new URL(`/signin?callbackUrl=${callbackUrl}`, req.url)
+        new URL(`/signin?callbackUrl=${encodeURIComponent(callbackUrl)}`, req.url)
       );
     }
 
@@ -43,8 +51,7 @@ export default withAuth(
     callbacks: {
       authorized: ({ req, token }) => {
         // Allow public routes
-        if (req.nextUrl.pathname.startsWith('/(auth)') || 
-            req.nextUrl.pathname === '/signin') {
+        if (req.nextUrl.pathname === '/' || req.nextUrl.pathname === '/signin') {
           return true;
         }
         // All other routes require authentication
