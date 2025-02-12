@@ -1,6 +1,7 @@
 'use client';
 
 import { AuthProvider } from './auth-provider';
+import { ThemeProvider } from './theme-provider';
 import { ReactNode } from 'react';
 
 interface ProvidersProps {
@@ -9,6 +10,8 @@ interface ProvidersProps {
 
 export function Providers({ children }: ProvidersProps) {
   return (
-    <AuthProvider>{children}</AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+      <AuthProvider>{children}</AuthProvider>
+    </ThemeProvider>
   );
 }
