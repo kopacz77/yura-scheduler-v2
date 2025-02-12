@@ -25,7 +25,6 @@ export function SignInForm() {
   const router = useRouter()
   const [isLoading, setIsLoading] = React.useState<boolean>(false)
   const searchParams = useSearchParams()
-  // Let the server handle role-based redirect
   const callbackUrl = searchParams?.get('callbackUrl')
 
   const form = useForm<FormData>({
@@ -43,13 +42,15 @@ export function SignInForm() {
       const res = await signIn('credentials', {
         email: data.email,
         password: data.password,
-        redirect: true, // Let NextAuth handle the redirect
-        callbackUrl: callbackUrl || '/admin/dashboard', // Default to admin dashboard
+        redirect: false // Handle redirect manually after checking response
       })
 
-      // This code won't run if redirect is true
       if (res?.error) {
         form.setError('root', { message: 'Invalid email or password' })
+      } else if (res?.ok) {
+        // Get current user role from session and redirect accordingly
+        router.push(callbackUrl || '/admin/dashboard')
+        router.refresh() // Refresh to update session state
       }
     } catch (error) {
       console.error('Sign in error:', error)
