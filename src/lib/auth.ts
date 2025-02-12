@@ -31,14 +31,6 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Missing credentials');
         }
 
-        // Test database connection
-        try {
-          await prisma.$connect();
-        } catch (error) {
-          console.error('Database connection error:', error);
-          throw new Error('Database connection failed');
-        }
-
         try {
           const user = await prisma.user.findUnique({
             where: {
@@ -75,8 +67,6 @@ export const authOptions: NextAuthOptions = {
         } catch (error) {
           console.error('Authorization error:', error);
           return null;
-        } finally {
-          await prisma.$disconnect();
         }
       }
     })
@@ -107,6 +97,13 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
+      // After sign in, redirect based on role
+      if (url.includes('/signin')) {
+        return token?.role === Role.ADMIN ? 
+          `${baseUrl}/admin/dashboard` : 
+          `${baseUrl}/student/dashboard`;
+      }
+      
       // Handle relative URLs
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
@@ -119,14 +116,24 @@ export const authOptions: NextAuthOptions = {
       return baseUrl;
     }
   },
-  events: {
-    async signIn({ user }) {
-      console.log('User signed in:', user);
+  // Only log in development
+  logger: {
+    error(code, ...message) {
+      if (process.env.NODE_ENV === 'development') {
+        console.error(code, ...message);
+      }
     },
-    async signOut({ token }) {
-      console.log('User signed out:', token);
-    }
+    warn(code, ...message) {
+      if (process.env.NODE_ENV === 'development') {
+        console.warn(code, ...message);
+      }
+    },
+    debug(code, ...message) {
+      if (process.env.NODE_ENV === 'development') {
+        console.debug(code, ...message);
+      }
+    },
   },
   secret: process.env.NEXTAUTH_SECRET,
-  debug: process.env.NODE_ENV === 'development',
+  // No debug mode needed as we have custom logger
 };
