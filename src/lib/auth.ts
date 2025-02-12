@@ -42,12 +42,24 @@ export const authOptions: NextAuthOptions = {
               name: true,
               password: true,
               role: true,
+              // TODO: Re-enable email verification after testing existing accounts
+              // Requirements:
+              // 1. Add email verification on signup
+              // 2. Implement email verification flow
+              // 3. Add email verification check here
+              // 4. Consider verification bypass for admin accounts
+              // emailVerified: true,
             },
           });
 
           if (!user || !user.password) {
             throw new Error('Invalid credentials');
           }
+
+          // TODO: Add back email verification check
+          // if (!user.emailVerified) {
+          //   throw new Error('Email not verified');
+          // }
 
           const isValid = await bcrypt.compare(
             credentials.password,
@@ -109,6 +121,8 @@ export const authOptions: NextAuthOptions = {
             },
             select: {
               role: true
+              // TODO: Add back email verification check when implementing the feature
+              // emailVerified: true
             }
           });
 
