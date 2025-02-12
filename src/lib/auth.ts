@@ -10,6 +10,7 @@ export const authOptions: NextAuthOptions = {
   session: {
     strategy: 'jwt',
     maxAge: 24 * 60 * 60, // 24 hours
+    updateAge: 60 * 60, // 1 hour
   },
   providers: [
     CredentialsProvider({
@@ -26,7 +27,7 @@ export const authOptions: NextAuthOptions = {
           placeholder: 'Enter your password'
         }
       },
-      async authorize(credentials) {
+      async authorize(credentials, req) {
         if (!credentials?.email || !credentials?.password) {
           throw new Error('Missing credentials');
         }
@@ -42,10 +43,11 @@ export const authOptions: NextAuthOptions = {
               name: true,
               password: true,
               role: true,
+              active: true,
             },
           });
 
-          if (!user || !user.password) {
+          if (!user || !user.password || !user.active) {
             throw new Error('Invalid credentials');
           }
 
@@ -77,12 +79,18 @@ export const authOptions: NextAuthOptions = {
     signOut: '/'
   },
   callbacks: {
-    async jwt({ token, user }) {
+    async jwt({ token, user, trigger, session }) {
+      if (trigger === 'update' && session) {
+        // Handle session updates
+        return { ...token, ...session.user };
+      }
+
       if (user) {
         token.id = user.id;
         token.role = user.role;
         token.email = user.email;
       }
+
       return token;
     },
     async session({ session, token }) {
@@ -94,17 +102,25 @@ export const authOptions: NextAuthOptions = {
       return session;
     },
     async redirect({ url, baseUrl }) {
-      // Handle relative URLs
+      // Always allow relative URLs
       if (url.startsWith('/')) {
         return `${baseUrl}${url}`;
       }
-      // Handle absolute URLs that start with the base URL
-      else if (url.startsWith(baseUrl)) {
+      // Allow returning to the same origin
+      if (new URL(url).origin === baseUrl) {
         return url;
       }
-      
+      // Default to base URL
       return baseUrl;
     }
+  },
+  events: {
+    async signIn({ user }) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lastLogin: new Date() }
+      });
+    },
   },
   secret: process.env.NEXTAUTH_SECRET
 };
