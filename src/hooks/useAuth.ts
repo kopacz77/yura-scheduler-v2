@@ -1,43 +1,30 @@
-import { useState, useEffect } from 'react';
+import { useSession } from 'next-auth/react';
+import { useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 
-interface User {
-  id: string;
-  role: 'admin' | 'student';
-  name: string;
-  email: string;
-}
-
-export function useAuth() {
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+export function useAuth(requiredRole?: 'ADMIN' | 'STUDENT') {
+  const { data: session, status } = useSession();
+  const router = useRouter();
 
   useEffect(() => {
-    // Mock authentication for now
-    // TODO: Replace with actual auth integration
-    setUser({
-      id: '1',
-      role: 'admin',
-      name: 'Yura Min',
-      email: 'yura@example.com'
-    });
-    setIsLoading(false);
-  }, []);
+    if (status === 'loading') return;
 
-  const login = async (credentials: { email: string; password: string }) => {
-    // TODO: Implement real login
-    console.log('Login:', credentials);
-  };
+    if (!session) {
+      const currentPath = window.location.pathname;
+      router.push(`/signin?callbackUrl=${encodeURIComponent(currentPath)}`);
+      return;
+    }
 
-  const logout = async () => {
-    // TODO: Implement real logout
-    setUser(null);
-  };
+    if (requiredRole && session.user.role !== requiredRole) {
+      const redirectPath = requiredRole === 'ADMIN' ? '/student/dashboard' : '/admin/dashboard';
+      router.push(redirectPath);
+    }
+  }, [session, status, requiredRole, router]);
 
   return {
-    user,
-    isLoading,
-    login,
-    logout,
-    isAuthenticated: !!user
+    session,
+    isLoading: status === 'loading',
+    isAuthenticated: !!session,
+    isAuthorized: !requiredRole || session?.user.role === requiredRole,
   };
 }
