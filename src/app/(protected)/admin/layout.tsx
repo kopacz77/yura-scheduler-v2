@@ -1,24 +1,25 @@
-'use client';
-
-import { useSession } from 'next-auth/react';
+import { getServerSession } from 'next-auth/next';
 import { redirect } from 'next/navigation';
-import { PageHeader } from '@/components/layout/PageHeader';
-import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import { authOptions } from '@/lib/auth';
 
-export default function AdminLayout({
+export default async function AdminLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
+  const session = await getServerSession(authOptions);
+
+  if (!session?.user) {
+    redirect('/signin');
+  }
+
+  if (session.user.role !== 'ADMIN') {
+    redirect('/student/dashboard');
+  }
+
   return (
-    <ProtectedRoute requiredRole="ADMIN">
-      <div className="container mx-auto px-4 py-8">
-        <PageHeader 
-          title="Admin Dashboard"
-          description="Manage your ice dance coaching business"
-        />
-        {children}
-      </div>
-    </ProtectedRoute>
+    <div className="flex-1 space-y-4 p-4 md:p-8 pt-6">
+      {children}
+    </div>
   );
 }
