@@ -1,5 +1,3 @@
-import { SiteFooter } from '@/components/layout/site-footer';
-
 export default function ProtectedLayout({
   children,
 }: {
@@ -8,7 +6,6 @@ export default function ProtectedLayout({
   return (
     <div className="flex h-screen">
       <main className="flex-1">{children}</main>
-      <SiteFooter />
     </div>
   );
 }
