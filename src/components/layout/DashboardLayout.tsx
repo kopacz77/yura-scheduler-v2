@@ -89,6 +89,7 @@ export function DashboardLayout() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="px-8 py-6">
+          <h1 className="text-2xl font-semibold mb-6">{activeTab}</h1>
           {navItems.find(item => item.label === activeTab)?.content}
         </div>
       </main>
