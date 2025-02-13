@@ -90,12 +90,12 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <div className="col-span-full lg:col-span-4">
           <Overview />
         </div>
@@ -104,12 +104,12 @@ export function AdminDashboard() {
         </div>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-7">
         <LessonStats className="md:col-span-2 lg:col-span-4" />
         <RecentAppointments className="md:col-span-2 lg:col-span-3" />
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2">
+      <div className="grid gap-4 md:grid-cols-2">
         <RevenueChart data={revenueData} />
         <PaymentReport />
       </div>
