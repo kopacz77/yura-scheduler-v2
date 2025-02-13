@@ -6,9 +6,12 @@ export default function ProtectedLayout({
   children: React.ReactNode;
 }) {
   return (
-    <div className="relative flex min-h-screen flex-col">
-      <main className="flex-1 container py-6">{children}</main>
-      <SiteFooter />
+    <div className="flex min-h-screen">
+      {/* Your sidebar component here */}
+      <div className="flex-1">
+        <main className="h-full p-4">{children}</main>
+        <SiteFooter />
+      </div>
     </div>
   );
 }
