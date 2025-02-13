@@ -14,7 +14,7 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="h-screen grid grid-cols-[auto,1fr]">
+    <div className="h-screen grid grid-cols-[auto,1fr] px-4">
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
