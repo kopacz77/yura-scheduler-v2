@@ -2,6 +2,7 @@
 
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
+import { SiteFooter } from './site-footer';
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 
@@ -13,7 +14,7 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <div className="flex h-screen overflow-hidden">
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
@@ -29,6 +30,7 @@ export function AppShell({ children }: AppShellProps) {
         <main className="flex-1 overflow-y-auto">
           {children}
         </main>
+        <SiteFooter />
       </div>
     </div>
   );
