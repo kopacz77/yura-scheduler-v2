@@ -90,33 +90,27 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="p-6">
-      <div className="mb-6">
+    <div className="p-4">
+      <div className="mb-4">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
       </div>
 
-      {/* Main Stats and Chart Section */}
       <div className="grid grid-cols-12 gap-4">
-        {/* Growth Chart */}
         <div className="col-span-8">
           <Overview />
         </div>
-        {/* Student Stats */}
         <div className="col-span-4">
           <StudentStats data={studentStats} />
         </div>
       </div>
 
-      {/* Activity Stats Section */}
       <div className="grid grid-cols-12 gap-4 mt-4">
-        {/* Lesson Stats and KPIs */}
         <div className="col-span-8">
           <div className="grid grid-cols-2 gap-4 mb-4">
             <LessonStats />
           </div>
           <RevenueChart data={revenueData} />
         </div>
-        {/* Recent Activity and Payments */}
         <div className="col-span-4 space-y-4">
           <RecentAppointments />
           <PaymentReport />
