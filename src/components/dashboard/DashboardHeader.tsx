@@ -25,7 +25,7 @@ export function DashboardHeader({ stats, isLoading, error }: DashboardHeaderProp
     return (
       <Alert variant="destructive" className="mb-6">
         <AlertDescription className="flex items-center justify-between">
-          <span>Unable to load dashboard data: {error}</span>
+          <span>Unable to load data: {error}</span>
           {!retrying && (
             <button 
               onClick={() => setRetrying(true)}
@@ -53,12 +53,12 @@ export function DashboardHeader({ stats, isLoading, error }: DashboardHeaderProp
     change?: number;
     format?: (value: number) => string;
   }) => (
-    <div className="rounded-xl border bg-card text-card-foreground shadow">
-      <div className="p-6">
-        <div className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div className="text-sm font-medium">{title}</div>
+    <div className="rounded-xl border bg-card text-card-foreground shadow-sm transition-all hover:shadow">
+      <div className="px-6 py-5">
+        <div className="flex flex-row items-center justify-between pb-2">
+          <div className="text-sm font-medium text-muted-foreground">{title}</div>
         </div>
-        <div className="flex flex-col">
+        <div className="flex flex-col space-y-1">
           {isLoading ? (
             <>
               <Skeleton className="h-8 w-24 mb-2" />
@@ -66,10 +66,10 @@ export function DashboardHeader({ stats, isLoading, error }: DashboardHeaderProp
             </>
           ) : (
             <>
-              <h3 className="text-2xl font-bold">{format(value)}</h3>
+              <h3 className="text-2xl font-bold tracking-tight">{format(value)}</h3>
               {(trend && change !== undefined) && (
                 <div className="flex items-center space-x-1">
-                  <span className={trend === 'up' ? 'text-green-500' : 'text-red-500'}>
+                  <span className={`${trend === 'up' ? 'text-green-500' : 'text-red-500'} font-medium`}>
                     {trend === 'up' ? '+' : '-'}{Math.abs(change).toFixed(1)}%
                   </span>
                   <span className="text-sm text-muted-foreground">from last month</span>
@@ -83,35 +83,37 @@ export function DashboardHeader({ stats, isLoading, error }: DashboardHeaderProp
   );
 
   return (
-    <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
-      <StatCard
-        title="Total Students"
-        value={stats?.overview.totalStudents.value || 0}
-        trend={stats?.overview.totalStudents.trend}
-        change={stats?.overview.totalStudents.change}
-      />
-      
-      <StatCard
-        title="Active Students"
-        value={stats?.overview.activeStudents.value || 0}
-        trend={stats?.overview.activeStudents.trend}
-        change={stats?.overview.activeStudents.change}
-      />
-      
-      <StatCard
-        title="Revenue"
-        value={stats?.overview.revenue.value || 0}
-        trend={stats?.overview.revenue.trend}
-        change={stats?.overview.revenue.change}
-        format={(value) => `$${(value / 100).toFixed(2)}`}
-      />
-      
-      <StatCard
-        title="Completed Lessons"
-        value={stats?.overview.completedLessons.value || 0}
-        trend={stats?.overview.completedLessons.trend}
-        change={stats?.overview.completedLessons.change}
-      />
+    <div className="pr-6">
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        <StatCard
+          title="Total Students"
+          value={stats?.overview.totalStudents.value || 0}
+          trend={stats?.overview.totalStudents.trend}
+          change={stats?.overview.totalStudents.change}
+        />
+        
+        <StatCard
+          title="Active Students"
+          value={stats?.overview.activeStudents.value || 0}
+          trend={stats?.overview.activeStudents.trend}
+          change={stats?.overview.activeStudents.change}
+        />
+        
+        <StatCard
+          title="Revenue"
+          value={stats?.overview.revenue.value || 0}
+          trend={stats?.overview.revenue.trend}
+          change={stats?.overview.revenue.change}
+          format={(value) => `$${(value / 100).toFixed(2)}`}
+        />
+        
+        <StatCard
+          title="Completed Lessons"
+          value={stats?.overview.completedLessons.value || 0}
+          trend={stats?.overview.completedLessons.trend}
+          change={stats?.overview.completedLessons.change}
+        />
+      </div>
     </div>
   );
 }
