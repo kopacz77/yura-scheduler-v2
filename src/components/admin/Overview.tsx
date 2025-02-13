@@ -1,4 +1,5 @@
 import React from 'react';
+import { DashboardHeader } from '@/components/dashboard/DashboardHeader';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -13,69 +14,73 @@ const data = [
 
 export function Overview() {
   return (
-    <Card className="shadow-sm bg-white">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg font-medium">Student Growth & Attendance</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[300px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <LineChart data={data}>
-              <CartesianGrid
-                strokeDasharray="3 3"
-                vertical={false}
-                stroke="#e5e7eb"
-              />
-              <XAxis
-                dataKey="name"
-                stroke="#6b7280"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-              />
-              <YAxis
-                stroke="#6b7280"
-                fontSize={12}
-                tickLine={false}
-                axisLine={false}
-                tickFormatter={(value) => `${value}`}
-              />
-              <Tooltip
-                contentStyle={{
-                  backgroundColor: '#fff',
-                  border: '1px solid #e5e7eb',
-                  borderRadius: '0.375rem',
-                  boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="students"
-                stroke="#2563eb"
-                strokeWidth={2}
-                dot={{
-                  r: 4,
-                  fill: '#2563eb',
-                  strokeWidth: 2,
-                  stroke: '#fff'
-                }}
-              />
-              <Line
-                type="monotone"
-                dataKey="attendance"
-                stroke="#16a34a"
-                strokeWidth={2}
-                dot={{
-                  r: 4,
-                  fill: '#16a34a',
-                  strokeWidth: 2,
-                  stroke: '#fff'
-                }}
-              />
-            </LineChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
+    <div className="space-y-6">
+      <DashboardHeader />
+      
+      <Card className="shadow-sm bg-white">
+        <CardHeader className="pb-4">
+          <CardTitle className="text-lg font-medium">Student Growth & Attendance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="h-[300px]">
+            <ResponsiveContainer width="100%" height="100%">
+              <LineChart data={data}>
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  vertical={false}
+                  stroke="#e5e7eb"
+                />
+                <XAxis
+                  dataKey="name"
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="#6b7280"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                  tickFormatter={(value) => `${value}`}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: '#fff',
+                    border: '1px solid #e5e7eb',
+                    borderRadius: '0.375rem',
+                    boxShadow: '0 1px 2px 0 rgba(0, 0, 0, 0.05)',
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="students"
+                  stroke="#2563eb"
+                  strokeWidth={2}
+                  dot={{
+                    r: 4,
+                    fill: '#2563eb',
+                    strokeWidth: 2,
+                    stroke: '#fff'
+                  }}
+                />
+                <Line
+                  type="monotone"
+                  dataKey="attendance"
+                  stroke="#16a34a"
+                  strokeWidth={2}
+                  dot={{
+                    r: 4,
+                    fill: '#16a34a',
+                    strokeWidth: 2,
+                    stroke: '#fff'
+                  }}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 }
