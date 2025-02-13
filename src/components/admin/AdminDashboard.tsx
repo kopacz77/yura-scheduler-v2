@@ -90,8 +90,8 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
+    <div className="p-6">
+      <div className="mb-6">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
       </div>
 
@@ -108,7 +108,7 @@ export function AdminDashboard() {
       </div>
 
       {/* Activity Stats Section */}
-      <div className="grid grid-cols-12 gap-4">
+      <div className="grid grid-cols-12 gap-4 mt-4">
         {/* Lesson Stats and KPIs */}
         <div className="col-span-8">
           <div className="grid grid-cols-2 gap-4 mb-4">
