@@ -3,7 +3,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { cn } from '@/lib/utils';
 import '@/styles/globals.css';
 import { Providers } from '@/components/providers';
-import { getAuthSession } from '@/lib/auth';
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -11,9 +10,7 @@ interface RootLayoutProps {
   children: React.ReactNode;
 }
 
-export default async function RootLayout({ children }: RootLayoutProps) {
-  const session = await getAuthSession();
-
+export default function RootLayout({ children }: RootLayoutProps) {
   return (
     <html lang="en" suppressHydrationWarning>
       <head />
@@ -21,7 +18,7 @@ export default async function RootLayout({ children }: RootLayoutProps) {
         'min-h-screen bg-background font-sans antialiased',
         inter.className
       )}>
-        <Providers session={session}>
+        <Providers>
           {children}
           <Toaster />
         </Providers>
