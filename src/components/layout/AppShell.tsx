@@ -13,7 +13,7 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="min-h-screen bg-slate-50">
+    <div className="flex h-screen overflow-hidden bg-slate-50">
       {/* Sidebar */}
       <Sidebar
         isOpen={isSidebarOpen}
@@ -23,15 +23,13 @@ export function AppShell({ children }: AppShellProps) {
       {/* Main Content */}
       <div
         className={cn(
-          'flex flex-col transition-all duration-300',
+          'flex flex-1 flex-col transition-all duration-300',
           isSidebarOpen ? 'pl-64' : 'pl-16'
         )}
       >
         <TopNav />
-        <main className="flex-1 p-8">
-          <div className="mx-auto max-w-7xl">
-            {children}
-          </div>
+        <main className="flex-1 overflow-y-auto p-6">
+          {children}
         </main>
       </div>
     </div>
