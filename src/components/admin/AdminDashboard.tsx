@@ -92,7 +92,7 @@ export function AdminDashboard() {
   return (
     <div className="p-4">
       <div className="mb-4">
-        <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
+        <h1 className="text-2xl font-semibold tracking-tight">Overview</h1>
       </div>
 
       <div className="grid grid-cols-12 gap-4">
