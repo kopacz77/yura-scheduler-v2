@@ -14,7 +14,7 @@ export default function HomePage() {
             <span className="text-xl font-bold">YM Movement</span>
           </Link>
 
-          <nav className="hidden space-x-6 md:flex">
+          <nav className="flex items-center space-x-6">
             <Link href="/about" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
               About
             </Link>
@@ -24,16 +24,10 @@ export default function HomePage() {
             <Link href="/contact" className="text-sm font-medium text-slate-600 hover:text-slate-900 transition-colors">
               Contact
             </Link>
-          </nav>
-
-          <div className="flex items-center space-x-4">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" className="text-sm" asChild>
               <Link href="/signin">Sign In</Link>
             </Button>
-            <Button className="bg-blue-600 hover:bg-blue-700" asChild>
-              <Link href="/signup">Get Started</Link>
-            </Button>
-          </div>
+          </nav>
         </div>
       </header>
 
