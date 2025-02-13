@@ -13,17 +13,15 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-screen overflow-hidden">
-      {/* Sidebar */}
+    <div className="flex h-full overflow-hidden">
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
       />
       
-      {/* Main Content */}
       <div
         className={cn(
-          'flex flex-1 flex-col transition-all duration-300',
+          'flex flex-1 flex-col',
           isSidebarOpen ? 'pl-64' : 'pl-16'
         )}
       >
