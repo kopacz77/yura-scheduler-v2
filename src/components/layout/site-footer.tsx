@@ -1,7 +1,7 @@
 export function SiteFooter() {
   return (
-    <footer className="border-t py-6 md:py-0">
-      <div className="container flex flex-col items-center justify-between gap-4 md:h-16 md:flex-row">
+    <footer className="mt-auto border-t">
+      <div className="flex h-14 items-center justify-center md:justify-end px-4">
         <p className="text-sm text-muted-foreground">
           Built by{' '}
           <a
