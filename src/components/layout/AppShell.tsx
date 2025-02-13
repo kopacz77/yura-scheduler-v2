@@ -2,22 +2,34 @@
 
 import { Sidebar } from './Sidebar';
 import { TopNav } from './TopNav';
+import { useState } from 'react';
+import { cn } from '@/lib/utils';
 
 interface AppShellProps {
   children: React.ReactNode;
 }
 
 export function AppShell({ children }: AppShellProps) {
+  const [isSidebarOpen, setSidebarOpen] = useState(true);
+
   return (
-    <div className="flex h-screen overflow-hidden bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* Sidebar */}
-      <Sidebar />
+      <Sidebar
+        isOpen={isSidebarOpen}
+        onToggle={() => setSidebarOpen(!isSidebarOpen)}
+      />
       
       {/* Main Content */}
-      <div className="flex flex-1 flex-col overflow-hidden">
+      <div
+        className={cn(
+          'flex flex-col transition-all duration-300',
+          isSidebarOpen ? 'pl-64' : 'pl-16'
+        )}
+      >
         <TopNav />
-        <main className="flex-1 overflow-auto">
-          <div className="container mx-auto px-6 py-8">
+        <main className="flex-1 p-8">
+          <div className="mx-auto max-w-7xl">
             {children}
           </div>
         </main>
