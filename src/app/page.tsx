@@ -8,30 +8,36 @@ export default function HomePage() {
     <div className="flex min-h-screen flex-col bg-white">
       {/* Navigation Header */}
       <header className="fixed top-0 z-50 w-full border-b bg-white">
-        <div className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4">
-          {/* Logo */}
-          <Link href="/" className="flex items-center space-x-2">
-            <Logo size="small" />
-            <span className="text-lg font-semibold">YM Movement</span>
-          </Link>
-
-          {/* Navigation Links */}
-          <div className="flex flex-1 justify-center space-x-8">
-            <Link href="/about" className="text-sm text-slate-600 hover:text-slate-900">
-              About
-            </Link>
-            <Link href="/programs" className="text-sm text-slate-600 hover:text-slate-900">
-              Programs
-            </Link>
-            <Link href="/contact" className="text-sm text-slate-600 hover:text-slate-900">
-              Contact
+        <div className="mx-auto flex h-16 max-w-7xl items-center px-4">
+          {/* Left: Logo */}
+          <div className="w-[200px]">
+            <Link href="/" className="flex items-center space-x-2">
+              <Logo size="small" />
+              <span className="text-lg font-semibold">YM Movement</span>
             </Link>
           </div>
 
-          {/* Sign In Button */}
-          <Button className="rounded-full" variant="primary" asChild>
-            <Link href="/signin">Sign In</Link>
-          </Button>
+          {/* Center: Navigation Links */}
+          <div className="flex-1 text-center">
+            <div className="inline-flex space-x-8">
+              <Link href="/about" className="text-sm text-slate-600 hover:text-slate-900">
+                About
+              </Link>
+              <Link href="/programs" className="text-sm text-slate-600 hover:text-slate-900">
+                Programs
+              </Link>
+              <Link href="/contact" className="text-sm text-slate-600 hover:text-slate-900">
+                Contact
+              </Link>
+            </div>
+          </div>
+
+          {/* Right: Sign In */}
+          <div className="w-[200px] text-right">
+            <Button className="rounded-full" variant="primary" asChild>
+              <Link href="/signin">Sign In</Link>
+            </Button>
+          </div>
         </div>
       </header>
 
