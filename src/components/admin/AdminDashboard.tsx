@@ -62,7 +62,7 @@ export function AdminDashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
+      <div className="flex items-center justify-center min-h-[200px]">
         <div className="flex items-center space-x-2">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
           <span className="text-sm text-slate-600">Loading...</span>
@@ -90,30 +90,30 @@ export function AdminDashboard() {
   }
 
   return (
-    <div className="h-full">
-      <div className="mb-4">
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7">
-        <div className="lg:col-span-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <div className="col-span-full lg:col-span-4">
           <Overview />
         </div>
-        <div className="lg:col-span-3">
+        <div className="col-span-full lg:col-span-3">
           <StudentStats data={studentStats} />
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-7 mt-4">
-        <div className="lg:col-span-4">
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-7">
+        <div className="col-span-full lg:col-span-4">
           <LessonStats />
         </div>
-        <div className="lg:col-span-3">
+        <div className="col-span-full lg:col-span-3">
           <RecentAppointments />
         </div>
       </div>
 
-      <div className="grid gap-4 grid-cols-1 lg:grid-cols-2 mt-4">
+      <div className="grid gap-6 md:grid-cols-2">
         <RevenueChart data={revenueData} />
         <PaymentReport />
       </div>
