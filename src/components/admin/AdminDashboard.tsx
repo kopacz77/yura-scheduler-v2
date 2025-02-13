@@ -62,7 +62,7 @@ export function AdminDashboard() {
 
   if (status === 'loading' || isLoading) {
     return (
-      <div className="flex h-full w-full items-center justify-center">
+      <div className="flex h-full items-center justify-center">
         <div className="flex items-center space-x-2">
           <div className="h-6 w-6 animate-spin rounded-full border-2 border-blue-600 border-t-transparent" />
           <span className="text-sm text-slate-600">Loading...</span>
@@ -91,7 +91,7 @@ export function AdminDashboard() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between mb-4">
         <h1 className="text-2xl font-semibold tracking-tight">Dashboard Overview</h1>
       </div>
 
