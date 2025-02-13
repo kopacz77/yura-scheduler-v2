@@ -1,7 +1,7 @@
 export function SiteFooter() {
   return (
-    <footer className="mt-auto border-t">
-      <div className="flex h-14 items-center justify-center md:justify-end px-4">
+    <footer className="border-t bg-white">
+      <div className="h-14 px-4 flex items-center justify-end">
         <p className="text-sm text-muted-foreground">
           Built by{' '}
           <a
