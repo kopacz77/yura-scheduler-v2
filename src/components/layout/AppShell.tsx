@@ -14,20 +14,15 @@ export function AppShell({ children }: AppShellProps) {
   const [isSidebarOpen, setSidebarOpen] = useState(true);
 
   return (
-    <div className="flex h-screen overflow-hidden">
+    <div className="h-screen grid grid-cols-[auto,1fr]">
       <Sidebar
         isOpen={isSidebarOpen}
         onToggle={() => setSidebarOpen(!isSidebarOpen)}
       />
       
-      <div
-        className={cn(
-          'flex flex-1 flex-col',
-          isSidebarOpen ? 'pl-64' : 'pl-16'
-        )}
-      >
+      <div className="min-h-0 flex flex-col">
         <TopNav />
-        <main className="flex-1 overflow-y-auto">
+        <main className="flex-1 overflow-auto">
           {children}
         </main>
         <SiteFooter />
