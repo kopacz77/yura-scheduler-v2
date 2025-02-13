@@ -14,11 +14,11 @@ const data = [
 export function Overview() {
   return (
     <Card className="shadow-sm bg-white">
-      <CardHeader>
+      <CardHeader className="pb-4">
         <CardTitle className="text-lg font-medium">Student Growth & Attendance</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="h-[400px]">
+        <div className="h-[300px]">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart data={data}>
               <CartesianGrid
