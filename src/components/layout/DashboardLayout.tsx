@@ -3,8 +3,11 @@
 import { useState } from 'react';
 import { cn } from '@/lib/utils';
 import { Overview } from '@/components/admin/Overview';
+import { Calendar } from '@/components/calendar/Calendar';
+import { StudentList } from '@/components/students/StudentList';
+import { PaymentSystem } from '@/components/payments/PaymentSystem';
+import { UserSettings } from '@/components/settings/UserSettings';
 import { BarChart, CalendarDays, Users, CreditCard, Settings } from 'lucide-react';
-import Link from 'next/link';
 
 type NavItem = {
   icon: React.ReactNode;
@@ -21,22 +24,22 @@ const navItems: NavItem[] = [
   {
     icon: <CalendarDays className="h-4 w-4" />,
     label: 'Schedule',
-    content: <div>Schedule Content</div>
+    content: <Calendar />
   },
   {
     icon: <Users className="h-4 w-4" />,
     label: 'Students',
-    content: <div>Students Content</div>
+    content: <StudentList />
   },
   {
     icon: <CreditCard className="h-4 w-4" />,
     label: 'Payments',
-    content: <div>Payments Content</div>
+    content: <PaymentSystem />
   },
   {
     icon: <Settings className="h-4 w-4" />,
     label: 'Settings',
-    content: <div>Settings Content</div>
+    content: <UserSettings />
   }
 ];
 
@@ -89,7 +92,6 @@ export function DashboardLayout() {
       {/* Main Content */}
       <main className="flex-1 overflow-y-auto">
         <div className="px-8 py-6">
-          <h1 className="text-2xl font-semibold mb-6">{activeTab}</h1>
           {navItems.find(item => item.label === activeTab)?.content}
         </div>
       </main>
