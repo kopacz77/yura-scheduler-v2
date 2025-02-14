@@ -1,0 +1,1 @@
+// File removed - using auth-context.tsx instead
