@@ -18,9 +18,12 @@ export const authOptions: NextAuthOptions = {
   adapter: PrismaAdapter(prisma),
   session: {
     strategy: "jwt",
+    maxAge: 30 * 24 * 60 * 60, // 30 days
+    updateAge: 24 * 60 * 60, // 24 hours
   },
   pages: {
     signIn: "/signin",
+    error: "/auth/error",
   },
   providers: [
     CredentialsProvider({
@@ -35,9 +38,7 @@ export const authOptions: NextAuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: {
-            email: credentials.email,
-          },
+          where: { email: credentials.email },
           select: {
             id: true,
             email: true,
@@ -52,7 +53,6 @@ export const authOptions: NextAuthOptions = {
         }
 
         const isValid = await compare(credentials.password, user.password);
-
         if (!isValid) {
           throw new Error("Invalid credentials");
         }
@@ -91,3 +91,28 @@ export const authOptions: NextAuthOptions = {
 
 // Helper function to get session on server side
 export const getAuthSession = () => getServerSession(authOptions);
+
+// Helper function to check if user has required role
+export const checkUserRole = async (requiredRole: Role): Promise<boolean> => {
+  const session = await getAuthSession();
+  return session?.user?.role === requiredRole;
+};
+
+// Helper function to get current user
+export const getCurrentUser = async () => {
+  const session = await getAuthSession();
+  if (!session?.user?.id) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      email: true,
+      name: true,
+      role: true,
+      student: true,
+    },
+  });
+
+  return user;
+};
