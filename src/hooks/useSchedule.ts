@@ -1,16 +1,7 @@
-'use client';
-
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { toast } from '@/components/ui/use-toast';
-
-type Lesson = {
-  id: string;
-  startTime: string;
-  endTime: string;
-  studentId: string;
-  rinkId: string;
-  status: 'SCHEDULED' | 'CANCELLED' | 'COMPLETED';
-};
+import { type Lesson } from '@prisma/client';
 
 type ScheduleFilters = {
   studentId?: string;
@@ -19,16 +10,15 @@ type ScheduleFilters = {
   endDate?: Date;
 };
 
+type LessonInput = Omit<Lesson, 'id' | 'createdAt' | 'updatedAt'>;
+
 export function useSchedule() {
-  const [lessons, setLessons] = useState<Lesson[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const queryClient = useQueryClient();
+  const [filters, setFilters] = useState<ScheduleFilters>({});
 
-  const fetchLessons = async (filters: ScheduleFilters = {}) => {
-    try {
-      setIsLoading(true);
-      setError(null);
-
+  const { data: lessons = [], isLoading, error } = useQuery({
+    queryKey: ['lessons', filters],
+    queryFn: async () => {
       const params = new URLSearchParams();
       if (filters.studentId) params.append('studentId', filters.studentId);
       if (filters.rinkId) params.append('rinkId', filters.rinkId);
@@ -37,103 +27,75 @@ export function useSchedule() {
 
       const response = await fetch(`/api/lessons?${params}`);
       if (!response.ok) throw new Error('Failed to fetch lessons');
+      return response.json();
+    },
+    staleTime: 1000 * 60 * 5, // 5 minutes
+  });
 
-      const data = await response.json();
-      setLessons(data);
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'An error occurred';
-      setError(message);
-      toast({
-        title: 'Error',
-        description: message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchLessons();
-  }, []);
-
-  const scheduleLesson = async (lessonData: Omit<Lesson, 'id'>) => {
-    try {
+  const scheduleMutation = useMutation({
+    mutationFn: async (lessonData: LessonInput) => {
       const response = await fetch('/api/lessons', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(lessonData),
       });
-
-      if (!response.ok) throw new Error('Failed to schedule lesson');
-
-      const newLesson = await response.json();
-      setLessons((prev) => [...prev, newLesson]);
-
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || 'Failed to schedule lesson');
+      }
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
       toast({
         title: 'Success',
         description: 'Lesson scheduled successfully',
       });
-
-      return newLesson;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to schedule lesson';
+    },
+    onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: message,
+        description: error.message,
         variant: 'destructive',
       });
-      throw err;
-    }
-  };
+    },
+  });
 
-  const cancelLesson = async (lessonId: string, reason: string) => {
-    try {
-      const response = await fetch(`/api/lessons/${lessonId}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          status: 'CANCELLED',
-          cancellationReason: reason,
-        }),
+  const cancelMutation = useMutation({
+    mutationFn: async ({ lessonId, reason }: { lessonId: string; reason: string }) => {
+      const response = await fetch(`/api/lessons/${lessonId}/cancel`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason }),
       });
-
       if (!response.ok) throw new Error('Failed to cancel lesson');
-
-      const updatedLesson = await response.json();
-      setLessons((prev) =>
-        prev.map((lesson) =>
-          lesson.id === lessonId ? updatedLesson : lesson
-        )
-      );
-
+      return response.json();
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['lessons'] });
       toast({
         title: 'Success',
         description: 'Lesson cancelled successfully',
       });
-
-      return updatedLesson;
-    } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to cancel lesson';
+    },
+    onError: (error: Error) => {
       toast({
         title: 'Error',
-        description: message,
+        description: error.message,
         variant: 'destructive',
       });
-      throw err;
-    }
-  };
+    },
+  });
 
   return {
     lessons,
     isLoading,
     error,
-    fetchLessons,
-    scheduleLesson,
-    cancelLesson,
+    filters,
+    setFilters,
+    scheduleLesson: scheduleMutation.mutate,
+    cancelLesson: cancelMutation.mutate,
+    isScheduling: scheduleMutation.isPending,
+    isCancelling: cancelMutation.isPending,
   };
 }
