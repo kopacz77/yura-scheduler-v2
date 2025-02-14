@@ -1,1 +1,0 @@
-// File removed - consolidated in providers/index.tsx
